@@ -3,6 +3,7 @@ import QtQuick.Controls 2.12
 import "pages"
 
 ApplicationWindow {
+    id: root
     visible: true
     width: 400
     height: 700
@@ -11,14 +12,9 @@ ApplicationWindow {
     StackView {
         id: stack
         anchors.fill: parent
-        initialItem: homeComponent
-    }
 
-    Component {
-        id: homeComponent
-
-        HomePage {
-            navigationStack: stack
+        initialItem: HomePage {
+            appStack: stack
         }
     }
 }
