@@ -103,6 +103,7 @@ Page {
 
             mapView.runJavaScript(
                 "[selectedLat, selectedLon]",
+                
                 function(result) {
 
                     if (!result ||
