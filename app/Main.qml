@@ -18,7 +18,7 @@ ApplicationWindow {
         id: homeComponent
 
         HomePage {
-            stack: stack
+            navigationStack: stack
         }
     }
 }
