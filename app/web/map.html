@@ -1,22 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
 
-    <title>YatraSarthi Map</title>
+<meta charset="utf-8">
 
-    <link rel="stylesheet"
-          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<title>YatraSarthi Map</title>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
-    <style>
-        html, body, #map {
-            height: 100%;
-            width: 100%;
-            margin: 0;
-        }
-    </style>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+html, body, #map {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+}
+</style>
+
 </head>
 
 <body>
@@ -25,22 +27,22 @@
 
 <script>
 
-    var lat = 12.9716;
-    var lon = 77.5946;
+var lat = 12.9716;
+var lon = 77.5946;
 
-    var map = L.map('map').setView([lat, lon], 13);
+var map = L.map('map').setView([lat, lon], 13);
 
-    L.tileLayer(
-        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        {
-            attribution: '&copy; OpenStreetMap contributors'
-        }
-    ).addTo(map);
+L.tileLayer(
+    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+        attribution: '&copy; OpenStreetMap contributors'
+    }
+).addTo(map);
 
-    L.marker([lat, lon])
-        .addTo(map)
-        .bindPopup("You are here")
-        .openPopup();
+L.marker([lat, lon])
+ .addTo(map)
+ .bindPopup("You are here")
+ .openPopup();
 
 </script>
 
