@@ -5,6 +5,7 @@ import QtWebEngine 1.10
 Page {
 
     property var appStack
+    property var appState
 
     header: ToolBar {
 
@@ -20,16 +21,11 @@ Page {
                 }
             }
 
-            Button {
-                text: "✕ Exit"
-
-                onClicked: {
-                    appStack.pop()
-                }
-            }
-
             Label {
-                text: "OpenStreetMap"
+                text: appState.activeSelection === "pickup"
+                      ? "Select Pickup"
+                      : "Select Destination"
+
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
