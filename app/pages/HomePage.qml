@@ -9,34 +9,53 @@ Page {
     ColumnLayout {
         anchors.centerIn: parent
         spacing: 15
+        width: parent.width * 0.8
 
         Label {
             text: "YatraSarthi"
             font.pixelSize: 24
+            Layout.alignment: Qt.AlignHCenter
         }
+
         Label {
             id: locationLabel
             text: "Current Location: Not fetched"
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
+
+        Button {
+            text: "Get My Location"
+            Layout.alignment: Qt.AlignHCenter
+
+            onClicked: {
+                // Temporary mock location
+                locationLabel.text =
+                        "Current Location:\n" +
+                        "Bengaluru, Karnataka\n" +
+                        "12.9716, 77.5946"
+            }
+        }
+
         TextField {
+            id: pickupField
             placeholderText: "Pickup Location"
-            Layout.preferredWidth: 250
+            Layout.fillWidth: true
         }
 
         TextField {
+            id: destinationField
             placeholderText: "Destination"
-            Layout.preferredWidth: 250
+            Layout.fillWidth: true
         }
 
-       Button {
-    text: "Find Ride"
+        Button {
+            text: "Find Ride"
+            Layout.alignment: Qt.AlignHCenter
 
-    onClicked: {
-        console.log("Button clicked")
-        stack.push(Qt.resolvedUrl("ResultsPage.qml"))
-    }
-}
+            onClicked: {
+                stack.push(Qt.resolvedUrl("ResultsPage.qml"))
+            }
+        }
     }
 }
