@@ -3,10 +3,26 @@ import QtQuick.Controls 2.12
 
 Page {
 
+    property var appStack
+
     header: ToolBar {
-        Label {
-            anchors.centerIn: parent
-            text: "Available Rides"
+
+        Row {
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 10
+
+            Button {
+                text: "← Back"
+
+                onClicked: {
+                    appStack.pop()
+                }
+            }
+
+            Label {
+                text: "Available Rides"
+                anchors.verticalCenter: parent.verticalCenter
+            }
         }
     }
 
