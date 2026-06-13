@@ -83,4 +83,32 @@ Page {
             )
         }
     }
+
+    Button {
+        text: "Test Backend"
+
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        anchors.bottomMargin: 20
+        anchors.rightMargin: 20
+
+        onClicked: {
+
+            try {
+
+                var xhr = new XMLHttpRequest()
+
+                console.log(
+                    "XMLHttpRequest available"
+                )
+
+            } catch(e) {
+
+                console.log(
+                    "XMLHttpRequest NOT available:",
+                    e
+                )
+            }
+        }
+    }
 }
