@@ -32,24 +32,55 @@ Page {
     }
 
     WebEngineView {
+        id: mapView
+
         anchors.fill: parent
+
         url: Qt.resolvedUrl("../web/map.html")
     }
+
     Button {
-    text: "Use Mock Location"
+        text: "Use Selected Location"
 
-    anchors.bottom: parent.bottom
-    anchors.horizontalCenter: parent.horizontalCenter
-    anchors.bottomMargin: 20
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottomMargin: 20
 
-    onClicked: {
-        if (appState.activeSelection === "pickup") {
-            appState.pickupLocation = "Reva University, Bengaluru"
-        } else {
-            appState.destinationLocation = "Majestic, Bengaluru"
+        onClicked: {
+
+            mapView.runJavaScript(
+                "[selectedLat, selectedLon]",
+                function(result) {
+
+                    if (!result || result[0] === null) {
+                        console.log("No location selected")
+                        return
+                    }
+
+                    var lat = result[0]
+                    var lon = result[1]
+
+                    console.log("Selected:", lat, lon)
+
+                    var coordinateText =
+                            lat.toFixed(5)
+                            + ", "
+                            + lon.toFixed(5)
+
+                    if (appState.activeSelection === "pickup") {
+
+                        appState.pickupLocation =
+                                coordinateText
+
+                    } else {
+
+                        appState.destinationLocation =
+                                coordinateText
+                    }
+
+                    appStack.pop()
+                }
+            )
         }
-
-        appStack.pop()
     }
-}
 }
