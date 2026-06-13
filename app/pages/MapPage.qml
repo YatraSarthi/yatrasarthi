@@ -7,6 +7,59 @@ Page {
     property var appStack
     property var appState
 
+    function fetchAddress(lat, lon) {
+
+        var xhr = new XMLHttpRequest()
+
+        xhr.onreadystatechange = function() {
+
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+
+                var address =
+                        lat.toFixed(5)
+                        + ", "
+                        + lon.toFixed(5)
+
+                if (xhr.status === 200) {
+
+                    try {
+
+                        var data = JSON.parse(xhr.responseText)
+
+                        if (data.address) {
+                            address = data.address
+                        }
+
+                    } catch(e) {
+
+                        console.log("JSON Parse Error:", e)
+                    }
+                }
+
+                if (appState.activeSelection === "pickup") {
+
+                    appState.pickupLocation = address
+
+                } else {
+
+                    appState.destinationLocation = address
+                }
+
+                appStack.pop()
+            }
+        }
+
+        xhr.open(
+            "GET",
+            "http://192.168.192.1:8000/reverse-geocode"
+            + "?lat=" + lat
+            + "&lon=" + lon,
+            true
+        )
+
+        xhr.send()
+    }
+
     header: ToolBar {
 
         Row {
@@ -52,7 +105,11 @@ Page {
                 "[selectedLat, selectedLon]",
                 function(result) {
 
-                    if (!result || result[0] === null) {
+                    if (!result ||
+                        result[0] === null ||
+                        result[0] === undefined ||
+                        result[1] === undefined) {
+
                         console.log("No location selected")
                         return
                     }
@@ -60,55 +117,15 @@ Page {
                     var lat = result[0]
                     var lon = result[1]
 
-                    console.log("Selected:", lat, lon)
+                    console.log(
+                        "Reverse geocoding:",
+                        lat,
+                        lon
+                    )
 
-                    var coordinateText =
-                            lat.toFixed(5)
-                            + ", "
-                            + lon.toFixed(5)
-
-                    if (appState.activeSelection === "pickup") {
-
-                        appState.pickupLocation =
-                                coordinateText
-
-                    } else {
-
-                        appState.destinationLocation =
-                                coordinateText
-                    }
-
-                    appStack.pop()
+                    fetchAddress(lat, lon)
                 }
             )
-        }
-    }
-
-    Button {
-        text: "Test Backend"
-
-        anchors.bottom: parent.bottom
-        anchors.right: parent.right
-        anchors.bottomMargin: 20
-        anchors.rightMargin: 20
-
-        onClicked: {
-
-            try {
-
-                var xhr = new XMLHttpRequest()
-
-                console.log(
-                    "XMLHttpRequest available"
-                )
-
-            } catch(e) {
-
-                console.log(
-                    "XMLHttpRequest NOT available:",
-                    e
-                )
-            }
         }
     }
 }
