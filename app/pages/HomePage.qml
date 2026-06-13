@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.12
 
 Page {
 
-    property var stack
+    property var navigationStack
 
     ColumnLayout {
         anchors.centerIn: parent
@@ -54,7 +54,7 @@ Page {
             Layout.alignment: Qt.AlignHCenter
 
             onClicked: {
-                stack.push(Qt.resolvedUrl("ResultsPage.qml"))
+                navigationStack.push(Qt.resolvedUrl("ResultsPage.qml"))
             }
         }
     }
