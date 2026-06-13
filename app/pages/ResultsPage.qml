@@ -7,7 +7,6 @@ Page {
     property var appState
 
     property var rideData: null
-    property string errorMessage: ""
 
     function fetchEstimate() {
 
@@ -17,28 +16,27 @@ Page {
 
             if (xhr.readyState === XMLHttpRequest.DONE) {
 
+                console.log("Estimate Status:", xhr.status)
+                console.log("Estimate Response:", xhr.responseText)
+
                 if (xhr.status === 200) {
 
                     rideData = JSON.parse(xhr.responseText)
-                    errorMessage = ""
 
                 } else {
 
-                    errorMessage =
-                            "Unable to fetch ride estimates"
+                    console.log("Estimate request failed")
                 }
             }
         }
 
         xhr.open(
             "GET",
-
             "http://192.168.192.1:8000/estimate"
             + "?pickup_lat=" + appState.pickupLat
             + "&pickup_lon=" + appState.pickupLon
             + "&destination_lat=" + appState.destinationLat
             + "&destination_lon=" + appState.destinationLon,
-
             true
         )
 
@@ -57,7 +55,6 @@ Page {
             spacing: 10
 
             Button {
-
                 text: "← Back"
 
                 onClicked: {
@@ -71,111 +68,70 @@ Page {
         }
     }
 
-    ScrollView {
+    Column {
 
-        anchors.fill: parent
+        anchors.centerIn: parent
+        spacing: 15
 
-        Column {
+        Label {
+            text: "Pickup:"
+            font.bold: true
+        }
 
-            width: parent.width
-            spacing: 20
-            padding: 20
+        Label {
+            text: appState.pickupLocation
+        }
 
-            Label {
-                text: "Pickup:"
-                font.bold: true
-            }
+        Label {
+            text: "Destination:"
+            font.bold: true
+        }
 
-            Label {
-                text: appState.pickupLocation
-                wrapMode: Text.WordWrap
-            }
+        Label {
+            text: appState.destinationLocation
+        }
 
-            Label {
-                text: "Destination:"
-                font.bold: true
-            }
+        Label {
 
-            Label {
-                text: appState.destinationLocation
-                wrapMode: Text.WordWrap
-            }
+            text: rideData
+                  ? "Distance: " + rideData.distance + " km"
+                  : "Calculating..."
+        }
 
-            Label {
+        Label {
 
-                text: rideData
-                      ? "Distance: "
-                        + rideData.distance
-                        + " km"
-                      : "Calculating..."
-            }
+            visible: rideData !== null
 
-            Label {
+            text:
+                "🏍 Bike: ₹"
+                + rideData.bike.fare
+                + " • ETA "
+                + rideData.bike.eta
+                + " min"
+        }
 
-                text: errorMessage
+        Label {
 
-                visible: errorMessage !== ""
-            }
+            visible: rideData !== null
 
-            Frame {
+            text:
+                "🛺 Auto: ₹"
+                + rideData.auto.fare
+                + " • ETA "
+                + rideData.auto.eta
+                + " min"
+        }
 
-                width: parent.width
+        Label {
 
-                visible: rideData !== null
+            visible: rideData !== null
 
-                Label {
-
-                    anchors.centerIn: parent
-
-                    text:
-                        "🏍 Bike\n"
-                        + "Fare: ₹"
-                        + rideData.bike.fare
-                        + "\nETA: "
-                        + rideData.bike.eta
-                        + " min"
-                }
-            }
-
-            Frame {
-
-                width: parent.width
-
-                visible: rideData !== null
-
-                Label {
-
-                    anchors.centerIn: parent
-
-                    text:
-                        "🛺 Auto\n"
-                        + "Fare: ₹"
-                        + rideData.auto.fare
-                        + "\nETA: "
-                        + rideData.auto.eta
-                        + " min"
-                }
-            }
-
-            Frame {
-
-                width: parent.width
-
-                visible: rideData !== null
-
-                Label {
-
-                    anchors.centerIn: parent
-
-                    text:
-                        "🚕 Cab\n"
-                        + "Fare: ₹"
-                        + rideData.cab.fare
-                        + "\nETA: "
-                        + rideData.cab.eta
-                        + " min"
-                }
-            }
+            text:
+                "🚕 Cab: ₹"
+                + rideData.cab.fare
+                + " • ETA "
+                + rideData.cab.eta
+                + " min"
         }
     }
 }
