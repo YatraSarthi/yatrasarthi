@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.12
 Page {
 
     property var appStack
+    property var appState
 
     ColumnLayout {
         anchors.centerIn: parent
@@ -36,25 +37,66 @@ Page {
             }
         }
 
-        Button {
-            text: "Show Map"
+        RowLayout {
+            Layout.fillWidth: true
 
-            onClicked: {
-                appStack.push(
-                    Qt.resolvedUrl("MapPage.qml"),
-                    { "appStack": appStack }
-                )
+            TextField {
+                Layout.fillWidth: true
+                readOnly: true
+
+                text: appState.pickupLocation === ""
+                      ? ""
+                      : appState.pickupLocation
+
+                placeholderText: "Pickup Location"
+            }
+
+            Button {
+                text: "Show Map"
+
+                onClicked: {
+                    appState.activeSelection = "pickup"
+
+                    appStack.push(
+                        Qt.resolvedUrl("MapPage.qml"),
+                        {
+                            "appStack": appStack,
+                            "appState": appState
+                        }
+                    )
+                }
             }
         }
 
-        TextField {
-            placeholderText: "Pickup Location"
+        RowLayout {
             Layout.fillWidth: true
-        }
 
-        TextField {
-            placeholderText: "Destination"
-            Layout.fillWidth: true
+            TextField {
+                Layout.fillWidth: true
+                readOnly: true
+
+                text: appState.destinationLocation === ""
+                      ? ""
+                      : appState.destinationLocation
+
+                placeholderText: "Destination"
+            }
+
+            Button {
+                text: "Show Map"
+
+                onClicked: {
+                    appState.activeSelection = "destination"
+
+                    appStack.push(
+                        Qt.resolvedUrl("MapPage.qml"),
+                        {
+                            "appStack": appStack,
+                            "appState": appState
+                        }
+                    )
+                }
+            }
         }
 
         Button {
@@ -63,7 +105,9 @@ Page {
             onClicked: {
                 appStack.push(
                     Qt.resolvedUrl("ResultsPage.qml"),
-                    { "appStack": appStack }
+                    {
+                        "appStack": appStack
+                    }
                 )
             }
         }
