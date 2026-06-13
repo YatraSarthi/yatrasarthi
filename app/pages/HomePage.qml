@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.12
 
 Page {
 
-    property var navigationStack
+    property var appStack
 
     ColumnLayout {
         anchors.centerIn: parent
@@ -40,8 +40,9 @@ Page {
             text: "Show Map"
 
             onClicked: {
-                navigationStack.push(
-                    Qt.resolvedUrl("MapPage.qml")
+                appStack.push(
+                    Qt.resolvedUrl("MapPage.qml"),
+                    { "appStack": appStack }
                 )
             }
         }
@@ -60,8 +61,9 @@ Page {
             text: "Find Ride"
 
             onClicked: {
-                navigationStack.push(
-                    Qt.resolvedUrl("ResultsPage.qml")
+                appStack.push(
+                    Qt.resolvedUrl("ResultsPage.qml"),
+                    { "appStack": appStack }
                 )
             }
         }
