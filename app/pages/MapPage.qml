@@ -39,10 +39,14 @@ Page {
                 if (appState.activeSelection === "pickup") {
 
                     appState.pickupLocation = address
+                    appState.pickupLat = lat
+                    appState.pickupLon = lon
 
                 } else {
 
                     appState.destinationLocation = address
+                    appState.destinationLat = lat
+                    appState.destinationLon = lon
                 }
 
                 appStack.pop()
@@ -103,12 +107,13 @@ Page {
 
             mapView.runJavaScript(
                 "[selectedLat, selectedLon]",
-                
+
                 function(result) {
 
                     if (!result ||
                         result[0] === null ||
                         result[0] === undefined ||
+                        result[1] === null ||
                         result[1] === undefined) {
 
                         console.log("No location selected")
