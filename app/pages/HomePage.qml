@@ -99,17 +99,26 @@ Page {
             }
         }
 
-        Button {
-            text: "Find Ride"
+       Button {
+    text: "Find Ride"
 
-            onClicked: {
-                appStack.push(
-                    Qt.resolvedUrl("ResultsPage.qml"),
-                    {
-                        "appStack": appStack
-                    }
-                )
-            }
+    onClicked: {
+
+        if (appState.pickupLocation === ""
+            || appState.destinationLocation === "") {
+
+            console.log("Select both locations")
+            return
         }
+
+        appStack.push(
+            Qt.resolvedUrl("ResultsPage.qml"),
+            {
+                "appStack": appStack,
+                "appState": appState
+            }
+        )
+    }
+}
     }
 }
