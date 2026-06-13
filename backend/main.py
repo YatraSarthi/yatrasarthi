@@ -1,19 +1,42 @@
 from fastapi import FastAPI
-from backend.gps import get_location
+import requests
 
 app = FastAPI()
 
+
 @app.get("/")
-def health():
-    return {"status": "working"}
+def home():
+    return {"message": "YatraSarthi Backend Running"}
 
-@app.get("/rides")
-def rides():
-    return [
-        {"vehicle": "Auto", "fare": 120, "eta": 4},
-        {"vehicle": "Cab", "fare": 180, "eta": 7}
-    ]
 
-@app.get("/location")
-def location():
-    return get_location()
+@app.get("/reverse-geocode")
+def reverse_geocode(lat: float, lon: float):
+
+    url = (
+        f"https://nominatim.openstreetmap.org/reverse"
+        f"?format=json&lat={lat}&lon={lon}"
+    )
+
+    headers = {
+        "User-Agent": "YatraSarthi/1.0"
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+
+        if response.status_code == 200:
+            data = response.json()
+
+            return {
+                "address": data.get(
+                    "display_name",
+                    f"{lat}, {lon}"
+                )
+            }
+
+    except Exception as e:
+        print(e)
+
+    return {
+        "address": f"{lat}, {lon}"
+    }
