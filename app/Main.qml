@@ -3,11 +3,14 @@ import QtQuick.Controls 2.12
 import "pages"
 
 ApplicationWindow {
-    id: root
     visible: true
     width: 400
     height: 700
     title: "YatraSarthi"
+
+    AppState {
+        id: appState
+    }
 
     StackView {
         id: stack
@@ -15,6 +18,7 @@ ApplicationWindow {
 
         initialItem: HomePage {
             appStack: stack
+            appState: appState
         }
     }
 }
