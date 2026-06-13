@@ -35,4 +35,21 @@ Page {
         anchors.fill: parent
         url: Qt.resolvedUrl("../web/map.html")
     }
+    Button {
+    text: "Use Mock Location"
+
+    anchors.bottom: parent.bottom
+    anchors.horizontalCenter: parent.horizontalCenter
+    anchors.bottomMargin: 20
+
+    onClicked: {
+        if (appState.activeSelection === "pickup") {
+            appState.pickupLocation = "Reva University, Bengaluru"
+        } else {
+            appState.destinationLocation = "Majestic, Bengaluru"
+        }
+
+        appStack.pop()
+    }
+}
 }

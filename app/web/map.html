@@ -38,10 +38,35 @@ L.tileLayer(
     }
 ).addTo(map);
 
-L.marker([lat, lon])
- .addTo(map)
- .bindPopup("You are here")
- .openPopup();
+var marker = null;
+var selectedLat = null;
+var selectedLon = null;
+
+map.on('click', function(e) {
+
+    selectedLat = e.latlng.lat;
+    selectedLon = e.latlng.lng;
+
+    if (marker) {
+        map.removeLayer(marker);
+    }
+
+    marker = L.marker([selectedLat, selectedLon])
+              .addTo(map);
+
+    marker.bindPopup(
+        "Selected Location<br>" +
+        selectedLat.toFixed(5) +
+        ", " +
+        selectedLon.toFixed(5)
+    ).openPopup();
+
+    console.log(
+        "Selected:",
+        selectedLat,
+        selectedLon
+    );
+});
 
 </script>
 
