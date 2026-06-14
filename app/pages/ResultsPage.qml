@@ -8,10 +8,13 @@ Page {
     title: "Ride Estimates"
 
     function getVehicleIcon(vehicle) {
+
         if (vehicle === "Bike")
             return "../../assets/icons/bike.png"
+
         else if (vehicle === "Auto")
             return "../../assets/icons/auto.png"
+
         else if (vehicle === "Cab")
             return "../../assets/icons/cab.png"
 
@@ -19,8 +22,10 @@ Page {
     }
 
     ListView {
+
         anchors.fill: parent
         anchors.margins: 10
+
         spacing: 10
         clip: true
 
@@ -48,17 +53,21 @@ Page {
             height: 80
 
             color: "white"
+
             radius: 12
 
             border.color: "#D3D3D3"
             border.width: 1
 
             Row {
+
                 anchors.fill: parent
                 anchors.margins: 12
+
                 spacing: 15
 
                 Image {
+
                     source: getVehicleIcon(modelData.vehicle)
 
                     width: 36
@@ -71,18 +80,25 @@ Page {
                 }
 
                 Column {
+
                     anchors.verticalCenter: parent.verticalCenter
+
                     spacing: 4
 
                     Text {
+
                         text: modelData.vehicle
+
                         font.pixelSize: 18
                         font.bold: true
                     }
 
                     Text {
+
                         text: "₹" + modelData.fare
+
                         font.pixelSize: 15
+
                         color: "#555555"
                     }
                 }
@@ -93,27 +109,35 @@ Page {
                 }
 
                 Text {
+
                     anchors.verticalCenter: parent.verticalCenter
 
                     text: "ETA " + modelData.eta + " min"
 
                     font.pixelSize: 15
+
                     color: "#333333"
                 }
             }
 
             MouseArea {
+
                 anchors.fill: parent
 
                 onClicked: {
-                    console.log(modelData.vehicle + " selected")
+
+                    console.log(
+                        modelData.vehicle + " selected"
+                    )
                 }
             }
         }
     }
 
     Button {
-        text: "🚨 SOS"
+
+        width: 80
+        height: 50
 
         anchors.right: parent.right
         anchors.bottom: parent.bottom
@@ -123,6 +147,13 @@ Page {
 
         z: 100
 
+        background: Rectangle {
+
+            color: "#E53935"
+
+            radius: 25
+        }
+
         onClicked: {
 
             appStack.push(
@@ -131,6 +162,35 @@ Page {
                     "appStack": appStack
                 }
             )
+        }
+
+        contentItem: Row {
+
+            anchors.centerIn: parent
+
+            spacing: 6
+
+            Image {
+
+                source: "../../assets/icons/sos.png"
+
+                width: 22
+                height: 22
+
+                fillMode: Image.PreserveAspectFit
+
+                smooth: true
+            }
+
+            Text {
+
+                text: "SOS"
+
+                color: "white"
+
+                font.bold: true
+                font.pixelSize: 16
+            }
         }
     }
 }

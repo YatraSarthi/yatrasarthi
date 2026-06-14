@@ -78,16 +78,29 @@ Page {
 
         width: parent.width * 0.8
 
-        Label {
+        Column {
 
-            text: "🚨 Emergency SOS"
+    anchors.horizontalCenter: parent.horizontalCenter
 
-            font.pixelSize: 24
-            font.bold: true
+    spacing: 10
 
-            anchors.horizontalCenter:
-                    parent.horizontalCenter
-        }
+    Image {
+        source: "../../assets/icons/sos.png"
+
+        width: 64
+        height: 64
+
+        fillMode: Image.PreserveAspectFit
+        smooth: true
+    }
+
+    Label {
+        text: "Emergency SOS"
+
+        font.pixelSize: 24
+        font.bold: true
+    }
+}
 
         Label {
 

@@ -8,57 +8,63 @@ Page {
     property var appState
 
     ColumnLayout {
-        anchors.centerIn: parent
-        spacing: 15
-        width: parent.width * 0.85
+        anchors.fill: parent
+        anchors.margins: 20
+        spacing: 18
 
         Label {
             text: "YatraSarthi"
-            font.pixelSize: 28
+
+            font.pixelSize: 24
             font.bold: true
+
             Layout.alignment: Qt.AlignHCenter
         }
 
-        Label {
-            id: locationLabel
-
-            text: "Current Location: Not fetched"
-
-            wrapMode: Text.WordWrap
-
+        Rectangle {
             Layout.fillWidth: true
-        }
-
-        Button {
-            text: "Get My Location"
-
-            onClicked: {
-                locationLabel.text =
-                        "Current Location:\n" +
-                        "Bengaluru, Karnataka\n" +
-                        "12.9716, 77.5946"
-            }
+            height: 1
+            color: "#d0d0d0"
         }
 
         /*
          * PICKUP
          */
 
-        RowLayout {
+        Label {
+            text: "📍 Pickup"
+            font.bold: true
+        }
+
+        TextField {
             Layout.fillWidth: true
 
-            TextField {
-                Layout.fillWidth: true
+            readOnly: true
 
-                readOnly: true
+            text: appState.pickupLocation
 
-                text: appState.pickupLocation
+            placeholderText: "Current Location"
+        }
 
-                placeholderText: "Pickup Location"
+        RowLayout {
+            Layout.alignment: Qt.AlignRight
+            spacing: 8
+
+            Button {
+                text: "📡 My Location"
+
+                onClicked: {
+                    // Temporary demo value
+                    appState.pickupLocation =
+                            "Bengaluru, Karnataka"
+
+                    // Later:
+                    // GPS → FastAPI → reverse-geocode
+                }
             }
 
             Button {
-                text: "Show Map"
+                text: "🗺 Map"
 
                 onClicked: {
 
@@ -79,21 +85,26 @@ Page {
          * DESTINATION
          */
 
-        RowLayout {
+        Label {
+            text: "🏁 Destination"
+            font.bold: true
+        }
+
+        TextField {
             Layout.fillWidth: true
 
-            TextField {
-                Layout.fillWidth: true
+            readOnly: true
 
-                readOnly: true
+            text: appState.destinationLocation
 
-                text: appState.destinationLocation
+            placeholderText: "Where to?"
+        }
 
-                placeholderText: "Destination"
-            }
+        RowLayout {
+            Layout.alignment: Qt.AlignRight
 
             Button {
-                text: "Show Map"
+                text: "🗺 Map"
 
                 onClicked: {
 
@@ -110,10 +121,21 @@ Page {
             }
         }
 
-        Button {
-            text: "Find Ride"
+        Item {
+            Layout.fillHeight: true
+        }
 
-            Layout.alignment: Qt.AlignHCenter
+        /*
+         * FIND RIDE
+         */
+
+        Button {
+            text: "🚕 Find Ride"
+
+            Layout.fillWidth: true
+            Layout.preferredHeight: 50
+
+            font.pixelSize: 16
 
             onClicked: {
 

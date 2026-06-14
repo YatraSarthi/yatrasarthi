@@ -15,19 +15,12 @@ Page {
 
         xhr.onreadystatechange = function() {
 
-            console.log(
-                "readyState:",
-                xhr.readyState,
-                "status:",
-                xhr.status
-            )
-
             if (xhr.readyState === XMLHttpRequest.DONE) {
 
-                var address =
-                        lat.toFixed(5)
-                        + ", "
-                        + lon.toFixed(5)
+                var shortAddress =
+                        lat.toFixed(5) + ", " + lon.toFixed(5)
+
+                var fullAddress = shortAddress
 
                 console.log("Response:", xhr.responseText)
 
@@ -38,7 +31,10 @@ Page {
                         var data = JSON.parse(xhr.responseText)
 
                         if (data.address)
-                            address = data.address
+                            shortAddress = data.address
+
+                        if (data.full_address)
+                            fullAddress = data.full_address
 
                     } catch(e) {
 
@@ -46,22 +42,25 @@ Page {
                     }
                 }
 
-                console.log("Final address:", address)
+                console.log("Short Address:", shortAddress)
+                console.log("Full Address:", fullAddress)
 
                 if (appState.activeSelection === "pickup") {
 
-                    appState.pickupLocation = address
+                    appState.pickupLocation = shortAddress
+                    appState.pickupFullAddress = fullAddress
+
                     appState.pickupLat = lat
                     appState.pickupLon = lon
 
                 } else {
 
-                    appState.destinationLocation = address
+                    appState.destinationLocation = shortAddress
+                    appState.destinationFullAddress = fullAddress
+
                     appState.destinationLat = lat
                     appState.destinationLon = lon
                 }
-
-                console.log("Popping...")
 
                 appStack.pop()
             }
@@ -71,22 +70,21 @@ Page {
 
             console.log("XHR ERROR")
 
+            var fallback =
+                    lat.toFixed(5) + ", " + lon.toFixed(5)
+
             if (appState.activeSelection === "pickup") {
 
-                appState.pickupLocation =
-                        lat.toFixed(5)
-                        + ", "
-                        + lon.toFixed(5)
+                appState.pickupLocation = fallback
+                appState.pickupFullAddress = fallback
 
                 appState.pickupLat = lat
                 appState.pickupLon = lon
 
             } else {
 
-                appState.destinationLocation =
-                        lat.toFixed(5)
-                        + ", "
-                        + lon.toFixed(5)
+                appState.destinationLocation = fallback
+                appState.destinationFullAddress = fallback
 
                 appState.destinationLat = lat
                 appState.destinationLon = lon
@@ -104,8 +102,6 @@ Page {
         )
 
         xhr.send()
-
-        console.log("XHR sent")
     }
 
     header: ToolBar {
@@ -123,11 +119,14 @@ Page {
             }
 
             Label {
+
                 text: appState.activeSelection === "pickup"
                       ? "Select Pickup"
                       : "Select Destination"
 
                 anchors.verticalCenter: parent.verticalCenter
+
+                font.bold: true
             }
         }
     }
@@ -148,8 +147,6 @@ Page {
         anchors.bottomMargin: 20
 
         onClicked: {
-
-            console.log("Use Selected Location pressed")
 
             mapView.runJavaScript(
                 "[selectedLat, selectedLon]",

@@ -3,7 +3,9 @@ import requests
 import math
 
 from backend.sos import send_sos
+
 print("===== THIS MAIN.PY IS RUNNING =====")
+
 app = FastAPI()
 
 
@@ -22,7 +24,11 @@ def reverse_geocode(lat: float, lon: float):
 
     url = (
         f"https://nominatim.openstreetmap.org/reverse"
-        f"?format=json&lat={lat}&lon={lon}"
+        f"?format=json"
+        f"&lat={lat}"
+        f"&lon={lon}"
+        f"&zoom=18"
+        f"&addressdetails=1"
     )
 
     headers = {
@@ -36,25 +42,33 @@ def reverse_geocode(lat: float, lon: float):
 
             data = response.json()
 
-            address = data.get("address", {})
+            # Full address from Nominatim
+            display_name = data.get("display_name", "")
 
-            short_address = (
-                address.get("amenity")
-                or address.get("building")
-                or address.get("road")
-                or address.get("suburb")
-                or data.get("display_name")
-            )
+            if display_name:
+
+                parts = [
+                    part.strip()
+                    for part in display_name.split(",")
+                ]
+
+                # First 3 parts for UI display
+                short_address = ", ".join(parts[:3])
+
+            else:
+                short_address = f"{lat}, {lon}"
 
             return {
-                "address": short_address
+                "address": short_address,
+                "full_address": display_name
             }
 
     except Exception as e:
         print("Reverse geocoding error:", e)
 
     return {
-        "address": f"{lat}, {lon}"
+        "address": f"{lat}, {lon}",
+        "full_address": f"{lat}, {lon}"
     }
 
 
@@ -120,4 +134,6 @@ def estimate(
 @app.get("/sos")
 def sos():
     return send_sos()
+
+
 print("Loaded main.py with SOS endpoint")
