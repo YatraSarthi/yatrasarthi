@@ -3,135 +3,114 @@ import QtQuick.Controls 2.12
 
 Page {
 
-    property var appStack
-    property var appState
+    title: "Available Rides"
 
-    property var rideData: null
+    function getVehicleIcon(vehicle) {
+        if (vehicle === "Bike")
+            return "../../assets/icons/bike.png"
+        else if (vehicle === "Auto")
+            return "../../assets/icons/auto.png"
+        else if (vehicle === "Cab")
+            return "../../assets/icons/cab.png"
 
-    function fetchEstimate() {
+        return ""
+    }
 
-        var xhr = new XMLHttpRequest()
+    ListView {
+        anchors.fill: parent
+        anchors.margins: 10
+        spacing: 10
 
-        xhr.onreadystatechange = function() {
+        model: [
+            {
+                "vehicle": "Bike",
+                "fare": 164,
+                "eta": 20
+            },
+            {
+                "vehicle": "Auto",
+                "fare": 251,
+                "eta": 25
+            },
+            {
+                "vehicle": "Cab",
+                "fare": 381,
+                "eta": 22
+            }
+        ]
 
-            if (xhr.readyState === XMLHttpRequest.DONE) {
+        delegate: Rectangle {
 
-                console.log("Estimate Status:", xhr.status)
-                console.log("Estimate Response:", xhr.responseText)
+            width: ListView.view.width
+            height: 80
 
-                if (xhr.status === 200) {
+            radius: 12
 
-                    rideData = JSON.parse(xhr.responseText)
+            color: "#ffffff"
 
-                } else {
+            border.color: "#dcdcdc"
+            border.width: 1
 
-                    console.log("Estimate request failed")
+            Row {
+
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 12
+
+                Image {
+
+                    source: getVehicleIcon(modelData.vehicle)
+
+                    width: 36
+                    height: 36
+
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Column {
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 4
+
+                    Text {
+                        text: modelData.vehicle
+                        font.pixelSize: 18
+                        font.bold: true
+                    }
+
+                    Text {
+                        text: "₹" + modelData.fare
+                        font.pixelSize: 15
+                        color: "#555555"
+                    }
+                }
+
+                Item {
+                    width: 20
+                }
+
+                Text {
+
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    text: "ETA " + modelData.eta + " min"
+
+                    font.pixelSize: 15
+                    color: "#333333"
                 }
             }
-        }
 
-        xhr.open(
-            "GET",
-            "http://192.168.192.1:8000/estimate"
-            + "?pickup_lat=" + appState.pickupLat
-            + "&pickup_lon=" + appState.pickupLon
-            + "&destination_lat=" + appState.destinationLat
-            + "&destination_lon=" + appState.destinationLon,
-            true
-        )
+            MouseArea {
 
-        xhr.send()
-    }
-
-    Component.onCompleted: {
-        fetchEstimate()
-    }
-
-    header: ToolBar {
-
-        Row {
-
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 10
-
-            Button {
-                text: "← Back"
+                anchors.fill: parent
 
                 onClicked: {
-                    appStack.pop()
+                    console.log(modelData.vehicle + " selected")
                 }
             }
-
-            Label {
-                text: "Ride Estimates"
-            }
-        }
-    }
-
-    Column {
-
-        anchors.centerIn: parent
-        spacing: 15
-
-        Label {
-            text: "Pickup:"
-            font.bold: true
-        }
-
-        Label {
-            text: appState.pickupLocation
-        }
-
-        Label {
-            text: "Destination:"
-            font.bold: true
-        }
-
-        Label {
-            text: appState.destinationLocation
-        }
-
-        Label {
-
-            text: rideData
-                  ? "Distance: " + rideData.distance + " km"
-                  : "Calculating..."
-        }
-
-        Label {
-
-            visible: rideData !== null
-
-            text:
-                "🏍 Bike: ₹"
-                + rideData.bike.fare
-                + " • ETA "
-                + rideData.bike.eta
-                + " min"
-        }
-
-        Label {
-
-            visible: rideData !== null
-
-            text:
-                "🛺 Auto: ₹"
-                + rideData.auto.fare
-                + " • ETA "
-                + rideData.auto.eta
-                + " min"
-        }
-
-        Label {
-
-            visible: rideData !== null
-
-            text:
-                "🚕 Cab: ₹"
-                + rideData.cab.fare
-                + " • ETA "
-                + rideData.cab.eta
-                + " min"
         }
     }
 }
