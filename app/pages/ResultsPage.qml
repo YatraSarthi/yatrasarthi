@@ -3,7 +3,9 @@ import QtQuick.Controls 2.12
 
 Page {
 
-    title: "Available Rides"
+    property var appStack
+
+    title: "Ride Estimates"
 
     function getVehicleIcon(vehicle) {
         if (vehicle === "Bike")
@@ -20,22 +22,23 @@ Page {
         anchors.fill: parent
         anchors.margins: 10
         spacing: 10
+        clip: true
 
         model: [
             {
                 "vehicle": "Bike",
-                "fare": 164,
-                "eta": 20
+                "fare": 75,
+                "eta": 7
             },
             {
                 "vehicle": "Auto",
-                "fare": 251,
-                "eta": 25
+                "fare": 117,
+                "eta": 8
             },
             {
                 "vehicle": "Cab",
-                "fare": 381,
-                "eta": 22
+                "fare": 160,
+                "eta": 6
             }
         ]
 
@@ -44,34 +47,30 @@ Page {
             width: ListView.view.width
             height: 80
 
+            color: "white"
             radius: 12
 
-            color: "#ffffff"
-
-            border.color: "#dcdcdc"
+            border.color: "#D3D3D3"
             border.width: 1
 
             Row {
-
                 anchors.fill: parent
                 anchors.margins: 12
-                spacing: 12
+                spacing: 15
 
                 Image {
-
                     source: getVehicleIcon(modelData.vehicle)
 
                     width: 36
                     height: 36
 
+                    anchors.verticalCenter: parent.verticalCenter
+
                     fillMode: Image.PreserveAspectFit
                     smooth: true
-
-                    anchors.verticalCenter: parent.verticalCenter
                 }
 
                 Column {
-
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 4
 
@@ -89,11 +88,11 @@ Page {
                 }
 
                 Item {
-                    width: 20
+                    width: 40
+                    height: 1
                 }
 
                 Text {
-
                     anchors.verticalCenter: parent.verticalCenter
 
                     text: "ETA " + modelData.eta + " min"
@@ -104,13 +103,34 @@ Page {
             }
 
             MouseArea {
-
                 anchors.fill: parent
 
                 onClicked: {
                     console.log(modelData.vehicle + " selected")
                 }
             }
+        }
+    }
+
+    Button {
+        text: "🚨 SOS"
+
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+
+        anchors.rightMargin: 20
+        anchors.bottomMargin: 20
+
+        z: 100
+
+        onClicked: {
+
+            appStack.push(
+                Qt.resolvedUrl("SOSPage.qml"),
+                {
+                    "appStack": appStack
+                }
+            )
         }
     }
 }

@@ -9,9 +9,18 @@ Page {
 
     function fetchAddress(lat, lon) {
 
+        console.log("fetchAddress:", lat, lon)
+
         var xhr = new XMLHttpRequest()
 
         xhr.onreadystatechange = function() {
+
+            console.log(
+                "readyState:",
+                xhr.readyState,
+                "status:",
+                xhr.status
+            )
 
             if (xhr.readyState === XMLHttpRequest.DONE) {
 
@@ -20,21 +29,24 @@ Page {
                         + ", "
                         + lon.toFixed(5)
 
+                console.log("Response:", xhr.responseText)
+
                 if (xhr.status === 200) {
 
                     try {
 
                         var data = JSON.parse(xhr.responseText)
 
-                        if (data.address) {
+                        if (data.address)
                             address = data.address
-                        }
 
                     } catch(e) {
 
-                        console.log("JSON Parse Error:", e)
+                        console.log("JSON Error:", e)
                     }
                 }
+
+                console.log("Final address:", address)
 
                 if (appState.activeSelection === "pickup") {
 
@@ -49,8 +61,38 @@ Page {
                     appState.destinationLon = lon
                 }
 
+                console.log("Popping...")
+
                 appStack.pop()
             }
+        }
+
+        xhr.onerror = function() {
+
+            console.log("XHR ERROR")
+
+            if (appState.activeSelection === "pickup") {
+
+                appState.pickupLocation =
+                        lat.toFixed(5)
+                        + ", "
+                        + lon.toFixed(5)
+
+                appState.pickupLat = lat
+                appState.pickupLon = lon
+
+            } else {
+
+                appState.destinationLocation =
+                        lat.toFixed(5)
+                        + ", "
+                        + lon.toFixed(5)
+
+                appState.destinationLat = lat
+                appState.destinationLon = lon
+            }
+
+            appStack.pop()
         }
 
         xhr.open(
@@ -62,6 +104,8 @@ Page {
         )
 
         xhr.send()
+
+        console.log("XHR sent")
     }
 
     header: ToolBar {
@@ -105,15 +149,18 @@ Page {
 
         onClicked: {
 
+            console.log("Use Selected Location pressed")
+
             mapView.runJavaScript(
                 "[selectedLat, selectedLon]",
 
                 function(result) {
 
+                    console.log("JS returned:", result)
+
                     if (!result ||
                         result[0] === null ||
                         result[0] === undefined ||
-                        result[1] === null ||
                         result[1] === undefined) {
 
                         console.log("No location selected")
@@ -123,11 +170,9 @@ Page {
                     var lat = result[0]
                     var lon = result[1]
 
-                    console.log(
-                        "Reverse geocoding:",
-                        lat,
-                        lon
-                    )
+                    console.log("Selected coordinates:")
+                    console.log(lat)
+                    console.log(lon)
 
                     fetchAddress(lat, lon)
                 }

@@ -21,8 +21,11 @@ Page {
 
         Label {
             id: locationLabel
+
             text: "Current Location: Not fetched"
+
             wrapMode: Text.WordWrap
+
             Layout.fillWidth: true
         }
 
@@ -37,16 +40,19 @@ Page {
             }
         }
 
+        /*
+         * PICKUP
+         */
+
         RowLayout {
             Layout.fillWidth: true
 
             TextField {
                 Layout.fillWidth: true
+
                 readOnly: true
 
-                text: appState.pickupLocation === ""
-                      ? ""
-                      : appState.pickupLocation
+                text: appState.pickupLocation
 
                 placeholderText: "Pickup Location"
             }
@@ -55,6 +61,7 @@ Page {
                 text: "Show Map"
 
                 onClicked: {
+
                     appState.activeSelection = "pickup"
 
                     appStack.push(
@@ -68,16 +75,19 @@ Page {
             }
         }
 
+        /*
+         * DESTINATION
+         */
+
         RowLayout {
             Layout.fillWidth: true
 
             TextField {
                 Layout.fillWidth: true
+
                 readOnly: true
 
-                text: appState.destinationLocation === ""
-                      ? ""
-                      : appState.destinationLocation
+                text: appState.destinationLocation
 
                 placeholderText: "Destination"
             }
@@ -86,6 +96,7 @@ Page {
                 text: "Show Map"
 
                 onClicked: {
+
                     appState.activeSelection = "destination"
 
                     appStack.push(
@@ -99,26 +110,29 @@ Page {
             }
         }
 
-       Button {
-    text: "Find Ride"
+        Button {
+            text: "Find Ride"
 
-    onClicked: {
+            Layout.alignment: Qt.AlignHCenter
 
-        if (appState.pickupLocation === ""
-            || appState.destinationLocation === "") {
+            onClicked: {
 
-            console.log("Select both locations")
-            return
-        }
+                if (appState.pickupLocation === ""
+                        || appState.destinationLocation === "") {
 
-        appStack.push(
-            Qt.resolvedUrl("ResultsPage.qml"),
-            {
-                "appStack": appStack,
-                "appState": appState
+                    console.log("Select both locations")
+
+                    return
+                }
+
+                appStack.push(
+                    Qt.resolvedUrl("ResultsPage.qml"),
+                    {
+                        "appStack": appStack,
+                        "appState": appState
+                    }
+                )
             }
-        )
-    }
-}
+        }
     }
 }

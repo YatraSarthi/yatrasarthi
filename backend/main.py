@@ -2,14 +2,21 @@ from fastapi import FastAPI
 import requests
 import math
 
+from backend.sos import send_sos
+print("===== THIS MAIN.PY IS RUNNING =====")
 app = FastAPI()
 
 
 @app.get("/")
 def home():
-    return {"message": "YatraSarthi Backend Running"}
+    return {
+        "message": "YatraSarthi Backend Running"
+    }
 
 
+# ----------------------------
+# Reverse Geocoding
+# ----------------------------
 @app.get("/reverse-geocode")
 def reverse_geocode(lat: float, lon: float):
 
@@ -51,6 +58,9 @@ def reverse_geocode(lat: float, lon: float):
     }
 
 
+# ----------------------------
+# Fare Estimation
+# ----------------------------
 @app.get("/estimate")
 def estimate(
     pickup_lat: float,
@@ -58,19 +68,22 @@ def estimate(
     destination_lat: float,
     destination_lon: float
 ):
-    """
-    Calculate distance and ride estimates
-    """
 
     R = 6371  # Earth's radius in km
 
-    dlat = math.radians(destination_lat - pickup_lat)
-    dlon = math.radians(destination_lon - pickup_lon)
+    lat1 = math.radians(pickup_lat)
+    lon1 = math.radians(pickup_lon)
+
+    lat2 = math.radians(destination_lat)
+    lon2 = math.radians(destination_lon)
+
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
 
     a = (
         math.sin(dlat / 2) ** 2
-        + math.cos(math.radians(pickup_lat))
-        * math.cos(math.radians(destination_lat))
+        + math.cos(lat1)
+        * math.cos(lat2)
         * math.sin(dlon / 2) ** 2
     )
 
@@ -79,23 +92,32 @@ def estimate(
         math.sqrt(1 - a)
     )
 
-    distance = R * c
+    distance = round(R * c, 2)
 
     return {
-        "distance": round(distance, 2),
+        "distance": distance,
 
         "bike": {
-            "fare": round(30 + distance * 8),
-            "eta": max(2, round(distance * 1.2))
+            "fare": round(25 + distance * 8),
+            "eta": max(2, round(distance * 2))
         },
 
         "auto": {
-            "fare": round(50 + distance * 12),
-            "eta": max(4, round(distance * 1.5))
+            "fare": round(40 + distance * 12),
+            "eta": max(3, round(distance * 2.5))
         },
 
         "cab": {
-            "fare": round(80 + distance * 18),
-            "eta": max(3, round(distance * 1.3))
+            "fare": round(80 + distance * 16),
+            "eta": max(4, round(distance * 2))
         }
     }
+
+
+# ----------------------------
+# SOS Endpoint
+# ----------------------------
+@app.get("/sos")
+def sos():
+    return send_sos()
+print("Loaded main.py with SOS endpoint")
