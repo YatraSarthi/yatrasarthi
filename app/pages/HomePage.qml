@@ -9,31 +9,44 @@ Page {
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 20
-        spacing: 18
+        anchors.margins: 25
+        spacing: 20
 
         Label {
             text: "YatraSarthi"
 
-            font.pixelSize: 24
+            font.pixelSize: 26
             font.bold: true
 
             Layout.alignment: Qt.AlignHCenter
         }
 
-        Rectangle {
-            Layout.fillWidth: true
-            height: 1
-            color: "#d0d0d0"
+        Item {
+            Layout.preferredHeight: 20
         }
 
         /*
          * PICKUP
          */
 
-        Label {
-            text: "📍 Pickup"
-            font.bold: true
+        RowLayout {
+            spacing: 8
+
+            Image {
+                source: "../../assets/icons/pickup.png"
+
+                width: 22
+                height: 22
+
+                fillMode: Image.PreserveAspectFit
+            }
+
+            Label {
+                text: "Pickup"
+
+                font.bold: true
+                font.pixelSize: 15
+            }
         }
 
         TextField {
@@ -43,28 +56,43 @@ Page {
 
             text: appState.pickupLocation
 
-            placeholderText: "Current Location"
+            placeholderText: "Select Pickup Location"
         }
 
         RowLayout {
             Layout.alignment: Qt.AlignRight
-            spacing: 8
+            spacing: 6
 
             Button {
-                text: "📡 My Location"
 
                 onClicked: {
-                    // Temporary demo value
+
                     appState.pickupLocation =
                             "Bengaluru, Karnataka"
+                }
 
-                    // Later:
-                    // GPS → FastAPI → reverse-geocode
+                contentItem: Row {
+                    anchors.centerIn: parent
+                    spacing: 5
+
+                    Image {
+                        source: "../../assets/icons/my_location.png"
+
+                        width: 16
+                        height: 16
+
+                        fillMode: Image.PreserveAspectFit
+                    }
+
+                    Text {
+                        text: "Get My Location"
+
+                        font.pixelSize: 13
+                    }
                 }
             }
 
             Button {
-                text: "🗺 Map"
 
                 onClicked: {
 
@@ -78,6 +106,26 @@ Page {
                         }
                     )
                 }
+
+                contentItem: Row {
+                    anchors.centerIn: parent
+                    spacing: 5
+
+                    Image {
+                        source: "../../assets/icons/map.png"
+
+                        width: 16
+                        height: 16
+
+                        fillMode: Image.PreserveAspectFit
+                    }
+
+                    Text {
+                        text: "Show Map"
+
+                        font.pixelSize: 13
+                    }
+                }
             }
         }
 
@@ -85,9 +133,28 @@ Page {
          * DESTINATION
          */
 
-        Label {
-            text: "🏁 Destination"
-            font.bold: true
+        Item {
+            Layout.preferredHeight: 10
+        }
+
+        RowLayout {
+            spacing: 8
+
+            Image {
+                source: "../../assets/icons/destination.png"
+
+                width: 22
+                height: 22
+
+                fillMode: Image.PreserveAspectFit
+            }
+
+            Label {
+                text: "Destination"
+
+                font.bold: true
+                font.pixelSize: 15
+            }
         }
 
         TextField {
@@ -97,14 +164,13 @@ Page {
 
             text: appState.destinationLocation
 
-            placeholderText: "Where to?"
+            placeholderText: "Select Destination"
         }
 
         RowLayout {
             Layout.alignment: Qt.AlignRight
 
             Button {
-                text: "🗺 Map"
 
                 onClicked: {
 
@@ -118,6 +184,26 @@ Page {
                         }
                     )
                 }
+
+                contentItem: Row {
+                    anchors.centerIn: parent
+                    spacing: 5
+
+                    Image {
+                        source: "../../assets/icons/map.png"
+
+                        width: 16
+                        height: 16
+
+                        fillMode: Image.PreserveAspectFit
+                    }
+
+                    Text {
+                        text: "Show Map"
+
+                        font.pixelSize: 13
+                    }
+                }
             }
         }
 
@@ -130,12 +216,11 @@ Page {
          */
 
         Button {
-            text: "🚕 Find Ride"
 
-            Layout.fillWidth: true
-            Layout.preferredHeight: 50
+            Layout.alignment: Qt.AlignHCenter
 
-            font.pixelSize: 16
+            width: 140
+            height: 45
 
             onClicked: {
 
@@ -143,7 +228,6 @@ Page {
                         || appState.destinationLocation === "") {
 
                     console.log("Select both locations")
-
                     return
                 }
 
@@ -155,6 +239,31 @@ Page {
                     }
                 )
             }
+
+            contentItem: Row {
+                anchors.centerIn: parent
+                spacing: 8
+
+                Image {
+                    source: "../../assets/icons/rider.png"
+
+                    width: 30
+                    height: 30
+
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                Text {
+                    text: "Find Ride"
+
+                    font.pixelSize: 15
+                    font.bold: true
+                }
+            }
+        }
+
+        Item {
+            Layout.preferredHeight: 20
         }
     }
 }
