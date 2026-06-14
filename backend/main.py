@@ -8,7 +8,12 @@ print("===== THIS MAIN.PY IS RUNNING =====")
 
 app = FastAPI()
 
+print("===== THIS MAIN.PY IS RUNNING =====")
 
+
+# ----------------------------
+# Home Endpoint
+# ----------------------------
 @app.get("/")
 def home():
     return {
@@ -42,7 +47,6 @@ def reverse_geocode(lat: float, lon: float):
 
             data = response.json()
 
-            # Full address from Nominatim
             display_name = data.get("display_name", "")
 
             if display_name:
@@ -52,7 +56,6 @@ def reverse_geocode(lat: float, lon: float):
                     for part in display_name.split(",")
                 ]
 
-                # First 3 parts for UI display
                 short_address = ", ".join(parts[:3])
 
             else:
@@ -129,6 +132,39 @@ def estimate(
 
 
 # ----------------------------
+# Route Preview
+# ----------------------------
+@app.get("/route")
+def route(
+    pickup_lat: float,
+    pickup_lon: float,
+    destination_lat: float,
+    destination_lon: float
+):
+
+    url = (
+        "https://router.project-osrm.org/route/v1/driving/"
+        f"{pickup_lon},{pickup_lat};"
+        f"{destination_lon},{destination_lat}"
+        "?overview=full&geometries=geojson"
+    )
+
+    try:
+
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            return response.json()
+
+    except Exception as e:
+        print("Route Error:", e)
+
+    return {
+        "routes": []
+    }
+
+
+# ----------------------------
 # SOS Endpoint
 # ----------------------------
 @app.get("/sos")
@@ -136,4 +172,4 @@ def sos():
     return send_sos()
 
 
-print("Loaded main.py with SOS endpoint")
+print("Loaded main.py with SOS and Route endpoints")
