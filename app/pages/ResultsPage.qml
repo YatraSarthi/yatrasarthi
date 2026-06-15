@@ -216,6 +216,28 @@ Page {
                         modelData.vehicle
                         + " selected"
                     )
+
+                    appState.selectedVehicle =
+                            modelData.vehicle
+
+                    appState.selectedFare =
+                            modelData.fare
+
+                    appState.selectedEta =
+                            modelData.eta
+
+                    appState.selectedDistance =
+                            rideData.distance
+
+                    appStack.push(
+                        Qt.resolvedUrl(
+                            "../components/RoutePreview.qml"
+                        ),
+                        {
+                            "appStack": appStack,
+                            "appState": appState
+                        }
+                    )
                 }
             }
         }
