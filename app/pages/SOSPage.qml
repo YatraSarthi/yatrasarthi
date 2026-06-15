@@ -12,9 +12,18 @@ Page {
 
     function sendSOS() {
 
+        console.log("sendSOS() called")
+
         var xhr = new XMLHttpRequest()
 
         xhr.onreadystatechange = function() {
+
+            console.log(
+                "SOS readyState:",
+                xhr.readyState,
+                "status:",
+                xhr.status
+            )
 
             if (xhr.readyState === XMLHttpRequest.DONE) {
 
@@ -25,30 +34,32 @@ Page {
 
                     try {
 
-                        var data =
-                                JSON.parse(xhr.responseText)
+                        var data = JSON.parse(xhr.responseText)
 
                         statusMessage = data.status
 
-                        contactsMessage =
-                                data.contacts.join("\n")
+                        if (data.contacts) {
 
-                    } catch(e) {
+                            contactsMessage =
+                                    data.contacts.join("\n")
+                        }
 
-                        console.log(
-                            "SOS JSON Error:",
-                            e
-                        )
+                    } catch (e) {
+
+                        console.log("SOS JSON Error:", e)
 
                         statusMessage =
-                                "Invalid response"
+                                "Invalid server response"
 
+                        contactsMessage = ""
                     }
 
                 } else {
 
                     statusMessage =
                             "Failed to send SOS"
+
+                    contactsMessage = ""
                 }
             }
         }
@@ -59,11 +70,15 @@ Page {
 
             statusMessage =
                     "Unable to contact server"
+
+            contactsMessage = ""
         }
+
+        console.log("Sending SOS request...")
 
         xhr.open(
             "GET",
-            "http://192.168.192.1:8000/sos",
+            "http://127.0.0.1:8000/sos",
             true
         )
 
@@ -80,27 +95,31 @@ Page {
 
         Column {
 
-    anchors.horizontalCenter: parent.horizontalCenter
+            anchors.horizontalCenter:
+                    parent.horizontalCenter
 
-    spacing: 10
+            spacing: 10
 
-    Image {
-        source: "../../assets/icons/sos.png"
+            Image {
 
-        width: 64
-        height: 64
+                source: "../../assets/icons/sos.png"
 
-        fillMode: Image.PreserveAspectFit
-        smooth: true
-    }
+                width: 64
+                height: 64
 
-    Label {
-        text: "Emergency SOS"
+                fillMode: Image.PreserveAspectFit
 
-        font.pixelSize: 24
-        font.bold: true
-    }
-}
+                smooth: true
+            }
+
+            Label {
+
+                text: "Emergency SOS"
+
+                font.pixelSize: 24
+                font.bold: true
+            }
+        }
 
         Label {
 
@@ -120,6 +139,8 @@ Page {
                     parent.horizontalCenter
 
             onClicked: {
+
+                console.log("Send SOS clicked")
 
                 sendSOS()
             }
