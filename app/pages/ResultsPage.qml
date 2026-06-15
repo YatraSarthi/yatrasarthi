@@ -117,11 +117,30 @@ Page {
             border.color: "#D3D3D3"
 
             WebEngineView {
+    id: routeMap
 
-                anchors.fill: parent
+    anchors.fill: parent
 
-                url: Qt.resolvedUrl("../web/route.html")
-            }
+    url: Qt.resolvedUrl("../web/route.html")
+
+    onLoadingChanged: {
+
+        if (loadRequest.status ===
+                WebEngineLoadRequest.LoadSucceededStatus) {
+
+            console.log("Route map loaded")
+
+            runJavaScript(
+                "setRoute("
+                + appState.pickupLat + ","
+                + appState.pickupLon + ","
+                + appState.destinationLat + ","
+                + appState.destinationLon
+                + ")"
+            )
+        }
+    }
+}
         }
 
         /*
