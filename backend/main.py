@@ -3,6 +3,8 @@ import requests
 import math
 
 from backend.sos import send_sos
+from backend.database import engine
+from backend.models import Base
 
 print("===== THIS MAIN.PY IS RUNNING =====")
 
@@ -171,5 +173,6 @@ def route(
 def sos():
     return send_sos()
 
+Base.metadata.create_all(bind=engine)
 
 print("Loaded main.py with SOS and Route endpoints")
