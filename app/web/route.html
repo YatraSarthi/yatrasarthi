@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
+
 <head>
+
 <meta charset="utf-8">
 
 <title>YatraSarthi Route Preview</title>
@@ -26,7 +28,7 @@ html, body, #map {
 
 <script>
 
-var map = L.map('map').setView([12.9716, 77.5946], 13);
+var map = L.map('map').setView([12.9716, 77.5946], 12);
 
 L.tileLayer(
     'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -35,92 +37,100 @@ L.tileLayer(
     }
 ).addTo(map);
 
-
-/*
- * TEST COORDINATES
- * REVA University
- */
-
-var pickupLat = 13.1156;
-var pickupLon = 77.6347;
+var pickupMarker = null;
+var destinationMarker = null;
+var routeLine = null;
 
 
 /*
- * TEST COORDINATES
- * Majestic
+ * Called from QML
  */
+function setRoute(
+    pickupLat,
+    pickupLon,
+    destinationLat,
+    destinationLon
+) {
 
-var destinationLat = 12.9770;
-var destinationLon = 77.5727;
+    if (pickupMarker)
+        map.removeLayer(pickupMarker);
+
+    if (destinationMarker)
+        map.removeLayer(destinationMarker);
+
+    if (routeLine)
+        map.removeLayer(routeLine);
 
 
-/*
- * Markers
- */
-
-L.marker([pickupLat, pickupLon])
- .addTo(map)
- .bindPopup("Pickup");
-
-L.marker([destinationLat, destinationLon])
- .addTo(map)
- .bindPopup("Destination");
+    pickupMarker =
+        L.marker([pickupLat, pickupLon])
+         .addTo(map)
+         .bindPopup("Pickup");
 
 
-/*
- * OSRM Routing
- */
+    destinationMarker =
+        L.marker([destinationLat, destinationLon])
+         .addTo(map)
+         .bindPopup("Destination");
 
-var url =
-    "http://192.168.192.1:8000/route"
-    + "?pickup_lat=" + pickupLat
-    + "&pickup_lon=" + pickupLon
-    + "&destination_lat=" + destinationLat
-    + "&destination_lon=" + destinationLon;
 
-fetch(url)
+    var url =
+        "http://192.168.192.1:8000/route"
+        + "?pickup_lat=" + pickupLat
+        + "&pickup_lon=" + pickupLon
+        + "&destination_lat=" + destinationLat
+        + "&destination_lon=" + destinationLon;
 
-.then(response => response.json())
 
-.then(data => {
+    fetch(url)
 
-    if (!data.routes || data.routes.length === 0) {
-        console.log("No route found");
-        return;
-    }
+    .then(response => response.json())
 
-    var route =
-        data.routes[0].geometry.coordinates;
+    .then(data => {
 
-    var latlngs = route.map(function(point) {
+        if (!data.routes ||
+            data.routes.length === 0) {
 
-        return [
-            point[1],
-            point[0]
-        ];
+            console.log("No route found");
+            return;
+        }
+
+        var coordinates =
+            data.routes[0]
+                .geometry
+                .coordinates;
+
+        var latlngs =
+            coordinates.map(function(point) {
+
+                return [
+                    point[1],
+                    point[0]
+                ];
+            });
+
+        routeLine =
+            L.polyline(
+                latlngs,
+                {
+                    color: "blue",
+                    weight: 5
+                }
+            ).addTo(map);
+
+        map.fitBounds(
+            routeLine.getBounds()
+        );
+    })
+
+    .catch(error => {
+
+        console.log(
+            "Route Error:",
+            error
+        );
     });
-
-    var polyline =
-        L.polyline(
-            latlngs,
-            {
-                color: "blue",
-                weight: 5
-            }
-        ).addTo(map);
-
-    map.fitBounds(
-        polyline.getBounds()
-    );
-})
-
-.catch(error => {
-
-    console.log(
-        "Routing Error:",
-        error
-    );
-});
+}
 
 </script>
 

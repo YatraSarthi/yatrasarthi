@@ -1,9 +1,12 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
-import "../components"
+
 Page {
 
     property var appStack
+    property var appState
+
+    property var rideData: null
 
     title: "Ride Estimates"
 
@@ -21,6 +24,77 @@ Page {
         return ""
     }
 
+    function fetchEstimate() {
+
+        var xhr = new XMLHttpRequest()
+
+        xhr.onreadystatechange = function() {
+
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+
+                console.log("Estimate Status:", xhr.status)
+
+                console.log(
+                    "Estimate Response:",
+                    xhr.responseText
+                )
+
+                if (xhr.status === 200) {
+
+                    rideData =
+                            JSON.parse(xhr.responseText)
+
+                    console.log("rideData loaded")
+                }
+            }
+        }
+
+        var url =
+                "http://127.0.0.1:8000/estimate"
+                + "?pickup_lat=" + appState.pickupLat
+                + "&pickup_lon=" + appState.pickupLon
+                + "&destination_lat=" + appState.destinationLat
+                + "&destination_lon=" + appState.destinationLon
+
+        console.log("Sending estimate request:")
+        console.log(url)
+
+        xhr.open(
+            "GET",
+            url,
+            true
+        )
+
+        xhr.send()
+    }
+
+    Component.onCompleted: {
+
+        console.log("ResultsPage opened")
+
+        console.log(
+            "Pickup Lat:",
+            appState.pickupLat
+        )
+
+        console.log(
+            "Pickup Lon:",
+            appState.pickupLon
+        )
+
+        console.log(
+            "Destination Lat:",
+            appState.destinationLat
+        )
+
+        console.log(
+            "Destination Lon:",
+            appState.destinationLon
+        )
+
+        fetchEstimate()
+    }
+
     ListView {
 
         anchors.fill: parent
@@ -29,23 +103,25 @@ Page {
         spacing: 10
         clip: true
 
-        model: [
-            {
-                "vehicle": "Bike",
-                "fare": 75,
-                "eta": 7
-            },
-            {
-                "vehicle": "Auto",
-                "fare": 117,
-                "eta": 8
-            },
-            {
-                "vehicle": "Cab",
-                "fare": 160,
-                "eta": 6
-            }
-        ]
+        model: rideData
+               ? [
+                    {
+                        "vehicle": "Bike",
+                        "fare": rideData.bike.fare,
+                        "eta": rideData.bike.eta
+                    },
+                    {
+                        "vehicle": "Auto",
+                        "fare": rideData.auto.fare,
+                        "eta": rideData.auto.eta
+                    },
+                    {
+                        "vehicle": "Cab",
+                        "fare": rideData.cab.fare,
+                        "eta": rideData.cab.eta
+                    }
+                 ]
+               : []
 
         delegate: Rectangle {
 
@@ -68,20 +144,26 @@ Page {
 
                 Image {
 
-                    source: getVehicleIcon(modelData.vehicle)
+                    source: getVehicleIcon(
+                                modelData.vehicle
+                            )
 
                     width: 36
                     height: 36
 
-                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.verticalCenter:
+                            parent.verticalCenter
 
-                    fillMode: Image.PreserveAspectFit
+                    fillMode:
+                            Image.PreserveAspectFit
+
                     smooth: true
                 }
 
                 Column {
 
-                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.verticalCenter:
+                            parent.verticalCenter
 
                     spacing: 4
 
@@ -95,7 +177,8 @@ Page {
 
                     Text {
 
-                        text: "₹" + modelData.fare
+                        text: "₹"
+                              + modelData.fare
 
                         font.pixelSize: 15
 
@@ -110,9 +193,12 @@ Page {
 
                 Text {
 
-                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.verticalCenter:
+                            parent.verticalCenter
 
-                    text: "ETA " + modelData.eta + " min"
+                    text: "ETA "
+                          + modelData.eta
+                          + " min"
 
                     font.pixelSize: 15
 
@@ -127,7 +213,8 @@ Page {
                 onClicked: {
 
                     console.log(
-                        modelData.vehicle + " selected"
+                        modelData.vehicle
+                        + " selected"
                     )
                 }
             }
@@ -172,12 +259,14 @@ Page {
 
             Image {
 
-                source: "../../assets/icons/sos.png"
+                source:
+                    "../../assets/icons/sos.png"
 
                 width: 22
                 height: 22
 
-                fillMode: Image.PreserveAspectFit
+                fillMode:
+                    Image.PreserveAspectFit
 
                 smooth: true
             }

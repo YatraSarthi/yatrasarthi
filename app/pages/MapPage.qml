@@ -15,6 +15,13 @@ Page {
 
         xhr.onreadystatechange = function() {
 
+            console.log(
+                "readyState:",
+                xhr.readyState,
+                "status:",
+                xhr.status
+            )
+
             if (xhr.readyState === XMLHttpRequest.DONE) {
 
                 var shortAddress =
@@ -62,7 +69,10 @@ Page {
                     appState.destinationLon = lon
                 }
 
-                appStack.pop()
+                console.log("Popping back to HomePage")
+
+                if (appStack.depth > 1)
+                    appStack.pop()
             }
         }
 
@@ -90,16 +100,21 @@ Page {
                 appState.destinationLon = lon
             }
 
-            appStack.pop()
+            console.log("Popping back using fallback")
+
+            if (appStack.depth > 1)
+                appStack.pop()
         }
 
         xhr.open(
             "GET",
-            "http://192.168.192.1:8000/reverse-geocode"
+            "http://127.0.0.1:8000/reverse-geocode"
             + "?lat=" + lat
             + "&lon=" + lon,
             true
         )
+
+        console.log("Sending reverse geocode request...")
 
         xhr.send()
     }
@@ -114,7 +129,8 @@ Page {
                 text: "← Back"
 
                 onClicked: {
-                    appStack.pop()
+                    if (appStack.depth > 1)
+                        appStack.pop()
                 }
             }
 
