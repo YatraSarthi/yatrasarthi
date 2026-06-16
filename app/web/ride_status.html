@@ -5,7 +5,7 @@
 
 <meta charset="utf-8">
 
-<title>YatraSarthi Route Preview</title>
+<title>YatraSarthi Ride Status</title>
 
 <link rel="stylesheet"
 href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
@@ -28,18 +28,29 @@ html, body, #map {
 
 <script>
 
-var map = L.map('map').setView([12.9716, 77.5946], 12);
+/*
+ * Initial Map
+ */
+
+var map =
+    L.map('map')
+     .setView([12.9716, 77.5946], 13);
 
 L.tileLayer(
     'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
     {
-        attribution: '&copy; OpenStreetMap contributors'
+        attribution:
+            '&copy; OpenStreetMap contributors'
     }
 ).addTo(map);
 
 
-/* Green Pickup Marker */
+/*
+ * Pickup Marker
+ */
+
 var pickupIcon = L.icon({
+
     iconUrl:
         "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
 
@@ -53,8 +64,12 @@ var pickupIcon = L.icon({
 });
 
 
-/* Red Destination Marker */
+/*
+ * Destination Marker
+ */
+
 var destinationIcon = L.icon({
+
     iconUrl:
         "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
 
@@ -68,19 +83,53 @@ var destinationIcon = L.icon({
 });
 
 
+/*
+ * Driver Icons
+ */
+
+var bikeIcon = L.icon({
+
+    iconUrl: "../../assets/icons/bike.png",
+
+    iconSize: [35, 35],
+    iconAnchor: [17, 17]
+});
+
+var autoIcon = L.icon({
+
+    iconUrl: "../../assets/icons/auto.png",
+
+    iconSize: [35, 35],
+    iconAnchor: [17, 17]
+});
+
+var cabIcon = L.icon({
+
+    iconUrl: "../../assets/icons/cab.png",
+
+    iconSize: [35, 35],
+    iconAnchor: [17, 17]
+});
+
+
 var pickupMarker = null;
 var destinationMarker = null;
+var driverMarker = null;
 var routeLine = null;
+
+var routeLatLngs = [];
 
 
 /*
  * Called from QML
  */
-function setRoute(
+
+function setRide(
     pickupLat,
     pickupLon,
     destinationLat,
-    destinationLon
+    destinationLon,
+    vehicle
 ) {
 
     if (pickupMarker)
@@ -89,28 +138,27 @@ function setRoute(
     if (destinationMarker)
         map.removeLayer(destinationMarker);
 
+    if (driverMarker)
+        map.removeLayer(driverMarker);
+
     if (routeLine)
         map.removeLayer(routeLine);
 
 
-    /* Pickup */
     pickupMarker =
-    L.marker(
-        [pickupLat, pickupLon],
-        { icon: pickupIcon }
-    )
-    .addTo(map)
-    .bindPopup("Pickup");
+        L.marker(
+            [pickupLat, pickupLon],
+            { icon: pickupIcon }
+        )
+        .addTo(map);
 
 
-    /* Destination */
     destinationMarker =
-    L.marker(
-        [destinationLat, destinationLon],
-        { icon: destinationIcon }
-    )
-    .addTo(map)
-    .bindPopup("Destination");
+        L.marker(
+            [destinationLat, destinationLon],
+            { icon: destinationIcon }
+        )
+        .addTo(map);
 
 
     var url =
@@ -121,16 +169,13 @@ function setRoute(
         + "&destination_lon=" + destinationLon;
 
 
-    console.log("Fetching route:", url);
-
-
     fetch(url)
 
     .then(response => response.json())
 
     .then(data => {
-
-        console.log("Route response:", data);
+        
+        console.log("Route Response:", data);
 
         if (!data.routes ||
             data.routes.length === 0) {
@@ -139,12 +184,14 @@ function setRoute(
             return;
         }
 
+
         var coordinates =
             data.routes[0]
                 .geometry
                 .coordinates;
 
-        var latlngs =
+
+        routeLatLngs =
             coordinates.map(function(point) {
 
                 return [
@@ -153,18 +200,34 @@ function setRoute(
                 ];
             });
 
-
-        /* Blue Route */
+console.log(
+    "Coordinates:",
+    routeLatLngs.length
+);
         routeLine =
             L.polyline(
-                latlngs,
+                routeLatLngs,
                 {
-                    color: "#2196F3",
-                    weight: 6,
-                    opacity: 0.9
+                    color: "red",
+                    weight: 10,
+                    opacity: 1.0
                 }
-            ).addTo(map);
+            )
+            .addTo(map);
 
+        map.fitBounds(routeLine.getBounds());
+ 
+        var icon = null;
+
+        /*
+         * Driver starts far away
+         */
+
+        driverMarker =
+    L.marker(
+        routeLatLngs[0]
+    ).addTo(map);
+console.log("Driver marker added");
 
         map.fitBounds(
             routeLine.getBounds(),
@@ -177,10 +240,43 @@ function setRoute(
     .catch(error => {
 
         console.log(
-            "Route Error:",
+            "Ride Status Error:",
             error
         );
     });
+}
+
+
+/*
+ * Move Driver
+ */
+
+function moveDriver(step) {
+
+    if (!driverMarker)
+        return;
+
+    if (routeLatLngs.length === 0)
+        return;
+
+
+    /*
+     * Convert ETA step (0–8)
+     * into route coordinates
+     */
+
+    var index = Math.floor(
+        (step / 8) *
+        (routeLatLngs.length - 1)
+    );
+
+    if (index >= routeLatLngs.length)
+        index = routeLatLngs.length - 1;
+
+
+    driverMarker.setLatLng(
+        routeLatLngs[index]
+    );
 }
 
 </script>

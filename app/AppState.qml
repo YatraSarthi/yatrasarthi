@@ -16,6 +16,8 @@ QtObject {
 
     property string activeSelection: ""
 
+    /* Selected Ride */
+
     property string selectedVehicle: ""
     property int selectedFare: 0
     property int selectedEta: 0

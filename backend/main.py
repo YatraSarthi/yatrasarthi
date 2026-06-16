@@ -10,6 +10,16 @@ print("===== THIS MAIN.PY IS RUNNING =====")
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 print("===== THIS MAIN.PY IS RUNNING =====")
 
 
@@ -165,6 +175,49 @@ def route(
         "routes": []
     }
 
+# ----------------------------
+# Driver Location Simulation
+# ----------------------------
+
+driver_step = 0
+
+
+@app.get("/driver-location")
+def driver_location():
+
+    global driver_step
+
+    eta = max(1, 8 - driver_step)
+
+    arrived = False
+
+    if driver_step >= 8:
+        arrived = True
+
+    response = {
+        "step": driver_step,
+        "eta": eta,
+        "arrived": arrived
+    }
+
+    if not arrived:
+        driver_step += 1
+
+    return response
+# ----------------------------
+# Reset Driver Simulation
+# ----------------------------
+
+@app.get("/reset-driver")
+def reset_driver():
+
+    global driver_step
+
+    driver_step = 0
+
+    return {
+        "status": "reset"
+    }
 
 # ----------------------------
 # SOS Endpoint

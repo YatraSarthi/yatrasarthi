@@ -291,27 +291,30 @@ Page {
 
         Button {
 
-            anchors.horizontalCenter: parent.horizontalCenter
+    anchors.horizontalCenter: parent.horizontalCenter
 
-            width: parent.width * 0.7
-            height: 50
+    width: parent.width * 0.7
+    height: 50
 
-            text: "Choose " + selectedVehicle
+    text: "Choose " + selectedVehicle
 
-            enabled: selectedVehicle !== ""
+    enabled: selectedVehicle !== ""
 
-            onClicked: {
+    onClicked: {
 
-                console.log("Vehicle chosen:")
-                console.log(selectedVehicle)
-                console.log(selectedFare)
-                console.log(selectedEta)
+        appState.selectedVehicle = selectedVehicle
+        appState.selectedFare = selectedFare
+        appState.selectedEta = selectedEta
 
-                /*
-                 * BookingPage comes next
-                 */
+        appStack.push(
+            Qt.resolvedUrl("BookingPage.qml"),
+            {
+                "appStack": appStack,
+                "appState": appState
             }
-        }
+        )
+    }
+}
     }
 
     /*
