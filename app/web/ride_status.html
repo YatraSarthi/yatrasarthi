@@ -28,6 +28,47 @@ html, body, #map {
 
 <script>
 
+function drawRoute(routeCoordinates, vehicle) {
+
+    if (routeLine) {
+        map.removeLayer(routeLine);
+    }
+
+    routeLatLngs = routeCoordinates;
+
+    routeLine =
+        L.polyline(
+            routeLatLngs,
+            {
+                color: "#2196F3",
+                weight: 6,
+                opacity: 0.9
+            }
+        ).addTo(map);
+
+    map.fitBounds(
+        routeLine.getBounds(),
+        {
+            padding: [30, 30]
+        }
+    );
+
+   var icon = L.icon({
+
+    iconUrl: vehicle,
+
+    iconSize: [35, 35],
+
+    iconAnchor: [17, 17]
+});
+
+driverMarker =
+    L.marker(
+        routeLatLngs[0],
+        { icon: icon }
+    ).addTo(map);
+}
+
 /*
  * Initial Map
  */
@@ -128,8 +169,7 @@ function setRide(
     pickupLat,
     pickupLon,
     destinationLat,
-    destinationLon,
-    vehicle
+    destinationLon
 ) {
 
     if (pickupMarker)
@@ -138,114 +178,19 @@ function setRide(
     if (destinationMarker)
         map.removeLayer(destinationMarker);
 
-    if (driverMarker)
-        map.removeLayer(driverMarker);
-
-    if (routeLine)
-        map.removeLayer(routeLine);
-
-
     pickupMarker =
-        L.marker(
-            [pickupLat, pickupLon],
-            { icon: pickupIcon }
-        )
-        .addTo(map);
-
-
-    destinationMarker =
-        L.marker(
-            [destinationLat, destinationLon],
-            { icon: destinationIcon }
-        )
-        .addTo(map);
-
-
-    var url =
-        "http://127.0.0.1:8000/route"
-        + "?pickup_lat=" + pickupLat
-        + "&pickup_lon=" + pickupLon
-        + "&destination_lat=" + destinationLat
-        + "&destination_lon=" + destinationLon;
-
-
-    fetch(url)
-
-    .then(response => response.json())
-
-    .then(data => {
-        
-        console.log("Route Response:", data);
-
-        if (!data.routes ||
-            data.routes.length === 0) {
-
-            console.log("No route found");
-            return;
-        }
-
-
-        var coordinates =
-            data.routes[0]
-                .geometry
-                .coordinates;
-
-
-        routeLatLngs =
-            coordinates.map(function(point) {
-
-                return [
-                    point[1],
-                    point[0]
-                ];
-            });
-
-console.log(
-    "Coordinates:",
-    routeLatLngs.length
-);
-        routeLine =
-            L.polyline(
-                routeLatLngs,
-                {
-                    color: "red",
-                    weight: 10,
-                    opacity: 1.0
-                }
-            )
-            .addTo(map);
-
-        map.fitBounds(routeLine.getBounds());
- 
-        var icon = null;
-
-        /*
-         * Driver starts far away
-         */
-
-        driverMarker =
     L.marker(
-        routeLatLngs[0]
+        [pickupLat, pickupLon],
+        { icon: pickupIcon }
     ).addTo(map);
-console.log("Driver marker added");
 
-        map.fitBounds(
-            routeLine.getBounds(),
-            {
-                padding: [30, 30]
-            }
-        );
-    })
-
-    .catch(error => {
-
-        console.log(
-            "Ride Status Error:",
-            error
-        );
-    });
+destinationMarker =
+    L.marker(
+        [destinationLat, destinationLon],
+        { icon: destinationIcon }
+    ).addTo(map);
 }
-
+    
 
 /*
  * Move Driver

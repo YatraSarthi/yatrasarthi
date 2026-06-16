@@ -155,25 +155,65 @@ Page {
                     font.bold: true
                 }
 
-                Label {
-                    text: "👤 Rahul Kumar"
-                    font.pixelSize: 18
-                }
+                Row {
+    spacing: 8
 
-                Label {
-                    text: "⭐ 4.8 Rating"
-                    font.pixelSize: 18
-                }
+    Image {
+        source: "../../assets/icons/driver.png"
+        width: 20
+        height: 20
+    }
 
-                Label {
-                    text: "🚘 KA 01 AB 1234"
-                    font.pixelSize: 18
-                }
+    Label {
+        text: "Rahul Kumar"
+        font.pixelSize: 18
+    }
+}
 
-                Label {
-                    text: "🕒 ETA: 3 min"
-                    font.pixelSize: 18
-                }
+                Row {
+    spacing: 8
+
+    Image {
+        source: "../../assets/icons/star.png"
+        width: 20
+        height: 20
+    }
+
+    Label {
+        text: "4.8 Rating"
+        font.pixelSize: 18
+    }
+}
+
+                Row {
+    spacing: 8
+
+    Image {
+        source: "../../assets/icons/car_number.png"
+        width: 20
+        height: 20
+    }
+
+    Label {
+        text: "KA 01 AB 1234"
+        font.pixelSize: 18
+    }
+}
+
+                Row {
+    spacing: 8
+
+    Image {
+        source: "../../assets/icons/clock.png"
+        width: 20
+        height: 20
+    }
+
+    Label {
+        text: "ETA: 3 min"
+        font.pixelSize: 18
+    }
+}
 
                 Rectangle {
 
@@ -181,17 +221,6 @@ Page {
                     height: 1
 
                     color: "#E0E0E0"
-                }
-
-                Label {
-
-                    text: "Ride: "
-                          + appState.selectedVehicle
-                          + "     ₹"
-                          + appState.selectedFare
-
-                    font.pixelSize: 20
-                    font.bold: true
                 }
             }
         }
@@ -214,8 +243,8 @@ Button {
 
     anchors.horizontalCenter: parent.horizontalCenter
 
-    width: parent.width * 0.7
-    height: 50
+    width: 160
+    height: 42
 
     text: "Confirm Ride"
 

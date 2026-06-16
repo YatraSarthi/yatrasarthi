@@ -12,8 +12,84 @@ Page {
 
     property bool driverArrived: false
 
+    property string vehicleIcon:
+        appState.selectedVehicle === "Bike"
+            ? Qt.resolvedUrl("../../assets/icons/bike.png")
+        : appState.selectedVehicle === "Auto"
+            ? Qt.resolvedUrl("../../assets/icons/auto.png")
+        : Qt.resolvedUrl("../../assets/icons/cab.png")
+
     title: "Ride Status"
 
+    
+function fetchRoute() {
+
+    var xhr = new XMLHttpRequest()
+
+    xhr.onreadystatechange = function() {
+
+        if (xhr.readyState === XMLHttpRequest.DONE &&
+            xhr.status === 200) {
+
+            var data = JSON.parse(xhr.responseText)
+
+            if (!data.routes ||
+                data.routes.length === 0) {
+
+                console.log("No route found")
+                return
+            }
+
+            var coordinates =
+                    data.routes[0]
+                        .geometry
+                        .coordinates
+
+            var routeLatLngs = []
+
+            for (var i = 0;
+                 i < coordinates.length;
+                 i++) {
+
+                routeLatLngs.push([
+                    coordinates[i][1],
+                    coordinates[i][0]
+                ])
+            }
+
+            console.log(
+                "Route points:",
+                routeLatLngs.length
+            )
+
+          routeMap.runJavaScript(
+
+    "drawRoute("
+    + JSON.stringify(routeLatLngs)
+    + ", '"
+    + vehicleIcon
+    + "')",
+
+    function() {
+
+        fetchDriverLocation()
+    }
+)
+        }
+    }
+
+    xhr.open(
+        "GET",
+        "http://127.0.0.1:8000/route"
+        + "?pickup_lat=" + appState.pickupLat
+        + "&pickup_lon=" + appState.pickupLon
+        + "&destination_lat=" + appState.destinationLat
+        + "&destination_lon=" + appState.destinationLon,
+        true
+    )
+
+    xhr.send()
+}
     /*
      * Fetch driver updates from FastAPI
      */
@@ -174,23 +250,16 @@ Page {
                         console.log(
                             "Ride map loaded"
                         )
+runJavaScript(
+    "setRide("
+    + appState.pickupLat + ","
+    + appState.pickupLon + ","
+    + appState.destinationLat + ","
+    + appState.destinationLon
+    + ")"
+)
 
-                        runJavaScript(
-
-                            "setRide("
-                            + appState.pickupLat + ","
-                            + appState.pickupLon + ","
-                            + appState.destinationLat + ","
-                            + appState.destinationLon + ",'"
-                            + appState.selectedVehicle
-                            + "')"
-                        )
-
-                        /*
-                         * Initial fetch
-                         */
-
-                        fetchDriverLocation()
+fetchRoute()
                     }
                 }
             }
