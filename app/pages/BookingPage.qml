@@ -165,7 +165,7 @@ Page {
     }
 
     Label {
-        text: "Rahul Kumar"
+        text: "Agnik Haldar"
         font.pixelSize: 18
     }
 }

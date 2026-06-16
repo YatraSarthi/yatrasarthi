@@ -8,9 +8,14 @@ Page {
     property var appState
 
     property int eta: 8
-    property int driverStep: 0
+property int driverStep: 0
 
-    property bool driverArrived: false
+property bool driverArrived: false
+
+property string rideOtp: ""
+property string driverName: "Agnik Haldar"
+property string vehicleNumber: "WB03AD7394"
+property real driverRating: 5.5
 
     property string vehicleIcon:
         appState.selectedVehicle === "Bike"
@@ -90,6 +95,21 @@ function fetchRoute() {
 
     xhr.send()
 }
+ 
+ function generateOtp() {
+
+    rideOtp = ""
+
+    for (var i = 0; i < 4; i++) {
+
+        rideOtp += Math.floor(
+            Math.random() * 10
+        )
+    }
+
+    console.log("Ride OTP:", rideOtp)
+}
+
     /*
      * Fetch driver updates from FastAPI
      */
@@ -155,6 +175,11 @@ function fetchRoute() {
     /*
      * Poll backend every 5 seconds
      */
+
+Component.onCompleted: {
+
+    generateOtp()
+}
 
     Timer {
 
@@ -264,5 +289,196 @@ fetchRoute()
                 }
             }
         }
+        /*
+ * OTP CARD
+ */
+Rectangle {
+
+    width: parent.width - 20
+    height: 90
+
+    anchors.horizontalCenter: parent.horizontalCenter
+
+    radius: 15
+
+    color: "#1976D2"
+
+    Column {
+
+        anchors.centerIn: parent
+
+        spacing: 5
+
+        Label {
+
+            text:
+                driverArrived
+                ? "Drop in " + eta + " min"
+                : "Captain arriving in " + eta + " min"
+
+            color: "white"
+
+            font.pixelSize: 24
+            font.bold: true
+        }
+
+        Label {
+
+            text:
+                driverArrived
+                ? "Heading to destination"
+                : "212 m away"
+
+            color: "white"
+
+            font.pixelSize: 16
+        }
+    }
+}
+Rectangle {
+
+    visible: driverArrived
+
+    width: parent.width - 20
+    height: 320
+
+    anchors.horizontalCenter: parent.horizontalCenter
+
+    radius: 15
+
+    color: "white"
+
+    border.color: "#D3D3D3"
+
+    Column {
+
+        anchors.fill: parent
+        anchors.margins: 15
+
+        spacing: 15
+
+        Label {
+
+            text: "Share this OTP with Captain"
+
+            font.pixelSize: 18
+            font.bold: true
+        }
+
+        Row {
+
+            spacing: 10
+
+            anchors.horizontalCenter: parent.horizontalCenter
+
+            Repeater {
+
+                model: 4
+
+                Rectangle {
+
+                    width: 55
+                    height: 55
+
+                    radius: 8
+
+                    color: "#F5F5F5"
+
+                    border.color: "#D3D3D3"
+
+                    Label {
+
+                        anchors.centerIn: parent
+
+                        text: rideOtp[index]
+
+                        font.pixelSize: 28
+                        font.bold: true
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+
+            width: parent.width
+            height: 1
+
+            color: "#E0E0E0"
+        }
+
+        Row {
+
+            spacing: 15
+
+            Image {
+
+                source: "../../assets/image/agnik.jpeg"
+
+                width: 70
+                height: 70
+
+                fillMode: Image.PreserveAspectCrop
+
+                clip: true
+            }
+
+            Column {
+
+                spacing: 5
+
+                Label {
+
+                    text: vehicleNumber
+
+                    font.pixelSize: 22
+                    font.bold: true
+                }
+
+                Label {
+
+                    text: driverName
+
+                    font.pixelSize: 18
+                }
+
+                Label {
+
+                    text: "★★★★★ " + driverRating
+
+                    font.pixelSize: 16
+                }
+            }
+        }
+
+        Row {
+
+            spacing: 10
+
+            anchors.horizontalCenter: parent.horizontalCenter
+
+            Button {
+
+                text: "📞 Call"
+
+                onClicked: {
+
+                    console.log("Call Driver")
+                }
+            }
+
+            Button {
+
+                text: "💬 Message"
+
+                onClicked: {
+
+                    console.log("Message Driver")
+                }
+            }
+        }
+    }
+}
+
     }
 }
