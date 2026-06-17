@@ -314,7 +314,7 @@ Rectangle {
             text:
                 driverArrived
                 ? "Drop in " + eta + " min"
-                : "Captain arriving in " + eta + " min"
+                : " driver arriving in " + eta + " min"
 
             color: "white"
 
