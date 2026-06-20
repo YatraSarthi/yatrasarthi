@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import requests
 import math
-
+import random
 from backend.sos import send_sos
 from backend.database import engine
 from backend.models import Base
@@ -186,10 +186,92 @@ def route(
     }
 
 # ----------------------------
-# Driver Location Simulation
+# Driver Simulation
 # ----------------------------
 
 driver_step = 0
+
+driver_lat = 0
+driver_lon = 0
+
+pickup_lat_global = 0
+pickup_lon_global = 0
+
+driver_eta = 0
+driver_distance = 0
+
+
+@app.get("/start-driver")
+def start_driver(
+    pickup_lat: float,
+    pickup_lon: float
+):
+
+    global driver_step
+    global driver_lat
+    global driver_lon
+
+    global pickup_lat_global
+    global pickup_lon_global
+
+    global driver_eta
+    global driver_distance
+
+    driver_step = 0
+
+    pickup_lat_global = pickup_lat
+    pickup_lon_global = pickup_lon
+
+    # Random location near pickup
+    offset_lat = random.uniform(
+        0.003,
+        0.015
+    )
+
+    offset_lon = random.uniform(
+        0.003,
+        0.015
+    )
+
+    driver_lat = (
+        pickup_lat +
+        random.choice([-1, 1])
+        * offset_lat
+    )
+
+    driver_lon = (
+        pickup_lon +
+        random.choice([-1, 1])
+        * offset_lon
+    )
+
+    # Random ETA
+    driver_eta = random.randint(
+        3,
+        8
+    )
+
+    # Approx distance
+    driver_distance = round(
+        math.sqrt(
+            offset_lat**2 +
+            offset_lon**2
+        ) * 111,
+        1
+    )
+
+    return {
+
+        "driverLat": driver_lat,
+        "driverLon": driver_lon,
+
+        "distance": driver_distance,
+        "eta": driver_eta,
+
+        "driverName": "Agnik Haldar",
+        "vehicleNumber": "WB03AD7394",
+        "driverRating": 4.8
+    }
 
 
 @app.get("/driver-location")
@@ -197,36 +279,61 @@ def driver_location():
 
     global driver_step
 
-    eta = max(1, 8 - driver_step)
+    global driver_lat
+    global driver_lon
+
+    global pickup_lat_global
+    global pickup_lon_global
+
+    global driver_distance
+    global driver_eta
 
     arrived = False
 
     if driver_step >= 8:
+
         arrived = True
 
-    response = {
-        "step": driver_step,
-        "eta": eta,
-        "arrived": arrived
-    }
+        driver_lat = pickup_lat_global
+        driver_lon = pickup_lon_global
 
-    if not arrived:
+        driver_distance = 0
+
+    else:
+
+        driver_lat += (
+            pickup_lat_global
+            - driver_lat
+        ) / 5
+
+        driver_lon += (
+            pickup_lon_global
+            - driver_lon
+        ) / 5
+
+        driver_distance = round(
+            max(
+                0,
+                driver_distance - 0.4
+            ),
+            1
+        )
+
         driver_step += 1
 
-    return response
-# ----------------------------
-# Reset Driver Simulation
-# ----------------------------
-
-@app.get("/reset-driver")
-def reset_driver():
-
-    global driver_step
-
-    driver_step = 0
-
     return {
-        "status": "reset"
+
+        "driverLat": driver_lat,
+        "driverLon": driver_lon,
+
+        "distance": driver_distance,
+
+        "eta": max(
+            0,
+            driver_eta - driver_step
+        ),
+
+        "arrived": arrived
     }
 
 # ----------------------------
@@ -235,6 +342,7 @@ def reset_driver():
 @app.get("/sos")
 def sos():
     return send_sos()
+
 
 Base.metadata.create_all(bind=engine)
 

@@ -7,7 +7,7 @@ Page {
     property var appStack
     property var appState
 
-    property int eta: 8
+    property int eta: 0
     property int driverStep: 0
     property real driverDistance: 0
 
@@ -27,73 +27,51 @@ Page {
 
     title: "Sarthi Arriving"
 
-    /*
-     * Fetch the route polyline from FastAPI and draw it on the map,
-     * then start polling driver location.
-     */
-    function fetchRoute() {
-
+    // Fix 2: startDriver() added — calls /start-driver, populates
+    // Sarthi identity + rating, and initializes the map via
+    // setPickupRide() (the function PickupMap.html actually has).
+    function startDriver() {
+        driverArrived = false
         var xhr = new XMLHttpRequest()
 
         xhr.onreadystatechange = function() {
 
-            if (xhr.readyState === XMLHttpRequest.DONE &&
-                xhr.status === 200) {
+            if (
+                xhr.readyState === XMLHttpRequest.DONE &&
+                xhr.status === 200
+            ) {
 
-                var data = JSON.parse(xhr.responseText)
+                var data =
+                    JSON.parse(xhr.responseText)
 
-                if (!data.routes ||
-                    data.routes.length === 0) {
+                driverDistance = data.distance
+                eta = data.eta
 
-                    console.log("No route found")
-                    return
-                }
+                if (data.driverName)
+                    sarthiName = data.driverName
 
-                var coordinates =
-                        data.routes[0]
-                            .geometry
-                            .coordinates
+                if (data.vehicleNumber)
+                    vehicleNumber = data.vehicleNumber
 
-                var routeLatLngs = []
-
-                for (var i = 0;
-                     i < coordinates.length;
-                     i++) {
-
-                    routeLatLngs.push([
-                        coordinates[i][1],
-                        coordinates[i][0]
-                    ])
-                }
-
-                console.log(
-                    "Route points:",
-                    routeLatLngs.length
-                )
+                if (data.driverRating)
+                    sarthiRating = data.driverRating
 
                 routeMap.runJavaScript(
-
-                    "drawRoute("
-                    + JSON.stringify(routeLatLngs)
-                    + ", '"
-                    + vehicleIcon
-                    + "')",
-
-                    function() {
-
-                        fetchDriverLocation()
-                    }
+                    "setPickupRide("
+                    + appState.pickupLat + ","
+                    + appState.pickupLon + ","
+                    + data.driverLat + ","
+                    + data.driverLon
+                    + ")"
                 )
             }
         }
 
         xhr.open(
             "GET",
-            "http://127.0.0.1:8000/route"
+            "http://127.0.0.1:8000/start-driver"
             + "?pickup_lat=" + appState.pickupLat
-            + "&pickup_lon=" + appState.pickupLon
-            + "&destination_lat=" + appState.destinationLat
-            + "&destination_lon=" + appState.destinationLon,
+            + "&pickup_lon=" + appState.pickupLon,
             true
         )
 
@@ -142,27 +120,32 @@ Page {
 
                     eta = data.eta
 
-                    driverStep = data.step
-
                     driverDistance =
                             data.distance
 
-                    driverArrived =
-                            data.arrived
+                    if (data.arrived && !driverArrived) {
+
+                        driverArrived = true
+
+                        console.log(
+                            "Sarthi arrived"
+                        )
+
+                        rideStartTimer.start()
+                        }
 
                     console.log(
                         "ETA:",
                         eta
                     )
 
-                    console.log(
-                        "STEP:",
-                        driverStep
-                    )
-
+                    // Fix 3: PickupMap.html exposes updateDriver(lat, lon),
+                    // not moveDriver(step) — driverStep was never part of
+                    // the /driver-location payload to begin with.
                     routeMap.runJavaScript(
-                        "moveDriver("
-                        + driverStep
+                        "updateDriver("
+                        + data.driverLat + ","
+                        + data.driverLon
                         + ")"
                     )
                 }
@@ -184,8 +167,14 @@ Page {
 
     Component.onCompleted: {
 
-        generateOtp()
-    }
+    generateOtp()
+
+    console.log(
+        "Pickup:",
+        appState.pickupLat,
+        appState.pickupLon
+    )
+}
 
     Timer {
 
@@ -201,6 +190,32 @@ Page {
 
                 fetchDriverLocation()
             }
+        }
+    }
+
+    Timer {
+
+        id: rideStartTimer
+
+        interval: 3000
+
+        repeat: false
+
+        onTriggered: {
+
+            console.log(
+                "Ride started automatically"
+            )
+
+            appStack.push(
+                Qt.resolvedUrl(
+                    "RideInProgress.qml"
+                ),
+                {
+                    "appStack": appStack,
+                    "appState": appState
+                }
+            )
         }
     }
 
@@ -356,6 +371,10 @@ Page {
                              "../web/PickupMap.html"
                          )
 
+                    // Fix 1: PickupMap.html has no setRide() function —
+                    // it only exposes setPickupRide() (called from inside
+                    // startDriver() once the backend responds). On load
+                    // we just call startDriver() directly.
                     onLoadingChanged: {
 
                         if (
@@ -368,16 +387,7 @@ Page {
                                 "Sarthi map loaded"
                             )
 
-                            runJavaScript(
-                                "setRide("
-                                + appState.pickupLat + ","
-                                + appState.pickupLon + ","
-                                + appState.destinationLat + ","
-                                + appState.destinationLon
-                                + ")"
-                            )
-
-                            fetchRoute()
+                            startDriver()
                         }
                     }
                 }
@@ -578,55 +588,6 @@ Page {
                 }
             }
 
-            /*
-             * START RIDE
-             */
-
-            Button {
-
-                width: parent.width * 0.7
-
-                height: 50
-
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                enabled: driverArrived
-
-                text:
-                    driverArrived
-                    ? "Start Ride"
-                    : "Waiting For Sarthi"
-
-                onClicked: {
-
-                    appStack.push(
-                        Qt.resolvedUrl(
-                            "DropPage.qml"
-                        ),
-                        {
-                            "appStack": appStack,
-                            "appState": appState
-                        }
-                    )
-                }
-            }
-Button {
-
-    text: "Start Ride"
-
-    onClicked: {
-
-        appStack.push(
-            Qt.resolvedUrl(
-                "RideInProgressPage.qml"
-            ),
-            {
-                "appStack": appStack,
-                "appState": appState
-            }
-        )
-    }
-}
             /*
              * CANCEL
              */

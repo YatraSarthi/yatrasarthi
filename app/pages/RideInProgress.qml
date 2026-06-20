@@ -7,396 +7,407 @@ Page {
     property var appStack
     property var appState
 
-    /*
-     * Temporary values
-     * Later from FastAPI
-     */
-
-    property int eta: 12
+    property int eta: appState.selectedEta
     property real remainingKm: 4.3
+    property real currentSpeed: 32
 
     property string driverName: "Agnik Haldar"
     property string vehicleNumber: "WB03AD7394"
-    property real driverRating: 4.9
+    property real driverRating: 4.8
 
     property string destinationName:
-        "REVA University"
+        appState.destinationName
 
     property string destinationAddress:
-        "Kattigenahalli, Bengaluru"
+        appState.destinationAddress
 
-    ScrollView {
+ #--------------------
+ #  Auto Countdown
+ #--------------------
+
+Timer {
+
+    interval: 5000
+
+    running: true
+
+    repeat: true
+
+    onTriggered: {
+
+        if (eta > 0)
+            eta--
+
+        if (remainingKm > 0)
+            remainingKm -= 0.5
+
+        if (currentSpeed < 45)
+            currentSpeed += 1
+
+        if (eta <= 0) {
+
+            stop()
+
+            appStack.push(
+                Qt.resolvedUrl(
+                    "RideCompletedPage.qml"
+                ),
+                {
+                    "appStack": appStack,
+                    "appState": appState
+                }
+            )
+        }
+    }
+}
+#Header
+Rectangle {
+
+    width: parent.width
+    height: 60
+
+    color: "white"
+
+    Row {
+
+        anchors.fill: parent
+        anchors.margins: 10
+
+        spacing: 10
+
+        Button {
+
+            text: "←"
+
+            onClicked: {
+                appStack.pop()
+            }
+        }
+
+        Label {
+
+            text: "Ride In Progress"
+
+            font.pixelSize: 24
+            font.bold: true
+
+            anchors.verticalCenter:
+                parent.verticalCenter
+        }
+    }
+}
+#Map Section
+Rectangle {
+
+    width: parent.width
+    height: 280
+
+    WebEngineView {
 
         anchors.fill: parent
 
+        url: Qt.resolvedUrl(
+            "../web/RideInProgressMap.html"
+        )
+    }
+}
+#Drop Banner
+Rectangle {
+
+    width: parent.width - 20
+    height: 100
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    radius: 15
+
+    color: "#1976D2"
+
+    Row {
+
+        anchors.centerIn: parent
+
+        spacing: 60
+
         Column {
 
-            width: parent.width
+            Label {
 
-            spacing: 12
-
-            /*
-             * HEADER
-             */
-
-            Rectangle {
-
-                width: parent.width
-                height: 60
+                text:
+                    "Drop in "
+                    + eta
+                    + " min"
 
                 color: "white"
 
-                Row {
-
-                    anchors.fill: parent
-
-                    anchors.margins: 10
-
-                    spacing: 10
-
-                    Button {
-
-                        text: "←"
-
-                        onClicked: {
-                            appStack.pop()
-                        }
-                    }
-
-                    Label {
-
-                        text: "Ride In Progress"
-
-                        font.pixelSize: 22
-                        font.bold: true
-
-                        anchors.verticalCenter:
-                            parent.verticalCenter
-                    }
-                }
+                font.pixelSize: 24
+                font.bold: true
             }
 
-            /*
-             * MAP
-             */
+            Label {
 
-            Rectangle {
+                text:
+                    remainingKm.toFixed(1)
+                    + " km left"
 
-                width: parent.width - 20
-                height: 280
-
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
-
-                radius: 15
-
-                border.color: "#D3D3D3"
-
-                WebEngineView {
-
-                    anchors.fill: parent
-
-                    url: Qt.resolvedUrl(
-                        "../web/ride_status.html"
-                    )
-                }
+                color: "white"
             }
+        }
 
-            /*
-             * PROGRESS CARD
-             */
+        Column {
 
-            Rectangle {
+            Label {
 
-                width: parent.width - 20
-                height: 120
-
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
-
-                radius: 15
-
-                color: "#1976D2"
-
-                Column {
-
-                    anchors.centerIn: parent
-
-                    spacing: 8
-
-                    Label {
-
-                        text:
-                            "Drop in "
-                            + eta
-                            + " min"
-
-                        color: "white"
-
-                        font.pixelSize: 24
-                        font.bold: true
-                    }
-
-                    Label {
-
-                        text:
-                            remainingKm
-                            + " km remaining"
-
-                        color: "white"
-
-                        font.pixelSize: 18
-                    }
-                }
-            }
-
-            /*
-             * FARE CARD
-             */
-
-            Rectangle {
-
-                width: parent.width - 20
-                height: 80
-
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
-
-                radius: 15
+                text:
+                    currentSpeed
+                    + " km/h"
 
                 color: "white"
 
-                border.color: "#D3D3D3"
-
-                Row {
-
-                    anchors.fill: parent
-
-                    anchors.margins: 15
-
-                    Label {
-
-                        text: "Fare"
-
-                        font.pixelSize: 18
-                    }
-
-                    Item {
-
-                        width: 1
-
-                        anchors.horizontalCenter:
-                            parent.horizontalCenter
-                    }
-
-                    Label {
-
-                        anchors.right:
-                            parent.right
-
-                        text:
-                            "₹"
-                            + appState.selectedFare
-
-                        font.pixelSize: 28
-                        font.bold: true
-                    }
-                }
+                font.pixelSize: 24
+                font.bold: true
             }
 
-            /*
-             * DRIVER CARD
-             */
+            Label {
 
-            Rectangle {
-
-                width: parent.width - 20
-                height: 150
-
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
-
-                radius: 15
+                text: "Current Speed"
 
                 color: "white"
-
-                border.color: "#D3D3D3"
-
-                Row {
-
-                    anchors.fill: parent
-
-                    anchors.margins: 15
-
-                    spacing: 15
-
-                    Rectangle {
-
-                        width: 80
-                        height: 80
-
-                        radius: 40
-
-                        clip: true
-
-                        Image {
-
-                            anchors.fill: parent
-
-                            source:
-                                "../../assets/images/agnik.jpeg"
-
-                            fillMode:
-                                Image.PreserveAspectCrop
-                        }
-                    }
-
-                    Column {
-
-                        spacing: 5
-
-                        Label {
-
-                            text: driverName
-
-                            font.pixelSize: 20
-                            font.bold: true
-                        }
-
-                        Label {
-
-                            text: vehicleNumber
-
-                            font.pixelSize: 18
-                        }
-
-                        Label {
-
-                            text:
-                                "★★★★★ "
-                                + driverRating
-
-                            font.pixelSize: 16
-                        }
-
-                        Label {
-
-                            text:
-                                appState.selectedVehicle
-
-                            color: "#555555"
-                        }
-                    }
-                }
-            }
-
-            /*
-             * DESTINATION CARD
-             */
-
-            Rectangle {
-
-                width: parent.width - 20
-                height: 110
-
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
-
-                radius: 15
-
-                color: "white"
-
-                border.color: "#D3D3D3"
-
-                Column {
-
-                    anchors.fill: parent
-
-                    anchors.margins: 15
-
-                    spacing: 5
-
-                    Label {
-
-                        text: "Destination"
-
-                        color: "#555555"
-                    }
-
-                    Label {
-
-                        text: destinationName
-
-                        font.pixelSize: 20
-                        font.bold: true
-                    }
-
-                    Label {
-
-                        text:
-                            destinationAddress
-                    }
-                }
-            }
-
-            /*
-             * ACTION BUTTONS
-             */
-
-            Row {
-
-                spacing: 10
-
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
-
-                Button {
-
-                    text: "📞 Call"
-
-                    onClicked: {
-
-                        console.log(
-                            "Call Driver"
-                        )
-                    }
-                }
-
-                Button {
-
-                    text: "💬 Message"
-
-                    onClicked: {
-
-                        console.log(
-                            "Message Driver"
-                        )
-                    }
-                }
-
-                Button {
-
-                    text: "🚨 SOS"
-
-                    onClicked: {
-
-                        appStack.push(
-                            Qt.resolvedUrl(
-                                "SOSPage.qml"
-                            ),
-                            {
-                                "appStack":
-                                    appStack
-                            }
-                        )
-                    }
-                }
-            }
-
-            Item {
-
-                height: 30
             }
         }
     }
+}
+#Destination Card
+Rectangle {
+
+    width: parent.width - 20
+    height: 110
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    radius: 15
+
+    color: "white"
+
+    border.color: "#D3D3D3"
+
+    Column {
+
+        anchors.fill: parent
+
+        anchors.margins: 15
+
+        spacing: 5
+
+        Label {
+
+            text: "Destination"
+
+            color: "#666666"
+        }
+
+        Label {
+
+            text: destinationName
+
+            font.pixelSize: 22
+
+            font.bold: true
+        }
+
+        Label {
+
+            text: destinationAddress
+
+            wrapMode: Text.WordWrap
+        }
+    }
+}
+#Fare Card
+Rectangle {
+
+    width: parent.width - 20
+    height: 80
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    radius: 15
+
+    color: "white"
+
+    border.color: "#D3D3D3"
+
+    Row {
+
+        anchors.fill: parent
+        anchors.margins: 15
+
+        Label {
+
+            text: "Fare"
+
+            font.pixelSize: 18
+        }
+
+        Item {
+            width: 150
+        }
+
+        Label {
+
+            text:
+                "₹"
+                + appState.selectedFare
+
+            font.pixelSize: 28
+            font.bold: true
+        }
+    }
+}
+#Driver Card
+Rectangle {
+
+    width: parent.width - 20
+    height: 180
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    radius: 15
+
+    color: "white"
+
+    border.color: "#D3D3D3"
+
+    Row {
+
+        anchors.fill: parent
+        anchors.margins: 15
+
+        spacing: 15
+
+        Image {
+
+            source:
+                "../../assets/images/agnik.jpeg"
+
+            width: 90
+            height: 90
+
+            fillMode:
+                Image.PreserveAspectCrop
+        }
+
+        Column {
+
+            spacing: 5
+
+            Label {
+
+                text: driverName
+
+                font.pixelSize: 22
+                font.bold: true
+            }
+
+            Label {
+
+                text: vehicleNumber
+            }
+
+            Label {
+
+                text:
+                    "★ "
+                    + driverRating
+            }
+
+            Label {
+
+                text:
+                    appState.selectedVehicle
+            }
+        }
+    }
+}
+#Call + Message Buttons
+Row {
+
+    spacing: 15
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    Button {
+
+        text: "📞 Call"
+    }
+
+    Button {
+
+        text: "💬 Message"
+    }
+}
+#Trip Progress
+Rectangle {
+
+    width: parent.width - 20
+    height: 100
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    radius: 15
+
+    color: "white"
+
+    border.color: "#D3D3D3"
+
+    Row {
+
+        anchors.centerIn: parent
+
+        spacing: 40
+
+        Label {
+            text: "✓ Pickup"
+        }
+
+        Label {
+            text: "✓ On Trip"
+        }
+
+        Label {
+            text:
+                eta <= 3
+                ? "✓ Near Destination"
+                : "Near Destination"
+        }
+
+        Label {
+            text: "Completed"
+        }
+    }
+}
+#SOS Button
+Button {
+
+    width: 200
+    height: 50
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    text: "🚨 SOS"
+
+    background: Rectangle {
+
+        color: "#E53935"
+
+        radius: 10
+    }
+}
 }

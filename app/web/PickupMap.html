@@ -18,8 +18,8 @@ html,
 body,
 #map {
 
-    height: 100%;
     width: 100%;
+    height: 100%;
 
     margin: 0;
     padding: 0;
@@ -36,27 +36,36 @@ body,
 <script>
 
 /*
- * Default map
+ * Default Map
  */
 
 var map =
-    L.map('map')
+    L.map("map")
      .setView(
          [12.9716, 77.5946],
-         14
+         13
      );
 
 L.tileLayer(
-    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
     {
         attribution:
-            '&copy; OpenStreetMap contributors'
+            "&copy; OpenStreetMap contributors"
     }
 ).addTo(map);
 
 
 /*
- * Pickup Marker
+ * Markers
+ */
+
+var pickupMarker = null;
+var driverMarker = null;
+var routeLine = null;
+
+
+/*
+ * Pickup Icon
  */
 
 var pickupIcon = L.icon({
@@ -67,13 +76,13 @@ var pickupIcon = L.icon({
     shadowUrl:
         "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 
-    iconSize: [25,41],
-    iconAnchor: [12,41]
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
 });
 
 
 /*
- * Driver Marker
+ * Driver Icon
  */
 
 var driverIcon = L.icon({
@@ -84,24 +93,33 @@ var driverIcon = L.icon({
     shadowUrl:
         "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 
-    iconSize: [25,41],
-    iconAnchor: [12,41]
+    iconSize: [25, 41],
+    iconAnchor: [12, 41]
 });
 
 
-var pickupMarker = null;
-var driverMarker = null;
-var routeLine = null;
-
-
 /*
- * Called from QML
+ * Initialize Pickup + Driver
  */
 
 function setPickupRide(
     pickupLat,
-    pickupLon
+    pickupLon,
+    driverLat,
+    driverLon
 ) {
+
+    console.log(
+        "Pickup:",
+        pickupLat,
+        pickupLon
+    );
+
+    console.log(
+        "Driver:",
+        driverLat,
+        driverLon
+    );
 
     if (pickupMarker)
         map.removeLayer(pickupMarker);
@@ -111,19 +129,6 @@ function setPickupRide(
 
     if (routeLine)
         map.removeLayer(routeLine);
-
-
-    /*
-     * Fake driver location
-     * ~1 km away from pickup
-     */
-
-    var driverLat =
-        pickupLat + 0.008;
-
-    var driverLon =
-        pickupLon + 0.008;
-
 
     pickupMarker =
         L.marker(
@@ -135,7 +140,6 @@ function setPickupRide(
         .addTo(map)
         .bindPopup("Pickup Location");
 
-
     driverMarker =
         L.marker(
             [driverLat, driverLon],
@@ -146,78 +150,149 @@ function setPickupRide(
         .addTo(map)
         .bindPopup("Sarthi");
 
+    fetch(
+    "https://router.project-osrm.org/route/v1/driving/"
+    + driverLon + "," + driverLat + ";"
+    + pickupLon + "," + pickupLat
+    + "?overview=full&geometries=geojson"
+)
+.then(response => response.json())
+.then(data => {
 
-    routeLine =
-        L.polyline(
-            [
-                [driverLat, driverLon],
-                [pickupLat, pickupLon]
-            ],
+    if (
+        data.routes &&
+        data.routes.length > 0
+    ) {
+
+        var coordinates =
+            data.routes[0]
+                .geometry
+                .coordinates;
+
+        var routePoints = [];
+
+        for (
+            var i = 0;
+            i < coordinates.length;
+            i++
+        ) {
+
+            routePoints.push([
+
+                coordinates[i][1],
+                coordinates[i][0]
+
+            ]);
+        }
+
+        routeLine =
+            L.polyline(
+                routePoints,
+                {
+                    color: "#1976D2",
+                    weight: 6
+                }
+            ).addTo(map);
+
+        map.fitBounds(
+            routeLine.getBounds(),
             {
-                color: "#1976D2",
-                weight: 6
+                padding: [40, 40]
             }
-        )
-        .addTo(map);
-
+        );
+    }
+});
 
     map.fitBounds(
         routeLine.getBounds(),
         {
-            padding: [30,30]
+            padding: [40, 40]
         }
     );
 }
 
 
 /*
- * Called every 5 sec from QML
+ * Update Driver Position
  */
 
-function moveDriver(step) {
+function updateDriver(
+    driverLat,
+    driverLon
+) {
 
     if (!driverMarker)
         return;
 
-    var pickup =
-        pickupMarker.getLatLng();
-
-    var startLat =
-        pickup.lat + 0.008;
-
-    var startLon =
-        pickup.lng + 0.008;
-
-    var progress =
-        step / 8.0;
-
-    if (progress > 1)
-        progress = 1;
-
-    var lat =
-        startLat +
-        (pickup.lat - startLat)
-        * progress;
-
-    var lon =
-        startLon +
-        (pickup.lng - startLon)
-        * progress;
-
     driverMarker.setLatLng(
-        [lat, lon]
+        [
+            driverLat,
+            driverLon
+        ]
     );
 
-    if (routeLine) {
+    if (
+        pickupMarker &&
+        routeLine
+    ) {
 
-        routeLine.setLatLngs([
-            [lat, lon],
-            [pickup.lat, pickup.lng]
-        ]);
+        var pickup =
+            pickupMarker.getLatLng();
+
+        fetch(
+    "https://router.project-osrm.org/route/v1/driving/"
+    + driverLon + "," + driverLat + ";"
+    + pickup.lng + "," + pickup.lat
+    + "?overview=full&geometries=geojson"
+)
+.then(response => response.json())
+.then(data => {
+
+    if (
+        data.routes &&
+        data.routes.length > 0
+    ) {
+
+        var coordinates =
+            data.routes[0]
+                .geometry
+                .coordinates;
+
+        var routePoints = [];
+
+        for (
+            var i = 0;
+            i < coordinates.length;
+            i++
+        ) {
+
+            routePoints.push([
+                coordinates[i][1],
+                coordinates[i][0]
+            ]);
+        }
+
+        routeLine.setLatLngs(
+            routePoints
+        );
     }
+});
+    }
+
+    map.panTo(
+        [
+            driverLat,
+            driverLon
+        ],
+        {
+            animate: true,
+            duration: 1
+        }
+    );
 }
 
 </script>
 
 </body>
+
 </html>
