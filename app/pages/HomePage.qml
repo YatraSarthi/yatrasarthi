@@ -152,22 +152,27 @@ Timer {
 
     onTextChanged: {
 
-        if (text.length > 2)
-            pickupTimer.restart()
-    }
+    if (!activeFocus)
+        return
+
+    if (text.length > 2)
+        pickupTimer.restart()
+}
 }
 
 Rectangle {
 
     Layout.fillWidth: true
 
-    Layout.preferredHeight:
+    height:
         pickupModel.length > 0
         ? 140
         : 0
 
     visible:
         pickupModel.length > 0
+
+    z: 999
 
     border.color: "#D3D3D3"
 
@@ -227,24 +232,24 @@ Rectangle {
 
                 onClicked: {
 
-                    pickupTimer.stop()
+    pickupTimer.stop()
 
-                    pickupSearch.text =
-                        modelData.name
+    pickupSearch.focus = false
 
-                    appState.pickupLocation =
-                        modelData.name
+    appState.pickupLocation =
+        modelData.name
 
-                    appState.pickupLat =
-                        modelData.lat
+    appState.pickupLat =
+        modelData.lat
 
-                    appState.pickupLon =
-                        modelData.lon
+    appState.pickupLon =
+        modelData.lon
 
-                    pickupModel = []
+    pickupSearch.text =
+        modelData.name
 
-                    pickupSearch.focus = false
-                }
+    pickupModel = []
+}
             }
         }
     }
@@ -361,9 +366,12 @@ Rectangle {
 
     onTextChanged: {
 
-        if (text.length > 2)
-            destinationTimer.restart()
-    }
+    if (!activeFocus)
+        return
+
+    if (text.length > 2)
+        destinationTimer.restart()
+}
 }
 
 Rectangle {
@@ -377,6 +385,8 @@ Rectangle {
 
     visible:
         destinationModel.length > 0
+    
+    z: 999
 
     border.color: "#D3D3D3"
 
