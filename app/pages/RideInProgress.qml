@@ -21,9 +21,10 @@ Page {
     property string destinationAddress:
         appState.destinationAddress
 
- #--------------------
- #  Auto Countdown
- #--------------------
+ /*******************
+ Auto Countdown
+ *******************/
+
 
 Timer {
 
@@ -60,7 +61,10 @@ Timer {
         }
     }
 }
+/********************
 #Header
+*********************/
+
 Rectangle {
 
     width: parent.width
@@ -96,7 +100,9 @@ Rectangle {
         }
     }
 }
-#Map Section
+/*******************
+ Map Section
+ *******************/
 Rectangle {
 
     width: parent.width
@@ -111,7 +117,10 @@ Rectangle {
         )
     }
 }
-#Drop Banner
+/*******************
+ Drop Banner
+ *******************/
+
 Rectangle {
 
     width: parent.width - 20
@@ -178,7 +187,10 @@ Rectangle {
         }
     }
 }
-#Destination Card
+/*******************
+ Destination Card
+ *******************/
+
 Rectangle {
 
     width: parent.width - 20
@@ -225,7 +237,10 @@ Rectangle {
         }
     }
 }
-#Fare Card
+/*******************
+ Fare Card
+ *******************/
+
 Rectangle {
 
     width: parent.width - 20
@@ -267,7 +282,10 @@ Rectangle {
         }
     }
 }
-#Driver Card
+/*******************
+ Driver Card
+ *******************/
+
 Rectangle {
 
     width: parent.width - 20
@@ -333,7 +351,10 @@ Rectangle {
         }
     }
 }
-#Call + Message Buttons
+/*******************
+ Call + Message Buttons
+ *******************/
+
 Row {
 
     spacing: 15
@@ -351,7 +372,10 @@ Row {
         text: "💬 Message"
     }
 }
-#Trip Progress
+/*******************
+ Trip Progress
+ *******************/
+
 Rectangle {
 
     width: parent.width - 20
@@ -392,7 +416,10 @@ Rectangle {
         }
     }
 }
-#SOS Button
+
+/*******************
+ sos button
+ *******************/
 Button {
 
     width: 200

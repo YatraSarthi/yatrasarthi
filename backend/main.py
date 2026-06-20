@@ -290,7 +290,7 @@ def driver_location():
 
     arrived = False
 
-    if driver_step >= 8:
+    if driver_step >= 15:
 
         arrived = True
 
@@ -304,20 +304,20 @@ def driver_location():
         driver_lat += (
             pickup_lat_global
             - driver_lat
-        ) / 5
+        ) / 15
 
         driver_lon += (
             pickup_lon_global
             - driver_lon
-        ) / 5
+        ) / 15
 
         driver_distance = round(
-            max(
-                0,
-                driver_distance - 0.4
-            ),
+            math.sqrt(
+            (pickup_lat_global - driver_lat) ** 2 +
+            (pickup_lon_global - driver_lon) ** 2
+            ) * 111,
             1
-        )
+)
 
         driver_step += 1
 
@@ -329,11 +329,43 @@ def driver_location():
         "distance": driver_distance,
 
         "eta": max(
-            0,
-            driver_eta - driver_step
+            1,
+            round(driver_distance * 2)
         ),
 
         "arrived": arrived
+    }
+@app.get("/pickup-route")
+def pickup_route(
+    driver_lat: float,
+    driver_lon: float,
+    pickup_lat: float,
+    pickup_lon: float
+):
+
+    url = (
+        "https://router.project-osrm.org/route/v1/driving/"
+        f"{driver_lon},{driver_lat};"
+        f"{pickup_lon},{pickup_lat}"
+        "?overview=full&geometries=geojson"
+    )
+
+    try:
+
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            return response.json()
+
+    except Exception as e:
+
+        print(
+            "Pickup Route Error:",
+            e
+        )
+
+    return {
+        "routes": []
     }
 
 # ----------------------------

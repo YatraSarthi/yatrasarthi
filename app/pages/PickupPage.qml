@@ -64,6 +64,10 @@ Page {
                     + data.driverLon
                     + ")"
                 )
+                fetchPickupRoute(
+                    data.driverLat,
+                    data.driverLon
+                )
             }
         }
 
@@ -148,6 +152,10 @@ Page {
                         + data.driverLon
                         + ")"
                     )
+                    fetchPickupRoute(
+                        data.driverLat,
+                        data.driverLon
+                    )
                 }
             }
         }
@@ -160,7 +168,89 @@ Page {
 
         xhr.send()
     }
+/*
+to add blue line
+*/
 
+function fetchPickupRoute(
+    driverLat,
+    driverLon
+) {
+
+    var xhr =
+        new XMLHttpRequest()
+
+    xhr.onreadystatechange =
+        function() {
+
+        if (
+            xhr.readyState ===
+            XMLHttpRequest.DONE &&
+            xhr.status === 200
+        ) {
+
+            var data =
+                JSON.parse(
+                    xhr.responseText
+                )
+
+            if (
+                !data.routes ||
+                data.routes.length === 0
+            )
+                return
+
+            var coordinates =
+                data.routes[0]
+                    .geometry
+                    .coordinates
+
+            var routePoints = []
+
+            for (
+                var i = 0;
+                i < coordinates.length;
+                i++
+            ) {
+
+                routePoints.push([
+
+                    coordinates[i][1],
+                    coordinates[i][0]
+
+                ])
+            }
+
+            routeMap.runJavaScript(
+
+                "drawRoute("
+                + JSON.stringify(
+                    routePoints
+                )
+                + ")"
+            )
+        }
+    }
+
+    xhr.open(
+
+        "GET",
+
+        "http://127.0.0.1:8000/pickup-route"
+        + "?driver_lat="
+        + driverLat
+        + "&driver_lon="
+        + driverLon
+        + "&pickup_lat="
+        + appState.pickupLat
+        + "&pickup_lon="
+        + appState.pickupLon,
+
+        true
+    )
+
+    xhr.send()
+}
     /*
      * Poll backend every 5 seconds
      */
