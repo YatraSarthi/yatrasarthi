@@ -157,54 +157,94 @@ Timer {
     }
 }
 
-ListView {
+Rectangle {
 
     Layout.fillWidth: true
 
-    height: pickupModel.length > 0
-            ? 120
-            : 0
+    Layout.preferredHeight:
+        pickupModel.length > 0
+        ? 140
+        : 0
 
-    model: pickupModel
+    visible:
+        pickupModel.length > 0
 
-    delegate: Rectangle {
+    border.color: "#D3D3D3"
 
-        width: parent.width
+    ListView {
 
-        height: 40
+        anchors.fill: parent
 
-        border.color: "#E0E0E0"
+        clip: true
 
-        Text {
+        model: pickupModel
 
-            anchors.centerIn: parent
+        delegate: Rectangle {
 
-            text: modelData.name
+            width: parent.width
+            height: 55
 
-            width: parent.width - 20
+            color: "white"
 
-            elide: Text.ElideRight
-        }
+            border.color: "#EEEEEE"
 
-        MouseArea {
+            Column {
 
-            anchors.fill: parent
+                anchors.fill: parent
+                anchors.margins: 6
 
-            onClicked: {
+                spacing: 2
 
-                pickupSearch.text =
-                    modelData.name
+                Text {
 
-                appState.pickupLocation =
-                    modelData.name
+                    text:
+                        modelData.name.split(",")[0]
 
-                appState.pickupLat =
-                    modelData.lat
+                    font.bold: true
 
-                appState.pickupLon =
-                    modelData.lon
+                    elide: Text.ElideRight
 
-                pickupModel = []
+                    width: parent.width
+                }
+
+                Text {
+
+                    text: modelData.name
+
+                    color: "#666666"
+
+                    font.pixelSize: 11
+
+                    elide: Text.ElideRight
+
+                    width: parent.width
+                }
+            }
+
+            MouseArea {
+
+                anchors.fill: parent
+
+                onClicked: {
+
+                    pickupTimer.stop()
+
+                    pickupSearch.text =
+                        modelData.name
+
+                    appState.pickupLocation =
+                        modelData.name
+
+                    appState.pickupLat =
+                        modelData.lat
+
+                    appState.pickupLon =
+                        modelData.lon
+
+                    pickupModel = []
+
+                    pickupSearch.focus = false
+                }
             }
         }
     }
@@ -326,54 +366,94 @@ ListView {
     }
 }
 
-ListView {
+Rectangle {
 
     Layout.fillWidth: true
 
-    height: destinationModel.length > 0
-            ? 120
-            : 0
+    Layout.preferredHeight:
+        destinationModel.length > 0
+        ? 140
+        : 0
 
-    model: destinationModel
+    visible:
+        destinationModel.length > 0
 
-    delegate: Rectangle {
+    border.color: "#D3D3D3"
 
-        width: parent.width
+    ListView {
 
-        height: 40
+        anchors.fill: parent
 
-        border.color: "#E0E0E0"
+        clip: true
 
-        Text {
+        model: destinationModel
 
-            anchors.centerIn: parent
+        delegate: Rectangle {
 
-            text: modelData.name
+            width: parent.width
+            height: 55
 
-            width: parent.width - 20
+            color: "white"
 
-            elide: Text.ElideRight
-        }
+            border.color: "#EEEEEE"
 
-        MouseArea {
+            Column {
 
-            anchors.fill: parent
+                anchors.fill: parent
+                anchors.margins: 6
 
-            onClicked: {
+                spacing: 2
 
-                destinationSearch.text =
-                    modelData.name
+                Text {
 
-                appState.destinationLocation =
-                    modelData.name
+                    text:
+                        modelData.name.split(",")[0]
 
-                appState.destinationLat =
-                    modelData.lat
+                    font.bold: true
 
-                appState.destinationLon =
-                    modelData.lon
+                    elide: Text.ElideRight
 
-                destinationModel = []
+                    width: parent.width
+                }
+
+                Text {
+
+                    text: modelData.name
+
+                    color: "#666666"
+
+                    font.pixelSize: 11
+
+                    elide: Text.ElideRight
+
+                    width: parent.width
+                }
+            }
+
+            MouseArea {
+
+                anchors.fill: parent
+
+                onClicked: {
+
+                    destinationTimer.stop()
+
+                    destinationSearch.text =
+                        modelData.name
+
+                    appState.destinationLocation =
+                        modelData.name
+
+                    appState.destinationLat =
+                        modelData.lat
+
+                    appState.destinationLon =
+                        modelData.lon
+
+                    destinationModel = []
+
+                    destinationSearch.focus = false
+                }
             }
         }
     }
