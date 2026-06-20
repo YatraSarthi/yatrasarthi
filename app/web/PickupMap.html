@@ -150,58 +150,22 @@ function setPickupRide(
         .addTo(map)
         .bindPopup("Sarthi");
 
-    fetch(
-    "https://router.project-osrm.org/route/v1/driving/"
-    + driverLon + "," + driverLat + ";"
-    + pickupLon + "," + pickupLat
-    + "?overview=full&geometries=geojson"
-)
-.then(response => response.json())
-.then(data => {
+    /*
+     * Fallback straight line
+     */
 
-    if (
-        data.routes &&
-        data.routes.length > 0
-    ) {
-
-        var coordinates =
-            data.routes[0]
-                .geometry
-                .coordinates;
-
-        var routePoints = [];
-
-        for (
-            var i = 0;
-            i < coordinates.length;
-            i++
-        ) {
-
-            routePoints.push([
-
-                coordinates[i][1],
-                coordinates[i][0]
-
-            ]);
-        }
-
-        routeLine =
-            L.polyline(
-                routePoints,
-                {
-                    color: "#1976D2",
-                    weight: 6
-                }
-            ).addTo(map);
-
-        map.fitBounds(
-            routeLine.getBounds(),
+    routeLine =
+        L.polyline(
+            [
+                [driverLat, driverLon],
+                [pickupLat, pickupLon]
+            ],
             {
-                padding: [40, 40]
+                color: "#1976D2",
+                weight: 6
             }
-        );
-    }
-});
+        )
+        .addTo(map);
 
     map.fitBounds(
         routeLine.getBounds(),
@@ -209,6 +173,65 @@ function setPickupRide(
             padding: [40, 40]
         }
     );
+
+    /*
+     * Replace with actual road route
+     */
+
+    fetch(
+        "https://router.project-osrm.org/route/v1/driving/"
+        + driverLon + "," + driverLat + ";"
+        + pickupLon + "," + pickupLat
+        + "?overview=full&geometries=geojson"
+    )
+    .then(response => response.json())
+    .then(data => {
+
+        console.log("OSRM:", data);
+
+        if (
+            data.routes &&
+            data.routes.length > 0
+        ) {
+
+            var coordinates =
+                data.routes[0]
+                    .geometry
+                    .coordinates;
+
+            var routePoints = [];
+
+            for (
+                var i = 0;
+                i < coordinates.length;
+                i++
+            ) {
+
+                routePoints.push([
+                    coordinates[i][1],
+                    coordinates[i][0]
+                ]);
+            }
+
+            routeLine.setLatLngs(
+                routePoints
+            );
+
+            map.fitBounds(
+                routeLine.getBounds(),
+                {
+                    padding: [40, 40]
+                }
+            );
+        }
+    })
+    .catch(error => {
+
+        console.log(
+            "OSRM Error:",
+            error
+        );
+    });
 }
 
 
@@ -276,6 +299,13 @@ function updateDriver(
             routePoints
         );
     }
+})
+.catch(error => {
+
+    console.log(
+        "Route Update Error:",
+        error
+    );
 });
     }
 
