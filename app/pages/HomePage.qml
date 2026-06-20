@@ -12,51 +12,91 @@ Page {
 
     function fetchPickupSuggestions(query) {
 
-        var xhr = new XMLHttpRequest()
+    var xhr = new XMLHttpRequest()
 
-        xhr.onreadystatechange = function() {
+    xhr.onreadystatechange = function() {
 
-            if (xhr.readyState === XMLHttpRequest.DONE &&
-                xhr.status === 200) {
+        if (
+            xhr.readyState === XMLHttpRequest.DONE &&
+            xhr.status === 200
+        ) {
 
-                pickupModel =
-                    JSON.parse(xhr.responseText)
-            }
+            pickupModel =
+                JSON.parse(
+                    xhr.responseText
+                )
         }
-
-        xhr.open(
-            "GET",
-            "http://127.0.0.1:8000/search-location?query="
-            + encodeURIComponent(query),
-            true
-        )
-
-        xhr.send()
     }
 
-    function fetchDestinationSuggestions(query) {
+    xhr.open(
+        "GET",
+        "http://127.0.0.1:8000/search-location?query="
+        + encodeURIComponent(query),
+        true
+    )
 
-        var xhr = new XMLHttpRequest()
+    xhr.send()
+}
 
-        xhr.onreadystatechange = function() {
+function fetchDestinationSuggestions(query) {
 
-            if (xhr.readyState === XMLHttpRequest.DONE &&
-                xhr.status === 200) {
+    var xhr = new XMLHttpRequest()
 
-                destinationModel =
-                    JSON.parse(xhr.responseText)
-            }
+    xhr.onreadystatechange = function() {
+
+        if (
+            xhr.readyState === XMLHttpRequest.DONE &&
+            xhr.status === 200
+        ) {
+
+            destinationModel =
+                JSON.parse(
+                    xhr.responseText
+                )
         }
-
-        xhr.open(
-            "GET",
-            "http://127.0.0.1:8000/search-location?query="
-            + encodeURIComponent(query),
-            true
-        )
-
-        xhr.send()
     }
+
+    xhr.open(
+        "GET",
+        "http://127.0.0.1:8000/search-location?query="
+        + encodeURIComponent(query),
+        true
+    )
+
+    xhr.send()
+}
+
+Timer {
+
+    id: pickupTimer
+
+    interval: 800
+
+    repeat: false
+
+    onTriggered: {
+
+        fetchPickupSuggestions(
+            pickupSearch.text
+        )
+    }
+}
+
+Timer {
+
+    id: destinationTimer
+
+    interval: 800
+
+    repeat: false
+
+    onTriggered: {
+
+        fetchDestinationSuggestions(
+            destinationSearch.text
+        )
+    }
+}
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 25
@@ -99,7 +139,7 @@ Page {
             }
         }
 
-        TextField {
+        TTextField {
 
     id: pickupSearch
 
@@ -107,30 +147,30 @@ Page {
 
     text: appState.pickupLocation
 
-    placeholderText: "Search Pickup Location"
+    placeholderText:
+        "Search Pickup Location"
 
     onTextChanged: {
 
         if (text.length > 2)
-            fetchPickupSuggestions(text)
+            pickupTimer.restart()
     }
 }
 
 ListView {
 
-    id: pickupSuggestions
-
     Layout.fillWidth: true
 
-    height: 120
-
-    visible: pickupModel.length > 0
+    height: pickupModel.length > 0
+            ? 120
+            : 0
 
     model: pickupModel
 
     delegate: Rectangle {
 
         width: parent.width
+
         height: 40
 
         border.color: "#E0E0E0"
@@ -153,23 +193,22 @@ ListView {
             onClicked: {
 
                 pickupSearch.text =
-                        modelData.name
+                    modelData.name
 
                 appState.pickupLocation =
-                        modelData.name
+                    modelData.name
 
                 appState.pickupLat =
-                        modelData.lat
+                    modelData.lat
 
                 appState.pickupLon =
-                        modelData.lon
+                    modelData.lon
 
                 pickupModel = []
             }
         }
     }
 }
-
         RowLayout {
             Layout.alignment: Qt.AlignRight
             spacing: 6
@@ -274,32 +313,33 @@ ListView {
 
     Layout.fillWidth: true
 
-    text: appState.destinationLocation
+    text:
+        appState.destinationLocation
 
-    placeholderText: "Search Destination"
+    placeholderText:
+        "Search Destination"
 
     onTextChanged: {
 
         if (text.length > 2)
-            fetchDestinationSuggestions(text)
+            destinationTimer.restart()
     }
 }
 
 ListView {
 
-    id: destinationSuggestions
-
     Layout.fillWidth: true
 
-    height: 120
-
-    visible: destinationModel.length > 0
+    height: destinationModel.length > 0
+            ? 120
+            : 0
 
     model: destinationModel
 
     delegate: Rectangle {
 
         width: parent.width
+
         height: 40
 
         border.color: "#E0E0E0"
@@ -322,23 +362,22 @@ ListView {
             onClicked: {
 
                 destinationSearch.text =
-                        modelData.name
+                    modelData.name
 
                 appState.destinationLocation =
-                        modelData.name
+                    modelData.name
 
                 appState.destinationLat =
-                        modelData.lat
+                    modelData.lat
 
                 appState.destinationLon =
-                        modelData.lon
+                    modelData.lon
 
                 destinationModel = []
             }
         }
     }
 }
-
         RowLayout {
             Layout.alignment: Qt.AlignRight
 

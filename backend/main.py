@@ -10,6 +10,8 @@ print("===== THIS MAIN.PY IS RUNNING =====")
 
 app = FastAPI()
 
+search_cache = {}
+
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
@@ -115,6 +117,11 @@ def reverse_geocode(lat: float, lon: float):
 @app.get("/search-location")
 def search_location(query: str):
 
+    global search_cache
+
+    if query in search_cache:
+        return search_cache[query]
+
     url = (
         "https://nominatim.openstreetmap.org/search"
         f"?q={query}"
@@ -124,7 +131,7 @@ def search_location(query: str):
 
     headers = {
         "User-Agent":
-        "YatraSarthi/1.0 (contact@yatrasarthi.com)"
+        "YatraSarthi Hackathon Project"
     }
 
     try:
@@ -133,16 +140,6 @@ def search_location(query: str):
             url,
             headers=headers,
             timeout=10
-        )
-
-        print(
-            "Search Status:",
-            response.status_code
-        )
-
-        print(
-            "Search Response:",
-            response.text[:300]
         )
 
         if response.status_code == 200:
@@ -156,16 +153,23 @@ def search_location(query: str):
                 places.append({
 
                     "name":
-                        place["display_name"],
+                    place["display_name"],
 
                     "lat":
-                        float(place["lat"]),
+                    float(place["lat"]),
 
                     "lon":
-                        float(place["lon"])
+                    float(place["lon"])
                 })
 
+            search_cache[query] = places
+
             return places
+
+        print(
+            "Search Status:",
+            response.status_code
+        )
 
     except Exception as e:
 
