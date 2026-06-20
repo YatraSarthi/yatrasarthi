@@ -22,4 +22,10 @@ QtObject {
     property int selectedFare: 0
     property int selectedEta: 0
     property real selectedDistance: 0
+
+    /* Carpool */
+
+    property int availableSeats: 0
+    property int routeMatch: 0
+    property real co2Saved: 0.0
 }

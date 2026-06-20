@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<meta charset="utf-8">
+
+<title>YatraSarthi Pickup Map</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+
+html,
+body,
+#map {
+
+    height: 100%;
+    width: 100%;
+
+    margin: 0;
+    padding: 0;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<script>
+
+/*
+ * Default map
+ */
+
+var map =
+    L.map('map')
+     .setView(
+         [12.9716, 77.5946],
+         14
+     );
+
+L.tileLayer(
+    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+        attribution:
+            '&copy; OpenStreetMap contributors'
+    }
+).addTo(map);
+
+
+/*
+ * Pickup Marker
+ */
+
+var pickupIcon = L.icon({
+
+    iconUrl:
+        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
+
+    shadowUrl:
+        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+
+    iconSize: [25,41],
+    iconAnchor: [12,41]
+});
+
+
+/*
+ * Driver Marker
+ */
+
+var driverIcon = L.icon({
+
+    iconUrl:
+        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+
+    shadowUrl:
+        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+
+    iconSize: [25,41],
+    iconAnchor: [12,41]
+});
+
+
+var pickupMarker = null;
+var driverMarker = null;
+var routeLine = null;
+
+
+/*
+ * Called from QML
+ */
+
+function setPickupRide(
+    pickupLat,
+    pickupLon
+) {
+
+    if (pickupMarker)
+        map.removeLayer(pickupMarker);
+
+    if (driverMarker)
+        map.removeLayer(driverMarker);
+
+    if (routeLine)
+        map.removeLayer(routeLine);
+
+
+    /*
+     * Fake driver location
+     * ~1 km away from pickup
+     */
+
+    var driverLat =
+        pickupLat + 0.008;
+
+    var driverLon =
+        pickupLon + 0.008;
+
+
+    pickupMarker =
+        L.marker(
+            [pickupLat, pickupLon],
+            {
+                icon: pickupIcon
+            }
+        )
+        .addTo(map)
+        .bindPopup("Pickup Location");
+
+
+    driverMarker =
+        L.marker(
+            [driverLat, driverLon],
+            {
+                icon: driverIcon
+            }
+        )
+        .addTo(map)
+        .bindPopup("Sarthi");
+
+
+    routeLine =
+        L.polyline(
+            [
+                [driverLat, driverLon],
+                [pickupLat, pickupLon]
+            ],
+            {
+                color: "#1976D2",
+                weight: 6
+            }
+        )
+        .addTo(map);
+
+
+    map.fitBounds(
+        routeLine.getBounds(),
+        {
+            padding: [30,30]
+        }
+    );
+}
+
+
+/*
+ * Called every 5 sec from QML
+ */
+
+function moveDriver(step) {
+
+    if (!driverMarker)
+        return;
+
+    var pickup =
+        pickupMarker.getLatLng();
+
+    var startLat =
+        pickup.lat + 0.008;
+
+    var startLon =
+        pickup.lng + 0.008;
+
+    var progress =
+        step / 8.0;
+
+    if (progress > 1)
+        progress = 1;
+
+    var lat =
+        startLat +
+        (pickup.lat - startLat)
+        * progress;
+
+    var lon =
+        startLon +
+        (pickup.lng - startLon)
+        * progress;
+
+    driverMarker.setLatLng(
+        [lat, lon]
+    );
+
+    if (routeLine) {
+
+        routeLine.setLatLngs([
+            [lat, lon],
+            [pickup.lat, pickup.lng]
+        ]);
+    }
+}
+
+</script>
+
+</body>
+</html>

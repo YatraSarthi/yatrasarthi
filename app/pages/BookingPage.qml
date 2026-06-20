@@ -267,7 +267,7 @@ Button {
         console.log("Driver simulation reset")
 
         appStack.push(
-            Qt.resolvedUrl("RideStatusPage.qml"),
+            Qt.resolvedUrl("PickupPage.qml"),
             {
                 "appStack": appStack,
                 "appState": appState

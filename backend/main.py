@@ -98,7 +98,7 @@ def estimate(
     destination_lon: float
 ):
 
-    R = 6371  # Earth's radius in km
+    R = 6371
 
     lat1 = math.radians(pickup_lat)
     lon1 = math.radians(pickup_lon)
@@ -123,6 +123,9 @@ def estimate(
 
     distance = round(R * c, 2)
 
+    cab_fare = round(80 + distance * 16)
+    cab_eta = max(4, round(distance * 2))
+
     return {
         "distance": distance,
 
@@ -137,11 +140,18 @@ def estimate(
         },
 
         "cab": {
-            "fare": round(80 + distance * 16),
-            "eta": max(4, round(distance * 2))
-        }
-    }
+            "fare": cab_fare,
+            "eta": cab_eta
+        },
 
+        "carpool": {
+            "fare": round(cab_fare * 0.6),
+            "eta": cab_eta + 2,
+            "availableSeats": 3,
+            "routeMatch": 91,
+            "co2Saved": 2.1
+        }
+}
 
 # ----------------------------
 # Route Preview

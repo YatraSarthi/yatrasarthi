@@ -25,6 +25,12 @@ Page {
 
         else if (vehicle === "Cab")
             return "../../assets/icons/cab.png"
+        
+        else if (vehicle === "Cab")
+            return "../../assets/icons/cab.png"
+
+        else if (vehicle === "Carpool")
+           return "../../assets/icons/carpool.png"
 
         return ""
     }
@@ -171,6 +177,14 @@ Page {
                             "vehicle": "Cab",
                             "fare": rideData.cab.fare,
                             "eta": rideData.cab.eta
+                        },
+                        {
+                            "vehicle": "Carpool",
+                            "fare": Math.round(rideData.cab.fare * 0.6),
+                            "eta": rideData.cab.eta + 2,
+                            "availableSeats": 2,
+                            "routeMatch": 92,
+                            "co2Saved": 1.8
                         }
                      ]
                    : []
@@ -240,6 +254,21 @@ Page {
 
                             color: "#555555"
                         }
+                        Text {
+
+    visible:
+        modelData.vehicle === "Carpool"
+
+    text:
+        modelData.availableSeats
+        + " seats • "
+        + modelData.routeMatch
+        + "% route match"
+
+    color: "#4CAF50"
+
+    font.pixelSize: 12
+}
                     }
 
                     Item {
@@ -279,8 +308,20 @@ Page {
                         selectedFare = modelData.fare
                         selectedEta = modelData.eta
 
-                        console.log(selectedVehicle + " selected")
-                    }
+                        if (modelData.vehicle === "Carpool") {
+
+                                appState.availableSeats =
+                                    modelData.availableSeats
+
+                                appState.routeMatch =
+                                    modelData.routeMatch
+
+                                appState.co2Saved =
+                                    modelData.co2Saved
+    }
+
+    console.log(selectedVehicle + " selected")
+}
                 }
             }
         }
@@ -305,6 +346,13 @@ Page {
         appState.selectedVehicle = selectedVehicle
         appState.selectedFare = selectedFare
         appState.selectedEta = selectedEta
+
+        if (selectedVehicle !== "Carpool") {
+
+         appState.availableSeats = 0
+         appState.routeMatch = 0
+        appState.co2Saved = 0
+}
 
         appStack.push(
             Qt.resolvedUrl("BookingPage.qml"),
