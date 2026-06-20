@@ -49,17 +49,36 @@ def reverse_geocode(lat: float, lon: float):
     )
 
     headers = {
-        "User-Agent": "YatraSarthi/1.0"
+        "User-Agent":
+        "YatraSarthi/1.0 (contact@yatrasarthi.com)"
     }
 
     try:
-        response = requests.get(url, headers=headers)
+
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=10
+        )
+
+        print(
+            "Reverse Status:",
+            response.status_code
+        )
+
+        print(
+            "Reverse Response:",
+            response.text[:300]
+        )
 
         if response.status_code == 200:
 
             data = response.json()
 
-            display_name = data.get("display_name", "")
+            display_name = data.get(
+                "display_name",
+                ""
+            )
 
             if display_name:
 
@@ -68,22 +87,29 @@ def reverse_geocode(lat: float, lon: float):
                     for part in display_name.split(",")
                 ]
 
-                short_address = ", ".join(parts[:3])
+                short_address = ", ".join(
+                    parts[:3]
+                )
 
-            else:
-                short_address = f"{lat}, {lon}"
-
-            return {
-                "address": short_address,
-                "full_address": display_name
-            }
+                return {
+                    "address":
+                        short_address,
+                    "full_address":
+                        display_name
+                }
 
     except Exception as e:
-        print("Reverse geocoding error:", e)
+
+        print(
+            "Reverse Geocode Error:",
+            e
+        )
 
     return {
-        "address": f"{lat}, {lon}",
-        "full_address": f"{lat}, {lon}"
+        "address":
+            f"{lat},{lon}",
+        "full_address":
+            f"{lat},{lon}"
     }
 
 @app.get("/search-location")
@@ -97,14 +123,26 @@ def search_location(query: str):
     )
 
     headers = {
-        "User-Agent": "YatraSarthi/1.0"
+        "User-Agent":
+        "YatraSarthi/1.0 (contact@yatrasarthi.com)"
     }
 
     try:
 
         response = requests.get(
             url,
-            headers=headers
+            headers=headers,
+            timeout=10
+        )
+
+        print(
+            "Search Status:",
+            response.status_code
+        )
+
+        print(
+            "Search Response:",
+            response.text[:300]
         )
 
         if response.status_code == 200:
@@ -116,19 +154,27 @@ def search_location(query: str):
             for place in results:
 
                 places.append({
-                    "name": place["display_name"],
-                    "lat": float(place["lat"]),
-                    "lon": float(place["lon"])
+
+                    "name":
+                        place["display_name"],
+
+                    "lat":
+                        float(place["lat"]),
+
+                    "lon":
+                        float(place["lon"])
                 })
 
             return places
 
     except Exception as e:
 
-        print("Search Error:", e)
+        print(
+            "Search Error:",
+            e
+        )
 
     return []
-
 # ----------------------------
 # Fare Estimation
 # ----------------------------
