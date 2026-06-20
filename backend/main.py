@@ -86,6 +86,48 @@ def reverse_geocode(lat: float, lon: float):
         "full_address": f"{lat}, {lon}"
     }
 
+@app.get("/search-location")
+def search_location(query: str):
+
+    url = (
+        "https://nominatim.openstreetmap.org/search"
+        f"?q={query}"
+        "&format=jsonv2"
+        "&limit=5"
+    )
+
+    headers = {
+        "User-Agent": "YatraSarthi/1.0"
+    }
+
+    try:
+
+        response = requests.get(
+            url,
+            headers=headers
+        )
+
+        if response.status_code == 200:
+
+            results = response.json()
+
+            places = []
+
+            for place in results:
+
+                places.append({
+                    "name": place["display_name"],
+                    "lat": float(place["lat"]),
+                    "lon": float(place["lon"])
+                })
+
+            return places
+
+    except Exception as e:
+
+        print("Search Error:", e)
+
+    return []
 
 # ----------------------------
 # Fare Estimation

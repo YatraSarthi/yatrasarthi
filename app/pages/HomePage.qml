@@ -7,6 +7,56 @@ Page {
     property var appStack
     property var appState
 
+    property var pickupModel: []
+    property var destinationModel: []
+
+    function fetchPickupSuggestions(query) {
+
+        var xhr = new XMLHttpRequest()
+
+        xhr.onreadystatechange = function() {
+
+            if (xhr.readyState === XMLHttpRequest.DONE &&
+                xhr.status === 200) {
+
+                pickupModel =
+                    JSON.parse(xhr.responseText)
+            }
+        }
+
+        xhr.open(
+            "GET",
+            "http://127.0.0.1:8000/search-location?query="
+            + encodeURIComponent(query),
+            true
+        )
+
+        xhr.send()
+    }
+
+    function fetchDestinationSuggestions(query) {
+
+        var xhr = new XMLHttpRequest()
+
+        xhr.onreadystatechange = function() {
+
+            if (xhr.readyState === XMLHttpRequest.DONE &&
+                xhr.status === 200) {
+
+                destinationModel =
+                    JSON.parse(xhr.responseText)
+            }
+        }
+
+        xhr.open(
+            "GET",
+            "http://127.0.0.1:8000/search-location?query="
+            + encodeURIComponent(query),
+            true
+        )
+
+        xhr.send()
+    }
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 25
@@ -50,14 +100,75 @@ Page {
         }
 
         TextField {
-            Layout.fillWidth: true
 
-            readOnly: true
+    id: pickupSearch
 
-            text: appState.pickupLocation
+    Layout.fillWidth: true
 
-            placeholderText: "Select Pickup Location"
+    text: appState.pickupLocation
+
+    placeholderText: "Search Pickup Location"
+
+    onTextChanged: {
+
+        if (text.length > 2)
+            fetchPickupSuggestions(text)
+    }
+}
+
+ListView {
+
+    id: pickupSuggestions
+
+    Layout.fillWidth: true
+
+    height: 120
+
+    visible: pickupModel.length > 0
+
+    model: pickupModel
+
+    delegate: Rectangle {
+
+        width: parent.width
+        height: 40
+
+        border.color: "#E0E0E0"
+
+        Text {
+
+            anchors.centerIn: parent
+
+            text: modelData.name
+
+            width: parent.width - 20
+
+            elide: Text.ElideRight
         }
+
+        MouseArea {
+
+            anchors.fill: parent
+
+            onClicked: {
+
+                pickupSearch.text =
+                        modelData.name
+
+                appState.pickupLocation =
+                        modelData.name
+
+                appState.pickupLat =
+                        modelData.lat
+
+                appState.pickupLon =
+                        modelData.lon
+
+                pickupModel = []
+            }
+        }
+    }
+}
 
         RowLayout {
             Layout.alignment: Qt.AlignRight
@@ -158,14 +269,75 @@ Page {
         }
 
         TextField {
-            Layout.fillWidth: true
 
-            readOnly: true
+    id: destinationSearch
 
-            text: appState.destinationLocation
+    Layout.fillWidth: true
 
-            placeholderText: "Select Destination"
+    text: appState.destinationLocation
+
+    placeholderText: "Search Destination"
+
+    onTextChanged: {
+
+        if (text.length > 2)
+            fetchDestinationSuggestions(text)
+    }
+}
+
+ListView {
+
+    id: destinationSuggestions
+
+    Layout.fillWidth: true
+
+    height: 120
+
+    visible: destinationModel.length > 0
+
+    model: destinationModel
+
+    delegate: Rectangle {
+
+        width: parent.width
+        height: 40
+
+        border.color: "#E0E0E0"
+
+        Text {
+
+            anchors.centerIn: parent
+
+            text: modelData.name
+
+            width: parent.width - 20
+
+            elide: Text.ElideRight
         }
+
+        MouseArea {
+
+            anchors.fill: parent
+
+            onClicked: {
+
+                destinationSearch.text =
+                        modelData.name
+
+                appState.destinationLocation =
+                        modelData.name
+
+                appState.destinationLat =
+                        modelData.lat
+
+                appState.destinationLon =
+                        modelData.lon
+
+                destinationModel = []
+            }
+        }
+    }
+}
 
         RowLayout {
             Layout.alignment: Qt.AlignRight
