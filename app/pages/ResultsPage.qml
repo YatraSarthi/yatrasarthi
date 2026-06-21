@@ -1,588 +1,864 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
-import QtWebEngine 1.10
 
 Page {
 
     property var appStack
     property var appState
 
-    property var rideData: null
+    // Signal to tell Main.qml to switch tab
+    // (renamed from switchTab to avoid shadowing Main.qml's switchTab() function)
+    signal requestTabChange(int tabIndex)
 
-    property string selectedVehicle: ""
-    property int selectedFare: 0
-    property int selectedEta: 0
+    // No local footer — Main.qml owns the TabBar
+    footer: null
+    header: null
 
-    // ── Header ────────────────────────────────────────────────────
-    header: Rectangle {
+    property var pickupModel: []
+    property var destinationModel: []
+    property var favourites: []
 
-        width: parent.width
-        height: 60
-        color: "#1976D2"
+    property bool suppressPickupFetch: false
+    property bool suppressDestinationFetch: false
 
-        Row {
-            anchors.fill: parent
-            anchors.leftMargin: 8
-            anchors.rightMargin: 16
-            spacing: 8
+    Component.onCompleted: {
+        loadFavourites()
+    }
 
-            // Back button
-            ToolButton {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 44; height: 44
-
-                contentItem: Text {
-                    text: "‹"
-                    font.pixelSize: 28
-                    color: "white"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-
-                onClicked: {
-                    appStack.pop()
-                }
-            }
-
-            Column {
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 2
-                width: parent.width - 52
-
-                Label {
-                    text: "Choose a Ride"
-                    font.pixelSize: 17
-                    font.bold: true
-                    color: "white"
-                }
-
-                Label {
-                    text: {
-                        var from = appState.pickupLocation
-                        var to   = appState.destinationLocation
-                        var fp   = from.split(",")[0].trim()
-                        var tp   = to.split(",")[0].trim()
-                        return fp + "  →  " + tp
-                    }
-                    font.pixelSize: 11
-                    color: "#B3E5FC"
-                    width: parent.width
-                    elide: Text.ElideRight
-                }
-            }
+    // Reload favourites every time Home tab becomes visible
+    // Also restore the bottom bar (safety net in case booking flow left it hidden)
+    onVisibleChanged: {
+        if (visible) {
+            if (appState) appState.showBottomBar = true
+            loadFavourites()
         }
     }
 
-    // ── Helper functions ──────────────────────────────────────────
-    function getVehicleIcon(vehicle) {
-        if (vehicle === "Bike")    return "../../assets/icons/bike.png"
-        if (vehicle === "Auto")    return "../../assets/icons/auto.png"
-        if (vehicle === "Cab")     return "../../assets/icons/cab.png"
-        if (vehicle === "Carpool") return "../../assets/icons/rider.png"
-        return "../../assets/icons/rider.png"
-    }
-
-    function getVehicleColor(vehicle) {
-        if (vehicle === "Bike")    return "#E8F5E9"
-        if (vehicle === "Auto")    return "#FFF8E1"
-        if (vehicle === "Cab")     return "#E3F2FD"
-        if (vehicle === "Carpool") return "#F3E5F5"
-        return "#F5F5F5"
-    }
-
-    function getVehicleAccent(vehicle) {
-        if (vehicle === "Bike")    return "#2E7D32"
-        if (vehicle === "Auto")    return "#F57F17"
-        if (vehicle === "Cab")     return "#1565C0"
-        if (vehicle === "Carpool") return "#6A1B9A"
-        return "#1976D2"
-    }
-
-    function fetchEstimate() {
+    function loadFavourites() {
         var xhr = new XMLHttpRequest()
         xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                console.log("Estimate Status:", xhr.status)
-                if (xhr.status === 200) {
-                    rideData = JSON.parse(xhr.responseText)
-                    // Default selection: Bike
-                    selectedVehicle = "Bike"
-                    selectedFare    = rideData.bike.fare
-                    selectedEta     = rideData.bike.eta
-                    console.log("rideData loaded")
-                }
+            if (xhr.readyState === XMLHttpRequest.DONE
+                    && xhr.status === 200) {
+                favourites = JSON.parse(xhr.responseText)
             }
         }
-        var url =
-            "http://127.0.0.1:8000/estimate"
-            + "?pickup_lat="      + appState.pickupLat
-            + "&pickup_lon="      + appState.pickupLon
-            + "&destination_lat=" + appState.destinationLat
-            + "&destination_lon=" + appState.destinationLon
-        xhr.open("GET", url, true)
+        xhr.open("GET",
+            "http://127.0.0.1:8000/favourites", true)
         xhr.send()
     }
 
-    Component.onCompleted: {
-        fetchEstimate()
-    }
-
-    // ── Body ──────────────────────────────────────────────────────
-    Column {
-
-        anchors.fill: parent
-        spacing: 0
-
-        // ── Route Map ─────────────────────────────────────────────
-        Rectangle {
-
-            width: parent.width
-            height: 200
-            color: "#E8EAF6"
-
-            WebEngineView {
-                id: routeMap
-                anchors.fill: parent
-                url: Qt.resolvedUrl("../web/route.html")
-
-                onLoadingChanged: {
-                    if (loadRequest.status ===
-                            WebEngineLoadRequest.LoadSucceededStatus) {
-                        console.log("Route map loaded")
-                        runJavaScript(
-                            "setRoute("
-                            + appState.pickupLat   + ","
-                            + appState.pickupLon   + ","
-                            + appState.destinationLat + ","
-                            + appState.destinationLon
-                            + ")"
-                        )
-                    }
-                }
-            }
-
-            // Distance badge over the map
-            Rectangle {
-                anchors.top: parent.top
-                anchors.right: parent.right
-                anchors.margins: 10
-                height: 26
-                width: distBadge.width + 20
-                radius: 13
-                color: "#CC1976D2"
-
-                Label {
-                    id: distBadge
-                    anchors.centerIn: parent
-                    text: rideData
-                          ? (rideData.distance >= 1
-                             ? rideData.distance.toFixed(1) + " km"
-                             : Math.round(rideData.distance * 1000) + " m")
-                          : ""
-                    font.pixelSize: 12
-                    font.bold: true
-                    color: "white"
-                }
+    function fetchPickupSuggestions(query) {
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE
+                    && xhr.status === 200) {
+                pickupModel = JSON.parse(xhr.responseText)
             }
         }
+        xhr.open("GET",
+            "http://127.0.0.1:8000/search-location?query="
+            + encodeURIComponent(query), true)
+        xhr.send()
+    }
 
-        // ── Vehicle list ──────────────────────────────────────────
-        ListView {
+    function fetchDestinationSuggestions(query) {
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE
+                    && xhr.status === 200) {
+                destinationModel = JSON.parse(xhr.responseText)
+            }
+        }
+        xhr.open("GET",
+            "http://127.0.0.1:8000/search-location?query="
+            + encodeURIComponent(query), true)
+        xhr.send()
+    }
 
-            id: vehicleList
+    Timer {
+        id: pickupTimer
+        interval: 800
+        repeat: false
+        onTriggered: { fetchPickupSuggestions(pickupSearch.text) }
+    }
 
-            width: parent.width
-            // Fill remaining height minus the Choose button bar
-            height: parent.height - 200 - 80
+    Timer {
+        id: destinationTimer
+        interval: 800
+        repeat: false
+        onTriggered: {
+            fetchDestinationSuggestions(destinationSearch.text)
+        }
+    }
 
-            topMargin: 12
-            bottomMargin: 8
-            spacing: 10
+    // ── Root item — dropdowns float above ScrollView ──────────────
+    Item {
+
+        id: pageRoot
+        anchors.fill: parent
+
+        ScrollView {
+            anchors.fill: parent
+            contentWidth: width
             clip: true
 
-            model: rideData ? [
-                {
-                    vehicle: "Bike",
-                    fare: rideData.bike.fare,
-                    eta:  rideData.bike.eta,
-                    desc: "Fastest option",
-                    availableSeats: 0,
-                    routeMatch: 0,
-                    co2Saved: 0.0
-                },
-                {
-                    vehicle: "Auto",
-                    fare: rideData.auto.fare,
-                    eta:  rideData.auto.eta,
-                    desc: "Comfortable 3-wheeler",
-                    availableSeats: 0,
-                    routeMatch: 0,
-                    co2Saved: 0.0
-                },
-                {
-                    vehicle: "Cab",
-                    fare: rideData.cab.fare,
-                    eta:  rideData.cab.eta,
-                    desc: "AC sedan",
-                    availableSeats: 0,
-                    routeMatch: 0,
-                    co2Saved: 0.0
-                },
-                {
-                    vehicle: "Carpool",
-                    // FIX: use backend carpool fare directly
-                    fare: rideData.carpool.fare,
-                    eta:  rideData.carpool.eta,
-                    desc: "Share & save",
-                    availableSeats: rideData.carpool.availableSeats,
-                    routeMatch:     rideData.carpool.routeMatch,
-                    co2Saved:       rideData.carpool.co2Saved
-                }
-            ] : []
-
-            delegate: Rectangle {
-
-                width: vehicleList.width - 24
-                x: 12
-                height: modelData.vehicle === "Carpool" ? 102 : 86
-                radius: 14
-
-                // Selected = tinted background in vehicle colour
-                color: selectedVehicle === modelData.vehicle
-                       ? getVehicleColor(modelData.vehicle)
-                       : "white"
-
-                border.color: selectedVehicle === modelData.vehicle
-                              ? getVehicleAccent(modelData.vehicle)
-                              : "#EEEEEE"
-                border.width: selectedVehicle === modelData.vehicle
-                              ? 2 : 1
-
-                Behavior on scale {
-                    NumberAnimation { duration: 120 }
-                }
-
-                // Left accent strip when selected
-                Rectangle {
-                    visible: selectedVehicle === modelData.vehicle
-                    width: 4
-                    height: parent.height - 20
-                    radius: 2
-                    color: getVehicleAccent(modelData.vehicle)
-                    anchors.left: parent.left
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                Row {
-                    anchors.fill: parent
-                    anchors.leftMargin: 16
-                    anchors.rightMargin: 16
-                    anchors.topMargin: 0
-                    spacing: 14
-
-                    // Vehicle icon in a tinted circle
-                    Rectangle {
-                        width: 48; height: 48
-                        radius: 24
-                        color: getVehicleColor(modelData.vehicle)
-                        anchors.verticalCenter: parent.verticalCenter
-
-                        Image {
-                            source: getVehicleIcon(modelData.vehicle)
-                            width: 28; height: 28
-                            fillMode: Image.PreserveAspectFit
-                            anchors.centerIn: parent
-                        }
-                    }
-
-                    // Name + ETA + extras
-                    Column {
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 3
-                        width: parent.width - 48 - 14 - 70 - 14
-
-                        Text {
-                            text: modelData.vehicle
-                            font.pixelSize: 16
-                            font.bold: true
-                            color: "#111"
-                        }
-
-                        Text {
-                            text: modelData.desc
-                                  + "  ·  "
-                                  + modelData.eta + " min"
-                            font.pixelSize: 12
-                            color: "#888"
-                        }
-
-                        // Carpool extras row
-                        Row {
-                            visible: modelData.vehicle === "Carpool"
-                            spacing: 8
-
-                            Rectangle {
-                                height: 20
-                                width: seatsLabel.width + 12
-                                radius: 10
-                                color: "#E8F5E9"
-
-                                Label {
-                                    id: seatsLabel
-                                    anchors.centerIn: parent
-                                    text: modelData.availableSeats
-                                          + " seats"
-                                    font.pixelSize: 10
-                                    color: "#2E7D32"
-                                }
-                            }
-
-                            Rectangle {
-                                height: 20
-                                width: matchLabel.width + 12
-                                radius: 10
-                                color: "#E3F2FD"
-
-                                Label {
-                                    id: matchLabel
-                                    anchors.centerIn: parent
-                                    text: modelData.routeMatch
-                                          + "% match"
-                                    font.pixelSize: 10
-                                    color: "#1565C0"
-                                }
-                            }
-
-                            Rectangle {
-                                height: 20
-                                width: co2Label.width + 12
-                                radius: 10
-                                color: "#F1F8E9"
-
-                                Label {
-                                    id: co2Label
-                                    anchors.centerIn: parent
-                                    text: "🌱 "
-                                          + modelData.co2Saved
-                                          + " kg"
-                                    font.pixelSize: 10
-                                    color: "#558B2F"
-                                }
-                            }
-                        }
-                    }
-
-                    // Fare — right aligned
-                    Column {
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 2
-                        width: 70
-
-                        Text {
-                            anchors.right: parent.right
-                            text: "₹" + modelData.fare
-                            font.pixelSize: 20
-                            font.bold: true
-                            color: getVehicleAccent(modelData.vehicle)
-                        }
-
-                        // Carpool shows savings vs Cab
-                        Text {
-                            anchors.right: parent.right
-                            visible: modelData.vehicle === "Carpool"
-                                     && rideData !== null
-                            text: rideData
-                                  ? "save ₹"
-                                    + (rideData.cab.fare - modelData.fare)
-                                  : ""
-                            font.pixelSize: 10
-                            color: "#2E7D32"
-                        }
-                    }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    hoverEnabled: true
-
-                    onEntered: { parent.scale = 1.02 }
-                    onExited  : { parent.scale = 1.0  }
-
-                    onClicked: {
-                        selectedVehicle = modelData.vehicle
-                        selectedFare    = modelData.fare
-                        selectedEta     = modelData.eta
-
-                        if (modelData.vehicle === "Carpool") {
-                            appState.availableSeats = modelData.availableSeats
-                            appState.routeMatch     = modelData.routeMatch
-                            appState.co2Saved       = modelData.co2Saved
-                        } else {
-                            appState.availableSeats = 0
-                            appState.routeMatch     = 0
-                            appState.co2Saved       = 0
-                        }
-
-                        console.log(selectedVehicle + " selected")
-                    }
-                }
-            }
-        }
-
-        // ── Choose button bar ─────────────────────────────────────
-        Rectangle {
-            width: parent.width
-            height: 80
-            color: "white"
-
-            // Top separator
-            Rectangle {
-                anchors.top: parent.top
+            Column {
                 width: parent.width
-                height: 1
-                color: "#EEEEEE"
-            }
+                spacing: 0
 
-            Row {
-                anchors.centerIn: parent
-                spacing: 12
-
-                // Fare summary chip
+                // ── Header ────────────────────────────────────────
                 Rectangle {
-                    height: 48
-                    width: fareChip.width + 24
-                    radius: 12
-                    color: "#F5F5F5"
-                    border.color: "#E0E0E0"
-                    visible: selectedVehicle !== ""
-
+                    width: parent.width
+                    height: 65
+                    color: "#1976D2"
                     Label {
-                        id: fareChip
-                        anchors.centerIn: parent
-                        text: "₹" + selectedFare
-                              + "  ·  " + selectedEta + " min"
-                        font.pixelSize: 14
-                        font.bold: true
-                        color: "#333"
-                    }
-                }
-
-                // Choose button
-                Button {
-                    width: 160
-                    height: 48
-                    enabled: selectedVehicle !== ""
-
-                    background: Rectangle {
-                        color: selectedVehicle !== ""
-                               ? "#1976D2"
-                               : "#BDBDBD"
-                        radius: 12
-                    }
-
-                    contentItem: Text {
-                        text: selectedVehicle !== ""
-                              ? "Book " + selectedVehicle
-                              : "Select a ride"
-                        font.pixelSize: 15
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left: parent.left
+                        anchors.leftMargin: 20
+                        text: "YatraSarthi"
+                        font.pixelSize: 22
                         font.bold: true
                         color: "white"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                    }
+                }
+
+                Column {
+                    width: parent.width
+                    spacing: 14
+
+                    Item { width: 1; height: 10 }
+
+                    // ── Search Card ───────────────────────────────
+                    Rectangle {
+                        id: searchCard
+                        x: 16
+                        width: parent.width - 32
+                        height: 112
+                        radius: 14
+                        color: "white"
+                        border.color: "#E0E0E0"
+
+                        Column {
+                            anchors.fill: parent
+                            spacing: 0
+
+                            Row {
+                                id: pickupRowInCard
+                                width: parent.width
+                                height: 55
+                                leftPadding: 14
+                                rightPadding: 8
+                                spacing: 10
+
+                                Rectangle {
+                                    width: 10; height: 10
+                                    radius: 5; color: "#1976D2"
+                                    anchors.verticalCenter:
+                                        parent.verticalCenter
+                                }
+
+                                TextField {
+                                    id: pickupSearch
+                                    width: parent.width - 10 - 10
+                                           - 36 - 8
+                                           - parent.leftPadding
+                                           - parent.rightPadding
+                                    height: parent.height
+                                    text: appState.pickupLocation
+                                    placeholderText: "Pickup location"
+                                    background: Item {}
+                                    font.pixelSize: 14
+                                    verticalAlignment:
+                                        Text.AlignVCenter
+                                    onTextChanged: {
+                                        if (suppressPickupFetch) {
+                                            suppressPickupFetch = false
+                                            return
+                                        }
+                                        if (!activeFocus) return
+                                        if (text.length > 2)
+                                            pickupTimer.restart()
+                                        else
+                                            pickupModel = []
+                                    }
+                                }
+
+                                ToolButton {
+                                    width: 36; height: 36
+                                    anchors.verticalCenter:
+                                        parent.verticalCenter
+                                    onClicked: {
+                                        appState.activeSelection =
+                                            "pickup"
+                                        appStack.push(
+                                            Qt.resolvedUrl(
+                                                "MapPage.qml"),
+                                            { "appStack": appStack,
+                                              "appState": appState })
+                                    }
+                                    contentItem: Image {
+                                        source: Qt.resolvedUrl("../../assets/icons/map.png")
+                                        width: 18; height: 18
+                                        fillMode: Image.PreserveAspectFit
+                                        anchors.centerIn: parent
+                                    }
+                                }
+                            }
+
+                            Rectangle {
+                                x: 14; width: parent.width - 28
+                                height: 1; color: "#F0F0F0"
+                            }
+
+                            Row {
+                                id: destinationRowInCard
+                                width: parent.width
+                                height: 55
+                                leftPadding: 14
+                                rightPadding: 8
+                                spacing: 10
+
+                                Rectangle {
+                                    width: 10; height: 10
+                                    radius: 2; color: "#E53935"
+                                    anchors.verticalCenter:
+                                        parent.verticalCenter
+                                }
+
+                                TextField {
+                                    id: destinationSearch
+                                    width: parent.width - 10 - 10
+                                           - 36 - 8
+                                           - parent.leftPadding
+                                           - parent.rightPadding
+                                    height: parent.height
+                                    text: appState.destinationLocation
+                                    placeholderText: "Where to?"
+                                    background: Item {}
+                                    font.pixelSize: 14
+                                    verticalAlignment:
+                                        Text.AlignVCenter
+                                    onTextChanged: {
+                                        if (suppressDestinationFetch) {
+                                            suppressDestinationFetch =
+                                                false
+                                            return
+                                        }
+                                        if (!activeFocus) return
+                                        if (text.length > 2)
+                                            destinationTimer.restart()
+                                        else
+                                            destinationModel = []
+                                    }
+                                }
+
+                                ToolButton {
+                                    width: 36; height: 36
+                                    anchors.verticalCenter:
+                                        parent.verticalCenter
+                                    onClicked: {
+                                        appState.activeSelection =
+                                            "destination"
+                                        appStack.push(
+                                            Qt.resolvedUrl(
+                                                "MapPage.qml"),
+                                            { "appStack": appStack,
+                                              "appState": appState })
+                                    }
+                                    contentItem: Image {
+                                        source: Qt.resolvedUrl("../../assets/icons/map.png")
+                                        width: 18; height: 18
+                                        fillMode: Image.PreserveAspectFit
+                                        anchors.centerIn: parent
+                                    }
+                                }
+                            }
+                        }
                     }
 
-                    onClicked: {
-                        // Save state
-                        appState.selectedVehicle = selectedVehicle
-                        appState.selectedFare    = selectedFare
-                        appState.selectedEta     = selectedEta
-
-                        // ── Save to ride history ──────────────────
-                        var xhr = new XMLHttpRequest()
-                        xhr.open(
-                            "POST",
-                            "http://127.0.0.1:8000/ride-history"
-                            + "?pickup="
-                            + encodeURIComponent(
-                                appState.pickupLocation)
-                            + "&destination="
-                            + encodeURIComponent(
-                                appState.destinationLocation)
-                            + "&vehicle="
-                            + encodeURIComponent(selectedVehicle)
-                            + "&fare=" + selectedFare
-                            + "&distance="
-                            + (rideData ? rideData.distance : 0)
-                            + "&co2_saved="
-                            + appState.co2Saved,
-                            true
-                        )
-                        xhr.send()
-
-                        // ── Navigate to BookingPage ───────────────
-                        appStack.push(
-                            Qt.resolvedUrl("BookingPage.qml"),
-                            {
-                                "appStack": appStack,
-                                "appState": appState
+                    // ── Use My Location ───────────────────────────
+                    Button {
+                        x: 16
+                        width: parent.width - 32
+                        height: 40
+                        onClicked: {
+                            appState.pickupLocation =
+                                "Bengaluru, Karnataka"
+                            pickupSearch.text =
+                                "Bengaluru, Karnataka"
+                        }
+                        background: Rectangle {
+                            color: "#E3F2FD"; radius: 10
+                            border.color: "#90CAF9"
+                        }
+                        contentItem: Row {
+                            anchors.centerIn: parent
+                            spacing: 8
+                            Image {
+                                source: Qt.resolvedUrl("../../assets/icons/pickup.png")
+                                width: 16; height: 16
+                                fillMode: Image.PreserveAspectFit
+                                anchors.verticalCenter: parent.verticalCenter
                             }
-                        )
+                            Text {
+                                text: "Use My Current Location"
+                                font.pixelSize: 13; color: "#1976D2"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                    }
+
+                    // ── Find Ride ─────────────────────────────────
+                    Button {
+                        x: 16
+                        width: parent.width - 32
+                        height: 52
+                        onClicked: {
+                            if (appState.pickupLocation === ""
+                                    || appState.destinationLocation
+                                    === "") {
+                                console.log("Select both locations")
+                                return
+                            }
+                            appStack.push(
+                                Qt.resolvedUrl("ResultsPage.qml"),
+                                { "appStack": appStack,
+                                  "appState": appState })
+                        }
+                        background: Rectangle {
+                            color: "#1976D2"; radius: 12
+                        }
+                        contentItem: Row {
+                            anchors.centerIn: parent
+                            spacing: 10
+                            Image {
+                                source: Qt.resolvedUrl("../../assets/icons/rider.png")
+                                width: 24; height: 24
+                                fillMode: Image.PreserveAspectFit
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "Find Ride"
+                                font.pixelSize: 16; font.bold: true
+                                color: "white"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                    }
+
+                    // ── Quick Actions ─────────────────────────────
+                    Label {
+                        x: 16
+                        text: "Quick Actions"
+                        font.bold: true; font.pixelSize: 15
+                        color: "#111"
+                    }
+
+                    Row {
+                        x: 16
+                        width: parent.width - 32
+                        spacing: 10
+
+                        // SOS — goes to Services tab, SOS card
+                        Rectangle {
+                            width: (parent.width - 20) / 3
+                            height: 72
+                            radius: 12
+                            color: "#FFEBEE"
+                            border.color: "#FFCDD2"
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 4
+                                Image {
+                                    anchors.horizontalCenter:
+                                        parent.horizontalCenter
+                                    source: Qt.resolvedUrl("../../assets/icons/sos.png")
+                                    width: 26; height: 26
+                                    fillMode: Image.PreserveAspectFit
+                                }
+                                Text {
+                                    anchors.horizontalCenter:
+                                        parent.horizontalCenter
+                                    text: "SOS"
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                    color: "#E53935"
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    console.log("SOS clicked")
+                                    appState.quickAction = "sos"
+                                    requestTabChange(1)
+                                }
+                            }
+                        }
+
+                        // History — goes to Activity tab
+                        Rectangle {
+                            width: (parent.width - 20) / 3
+                            height: 72
+                            radius: 12
+                            color: "#E8F5E9"
+                            border.color: "#C8E6C9"
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 4
+                                Image {
+                                    anchors.horizontalCenter:
+                                        parent.horizontalCenter
+                                    source: Qt.resolvedUrl("../../assets/icons/rider.png")
+                                    width: 26; height: 26
+                                    fillMode: Image.PreserveAspectFit
+                                }
+                                Text {
+                                    anchors.horizontalCenter:
+                                        parent.horizontalCenter
+                                    text: "History"
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                    color: "#388E3C"
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    console.log("History clicked")
+                                    appState.quickAction = ""
+                                    requestTabChange(2)
+                                }
+                            }
+                        }
+
+                        // Queue — goes to Services tab
+                        Rectangle {
+                            width: (parent.width - 20) / 3
+                            height: 72
+                            radius: 12
+                            color: "#FFF8E1"
+                            border.color: "#FFE082"
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 4
+                                Image {
+                                    anchors.horizontalCenter:
+                                        parent.horizontalCenter
+                                    source: Qt.resolvedUrl("../../assets/icons/star.png")
+                                    width: 26; height: 26
+                                    fillMode: Image.PreserveAspectFit
+                                }
+                                Text {
+                                    anchors.horizontalCenter:
+                                        parent.horizontalCenter
+                                    text: "Queue"
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                    color: "#F9A825"
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: {
+                                    console.log("Queue clicked")
+                                    appState.quickAction = "queue"
+                                    requestTabChange(1)
+                                }
+                            }
+                        }
+                    }
+
+                    // ── Favourite Places (dynamic) ─────────────────
+                    Label {
+                        x: 16
+                        text: "Favourite Places"
+                        font.bold: true; font.pixelSize: 15
+                        color: "#111"
+                        visible: favourites.length > 0
+                    }
+
+                    Rectangle {
+                        x: 16
+                        width: parent.width - 32
+                        height: favourites.length > 0
+                                ? (favourites.length * 56) + 56
+                                : 56
+                        radius: 14
+                        color: "white"
+                        border.color: "#E0E0E0"
+                        clip: true
+
+                        Column {
+                            width: parent.width
+                            spacing: 0
+
+                            Repeater {
+                                model: favourites
+
+                                delegate: Rectangle {
+                                    width: parent.width
+                                    height: 56
+                                    color: favMouse.containsMouse
+                                           ? "#F5F5F5"
+                                           : "transparent"
+
+                                    Row {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 14
+                                        anchors.rightMargin: 14
+                                        spacing: 12
+
+                                        Rectangle {
+                                            width: 34; height: 34
+                                            radius: 17
+                                            color: modelData.color
+                                                   || "#E3F2FD"
+                                            anchors.verticalCenter:
+                                                parent.verticalCenter
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: modelData.emoji
+                                                      || "★"
+                                                font.pixelSize: 16
+                                            }
+                                        }
+
+                                        Column {
+                                            anchors.verticalCenter:
+                                                parent.verticalCenter
+                                            spacing: 2
+                                            width: parent.width
+                                                   - 34 - 12
+                                                   - 14 - 14
+
+                                            Label {
+                                                text: modelData.label
+                                                      || ""
+                                                font.pixelSize: 14
+                                                font.bold: true
+                                                color: "#111"
+                                            }
+
+                                            Label {
+                                                text: modelData.name
+                                                      !== ""
+                                                      ? modelData.name
+                                                      : "Tap to set"
+                                                font.pixelSize: 11
+                                                color: modelData.name
+                                                       !== ""
+                                                       ? "#888"
+                                                       : "#1976D2"
+                                                width: parent.width
+                                                elide: Text.ElideRight
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        visible: index < favourites.length - 1
+                                        anchors.bottom: parent.bottom
+                                        anchors.left: parent.left
+                                        anchors.right: parent.right
+                                        anchors.leftMargin: 60
+                                        height: 1; color: "#F0F0F0"
+                                    }
+
+                                    MouseArea {
+                                        id: favMouse
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onClicked: {
+                                            if (modelData.name !== ""
+                                                    && modelData.lat
+                                                    !== 0) {
+                                                appState.destinationLocation
+                                                    = modelData.name
+                                                appState.destinationLat
+                                                    = modelData.lat
+                                                appState.destinationLon
+                                                    = modelData.lon
+                                                suppressDestinationFetch
+                                                    = true
+                                                destinationSearch.text
+                                                    = modelData.name
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Add New Place row
+                            Rectangle {
+                                width: parent.width
+                                height: 56
+                                color: addMouse.containsMouse
+                                       ? "#F5F5F5" : "transparent"
+
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 14
+                                    anchors.rightMargin: 14
+                                    spacing: 12
+
+                                    Rectangle {
+                                        width: 34; height: 34
+                                        radius: 17; color: "#F0F0F0"
+                                        anchors.verticalCenter:
+                                            parent.verticalCenter
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: "+"
+                                            font.pixelSize: 22
+                                            color: "#888"
+                                        }
+                                    }
+
+                                    Label {
+                                        text: "Add New Place"
+                                        font.pixelSize: 14
+                                        color: "#1976D2"
+                                        anchors.verticalCenter:
+                                            parent.verticalCenter
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: addMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    onClicked: {
+                                        console.log(
+                                            "Add favourite tapped")
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Item { width: 1; height: 20 }
+                }
+            }
+        }
+
+        // ── PICKUP DROPDOWN (floats above everything) ─────────────
+        Rectangle {
+            x: searchCard.x
+            y: pickupAnchor.mapToItem(pageRoot, 0, 0).y
+            width: searchCard.width
+            height: pickupModel.length > 0
+                    ? Math.min(pickupModel.length * 52, 210) : 0
+            visible: pickupModel.length > 0
+            z: 99999
+            color: "white"
+            border.color: "#DDDDDD"
+            radius: 10
+
+            ListView {
+                anchors.fill: parent
+                anchors.margins: 4
+                clip: true
+                model: pickupModel
+
+                delegate: Rectangle {
+                    width: parent.width
+                    height: 52
+                    color: pMouse.containsMouse
+                           ? "#F0F4FF" : "transparent"
+                    radius: 8
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 10
+
+                        Rectangle {
+                            width: 30; height: 30; radius: 15
+                            color: "#E3F2FD"
+                            anchors.verticalCenter: parent.verticalCenter
+                            Image {
+                                source: Qt.resolvedUrl("../../assets/icons/pickup.png")
+                                width: 14; height: 14
+                                fillMode: Image.PreserveAspectFit
+                                anchors.centerIn: parent
+                            }
+                        }
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 30 - 10 - 24
+                            spacing: 1
+                            Text {
+                                text: modelData.name.split(",")[0].trim()
+                                font.pixelSize: 13; font.bold: true
+                                color: "#111"; width: parent.width
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                text: modelData.name.split(",")
+                                      .slice(1, 3).join(",").trim()
+                                font.pixelSize: 11; color: "#888"
+                                width: parent.width
+                                elide: Text.ElideRight
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        visible: index < pickupModel.length - 1
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: 52
+                        height: 1; color: "#F0F0F0"
+                    }
+
+                    MouseArea {
+                        id: pMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            pickupTimer.stop()
+                            appState.pickupLocation = modelData.name
+                            appState.pickupLat = modelData.lat
+                            appState.pickupLon = modelData.lon
+                            pickupModel = []
+                            pickupSearch.focus = false
+                            pickupSearch.text = modelData.name
+                            console.log("Pickup:",
+                                appState.pickupLat,
+                                appState.pickupLon)
+                        }
                     }
                 }
             }
         }
-    }
 
-    // ── Floating SOS button ───────────────────────────────────────
-    Rectangle {
-        width: 60; height: 60
-        radius: 30
-        color: "#E53935"
-        z: 100
-
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: 16
-        anchors.bottomMargin: 96   // sits above the Choose bar
-
-        // Shadow
+        // ── DESTINATION DROPDOWN ──────────────────────────────────
         Rectangle {
-            anchors.fill: parent
-            anchors.margins: -2
-            radius: parent.radius + 2
-            color: "transparent"
-            border.color: "#44E53935"
-            z: -1
+            x: searchCard.x
+            y: destAnchor.mapToItem(pageRoot, 0, 0).y
+            width: searchCard.width
+            height: destinationModel.length > 0
+                    ? Math.min(destinationModel.length * 52, 210) : 0
+            visible: destinationModel.length > 0
+            z: 99999
+            color: "white"
+            border.color: "#DDDDDD"
+            radius: 10
+
+            ListView {
+                anchors.fill: parent
+                anchors.margins: 4
+                clip: true
+                model: destinationModel
+
+                delegate: Rectangle {
+                    width: parent.width
+                    height: 52
+                    color: dMouse.containsMouse
+                           ? "#F0F4FF" : "transparent"
+                    radius: 8
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 10
+
+                        Rectangle {
+                            width: 30; height: 30; radius: 15
+                            color: "#FFEBEE"
+                            anchors.verticalCenter: parent.verticalCenter
+                            Image {
+                                source: Qt.resolvedUrl("../../assets/icons/destination.png")
+                                width: 14; height: 14
+                                fillMode: Image.PreserveAspectFit
+                                anchors.centerIn: parent
+                            }
+                        }
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 30 - 10 - 24
+                            spacing: 1
+                            Text {
+                                text: modelData.name.split(",")[0].trim()
+                                font.pixelSize: 13; font.bold: true
+                                color: "#111"; width: parent.width
+                                elide: Text.ElideRight
+                            }
+                            Text {
+                                text: modelData.name.split(",")
+                                      .slice(1, 3).join(",").trim()
+                                font.pixelSize: 11; color: "#888"
+                                width: parent.width
+                                elide: Text.ElideRight
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        visible: index < destinationModel.length - 1
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: 52
+                        height: 1; color: "#F0F0F0"
+                    }
+
+                    MouseArea {
+                        id: dMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            destinationTimer.stop()
+                            appState.destinationLocation = modelData.name
+                            appState.destinationLat = modelData.lat
+                            appState.destinationLon = modelData.lon
+                            destinationModel = []
+                            destinationSearch.focus = false
+                            destinationSearch.text = modelData.name
+                            var xhr = new XMLHttpRequest()
+                            xhr.open("POST",
+                                "http://127.0.0.1:8000/recent-places"
+                                + "?name="
+                                + encodeURIComponent(modelData.name)
+                                + "&lat=" + modelData.lat
+                                + "&lon=" + modelData.lon, true)
+                            xhr.send()
+                            console.log("Destination:",
+                                appState.destinationLat,
+                                appState.destinationLon)
+                        }
+                    }
+                }
+            }
         }
 
-        Column {
-            anchors.centerIn: parent
-            spacing: 2
-
-            Image {
-                anchors.horizontalCenter: parent.horizontalCenter
-                source: "../../assets/icons/sos.png"
-                width: 22; height: 22
-                fillMode: Image.PreserveAspectFit
-            }
-
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "SOS"
-                color: "white"
-                font.bold: true
-                font.pixelSize: 10
-            }
+        // Anchor helpers for dropdown positioning
+        Item {
+            id: pickupAnchor
+            parent: pickupRowInCard
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            width: 0; height: 0
         }
 
-        MouseArea {
-            anchors.fill: parent
-            onClicked: {
-                appStack.push(
-                    Qt.resolvedUrl("SOSPage.qml"),
-                    { "appStack": appStack }
-                )
-            }
+        Item {
+            id: destAnchor
+            parent: destinationRowInCard
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            width: 0; height: 0
         }
     }
 }
