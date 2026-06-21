@@ -62,38 +62,31 @@ function makeCircleIcon(color, label) {
     });
 }
 
-var pickupIcon = L.icon({
+var pickupIcon =
+    makeCircleIcon(
+        "#4CAF50",
+        "P"
+    );
 
-    iconUrl:
-        "../../assets/icons/pickup.png",
+var destinationIcon =
+    makeCircleIcon(
+        "#F44336",
+        "D"
+    );
 
-    iconSize: [40, 40],
-    iconAnchor: [20, 20]
-});
-var destinationIcon = L.icon({
-
-    iconUrl:
-        "../../assets/icons/destination.png",
-
-    iconSize: [40, 40],
-    iconAnchor: [20, 20]
-});
-
-var vehicleIcon = L.icon({
-    iconUrl:
-        "../../assets/icons/driver.png",
-
-    iconSize: [40, 40],
-    iconAnchor: [20, 20]
-});
+var vehicleIcon =
+    makeCircleIcon(
+        "#1976D2",
+        "C"
+    );
 /* ── initializeRide — called from QML after route is drawn ─────── */
    
 function initializeRide(
-
     pickupLat, pickupLon,
     destinationLat, destinationLon,
     vehicleLat, vehicleLon
-) 
+) {
+
     console.log(
         "Pickup:",
         pickupLat,
@@ -110,31 +103,47 @@ function initializeRide(
         "Vehicle:",
         vehicleLat,
         vehicleLon
-    ); {
-    // Remove old markers if any
-    if (pickupMarker)      { map.removeLayer(pickupMarker);      pickupMarker      = null; }
-    if (destinationMarker) { map.removeLayer(destinationMarker); destinationMarker = null; }
-    if (vehicleMarker)     { map.removeLayer(vehicleMarker);     vehicleMarker     = null; }
+    );
 
-    pickupMarker = L.marker([pickupLat, pickupLon], { icon: pickupIcon })
-        .addTo(map)
-        .bindPopup('<b>Pickup</b>');
+    if (pickupMarker) {
+        map.removeLayer(pickupMarker);
+        pickupMarker = null;
+    }
 
-    destinationMarker = L.marker([destinationLat, destinationLon], { icon: destinationIcon })
-        .addTo(map)
-        .bindPopup('<b>Drop</b>');
+    if (destinationMarker) {
+        map.removeLayer(destinationMarker);
+        destinationMarker = null;
+    }
 
-    vehicleMarker = L.marker([vehicleLat, vehicleLon], { icon: vehicleIcon })
-        .addTo(map)
-        .bindPopup('<b>Your ride</b>');
+    if (vehicleMarker) {
+        map.removeLayer(vehicleMarker);
+        vehicleMarker = null;
+    }
 
-    // Fit all three into view
-    var bounds = L.latLngBounds([
-        [pickupLat,      pickupLon],
+    pickupMarker = L.marker(
+        [pickupLat, pickupLon],
+        { icon: pickupIcon }
+    ).addTo(map);
+
+    destinationMarker = L.marker(
         [destinationLat, destinationLon],
-        [vehicleLat,     vehicleLon]
+        { icon: destinationIcon }
+    ).addTo(map);
+
+    vehicleMarker = L.marker(
+        [vehicleLat, vehicleLon],
+        { icon: vehicleIcon }
+    ).addTo(map);
+
+    var bounds = L.latLngBounds([
+        [pickupLat, pickupLon],
+        [destinationLat, destinationLon],
+        [vehicleLat, vehicleLon]
     ]);
-    map.fitBounds(bounds, { padding: [40, 40] });
+
+    map.fitBounds(bounds, {
+        padding: [40, 40]
+    });
 }
 
 

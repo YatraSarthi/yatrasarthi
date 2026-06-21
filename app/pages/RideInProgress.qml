@@ -7,393 +7,447 @@ Page {
     property var appStack
     property var appState
 
-    property int  eta:          appState.selectedEta
-    property real remainingKm:  4.3
-    property real currentSpeed: 32
-
-    property string driverName:    "Agnik Haldar"
-    property string vehicleNumber: "WB03AD7394"
-    property real   driverRating:  4.8
-
-    property string destinationName:    appState.destinationName
-    property string destinationAddress: appState.destinationAddress
-
-    // Route state
-    property var routePoints: []
-    property int routeIndex:  0
-    property real currentLat: 0
-    property real currentLon: 0
-
-    property bool mapReady:   false   // true once HTML has loaded
-    property bool routeReady: false   // true once /route response arrived
-
-
-    /* ─────────────────────────────────────────────────────────────
-       Helper: push markers + route onto the map.
-       Safe to call multiple times; guards ensure both sides ready.
-    ───────────────────────────────────────────────────────────── */
-    function pushToMap() {
-
-        if (!mapReady || !routeReady) return
-
-        // 1. Draw the blue route polyline
-        var pts = JSON.stringify(routePoints)
-        mapView.runJavaScript("drawRoute(" + pts + ")")
-
-        // 2. Place the three markers on top
-        mapView.runJavaScript(
-            "initializeRide("
-            + appState.pickupLat      + ","
-            + appState.pickupLon      + ","
-            + appState.destinationLat + ","
-            + appState.destinationLon + ","
-            + currentLat              + ","
-            + currentLon              + ")"
-        )
-    }
-
-
-    /* ─────────────────────────────────────────────────────────────
-       Load route from FastAPI GET /route
-    ───────────────────────────────────────────────────────────── */
-    function loadRideRoute() {
-
-        var xhr = new XMLHttpRequest()
-
-        var url =
-            "http://localhost:8000/route"
-            + "?pickup_lat="      + appState.pickupLat
-            + "&pickup_lon="      + appState.pickupLon
-            + "&destination_lat=" + appState.destinationLat
-            + "&destination_lon=" + appState.destinationLon
-
-        xhr.open("GET", url)
-
-        xhr.onreadystatechange = function() {
-
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-
-            if (xhr.status === 200) {
-
-                var resp    = JSON.parse(xhr.responseText)
-                routePoints = resp.points   // [[lat,lon], ...]
-                routeIndex  = 0
-
-                if (routePoints.length > 0) {
-                    currentLat = routePoints[0][0]
-                    currentLon = routePoints[0][1]
-                } else {
-                    // Fallback: start at pickup
-                    currentLat = appState.pickupLat
-                    currentLon = appState.pickupLon
-                }
-
-            } else {
-                // API unavailable — still show markers at pickup/destination
-                console.warn("Route API failed, status:", xhr.status)
-                routePoints = [
-                    [appState.pickupLat,      appState.pickupLon],
-                    [appState.destinationLat, appState.destinationLon]
-                ]
-                routeIndex = 0
-                currentLat = appState.pickupLat
-                currentLon = appState.pickupLon
-            }
-
-            routeReady = true
-            pushToMap()
-        }
-
-        xhr.send()
-    }
-
-
-    /* ─────────────────────────────────────────────────────────────
-       Auto countdown + vehicle movement every 5 s
-    ───────────────────────────────────────────────────────────── */
-    Timer {
-
-        interval: 5000
-        running:  true
-        repeat:   true
-
-        onTriggered: {
-
-            if (eta > 0)           eta--
-            if (remainingKm > 0)   remainingKm  -= 0.5
-            if (currentSpeed < 45) currentSpeed += 1
-
-            // Advance vehicle along route points
-            if (routePoints.length > 0 && routeIndex < routePoints.length) {
-
-                var pt     = routePoints[routeIndex]
-                currentLat = pt[0]
-                currentLon = pt[1]
-                routeIndex++
-
-                mapView.runJavaScript(
-                    "moveVehicle(" + currentLat + "," + currentLon + ")"
-                )
-            }
-
-            if (eta <= 0) {
-                stop()
-                appStack.push(
-                    Qt.resolvedUrl("RideCompletedPage.qml"),
-                    { "appStack": appStack, "appState": appState }
-                )
-            }
-        }
-    }
-
-
-    /* ═══════════════════════════════════════════════════════════
-       UI
-    ═══════════════════════════════════════════════════════════ */
-
     ScrollView {
 
-        id: rideScroll
+    anchors.fill: parent
+
+    Column {
+
+        width: parent.width
+
+        spacing: 12
+
+    property int eta: appState.selectedEta
+    property real remainingKm: 4.3
+    property real currentSpeed: 32
+
+    property string driverName: "Agnik Haldar"
+    property string vehicleNumber: "WB03AD7394"
+    property real driverRating: 4.8
+
+    property string destinationName: appState.destinationLocation
+    property string destinationAddress: appState.destinationFullAddress
+    
+ Label {
+    text: appState.selectedVehicle
+}
+
+ /*******************
+ Auto Countdown
+ *******************/
+
+
+Timer {
+
+    interval: 5000
+
+    running: true
+
+    repeat: true
+
+    onTriggered: {
+
+        if (eta > 0)
+            eta--
+
+        if (remainingKm > 0)
+            remainingKm -= 0.5
+
+        if (currentSpeed < 45)
+            currentSpeed += 1
+
+        if (eta <= 0) {
+
+            stop()
+
+            appStack.push(
+                Qt.resolvedUrl(
+                    "RideCompletedPage.qml"
+                ),
+                {
+                    "appStack": appStack,
+                    "appState": appState
+                }
+            )
+        }
+    }
+}
+/********************
+#Header
+*********************/
+
+Rectangle {
+
+    width: parent.width
+    height: 60
+
+    color: "white"
+
+    Row {
+
         anchors.fill: parent
+        anchors.margins: 10
+
+        spacing: 10
+
+        Button {
+
+            text: "←"
+
+            onClicked: {
+                appStack.pop()
+            }
+        }
+
+        Label {
+
+            text: "Ride In Progress"
+
+            font.pixelSize: 24
+            font.bold: true
+
+            anchors.verticalCenter:
+                parent.verticalCenter
+        }
+    }
+}
+/*******************
+ Map Section
+ *******************/
+Rectangle {
+
+    width: parent.width
+    height: 280
+
+    WebEngineView {
+
+        anchors.fill: parent
+
+        url: Qt.resolvedUrl(
+            "../web/RideInProgressMap.html"
+        )
+    }
+}
+/*******************
+ Drop Banner
+ *******************/
+
+Rectangle {
+
+    width: parent.width - 20
+    height: 100
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    radius: 15
+
+    color: "#1976D2"
+
+    Row {
+
+        anchors.centerIn: parent
+
+        spacing: 60
 
         Column {
 
-            width:   rideScroll.width
-            spacing: 12
+            Label {
 
+                text:
+                    "Drop in "
+                    + eta
+                    + " min"
 
-            /* ── HEADER ────────────────────────────────────── */
+                color: "white"
 
-            Rectangle {
-
-                width:  parent.width
-                height: 60
-                color:  "white"
-
-                Row {
-
-                    anchors.fill:    parent
-                    anchors.margins: 10
-                    spacing:         10
-
-                    Button {
-                        text: "←"
-                        onClicked: appStack.pop()
-                    }
-
-                    Label {
-                        text:              "Ride In Progress"
-                        font.pixelSize:    24
-                        font.bold:         true
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
+                font.pixelSize: 24
+                font.bold: true
             }
 
+            Label {
 
-            /* ── MAP ───────────────────────────────────────── */
+                text:
+                    remainingKm.toFixed(1)
+                    + " km left"
 
-            Rectangle {
+                color: "white"
+            }
+        }
 
-                width:  rideScroll.width - 20
-                height: 280
+        Column {
 
-                anchors.horizontalCenter: parent.horizontalCenter
+            Label {
 
-                radius:       15
-                border.color: "#D3D3D3"
-                border.width: 1
-                clip:         true
+                text:
+                    currentSpeed
+                    + " km/h"
 
-                WebEngineView {
+                color: "white"
 
-                    id: mapView
-                    anchors.fill: parent
-
-                    url: Qt.resolvedUrl("../web/RideInProgressMap.html")
-
-                    onLoadingChanged: {
-                        if (loadRequest.status
-                                === WebEngineView.LoadSucceededStatus) {
-                            mapReady = true
-                            loadRideRoute()   // start XHR now map is ready
-                        }
-                    }
-                }
+                font.pixelSize: 24
+                font.bold: true
             }
 
+            Label {
 
-            /* ── ARRIVING CARD ─────────────────────────────── */
+                text: "Current Speed"
 
-            Rectangle {
+                color: "white"
+            }
+        }
+    }
+}
+/*******************
+ Destination Card
+ *******************/
 
-                width:  rideScroll.width - 20
-                height: 100
+Rectangle {
 
-                anchors.horizontalCenter: parent.horizontalCenter
+    width: parent.width - 20
+    height: 110
 
-                radius: 15
-                color:  "#1976D2"
+    anchors.horizontalCenter:
+        parent.horizontalCenter
 
-                Column {
+    radius: 15
 
-                    anchors.centerIn: parent
-                    spacing:          6
+    color: "white"
 
-                    Label {
-                        text:              "Arriving at Destination"
-                        color:             "white"
-                        font.pixelSize:    18
-                        font.bold:         true
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
+    border.color: "#D3D3D3"
 
-                    Row {
+    Column {
 
-                        spacing: 30
-                        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.fill: parent
 
-                        Label {
-                            text:           "ETA: " + eta + " min"
-                            color:          "white"
-                            font.pixelSize: 15
-                        }
+        anchors.margins: 15
 
-                        Label {
-                            text:           "Distance Left: " + remainingKm.toFixed(1) + " km"
-                            color:          "white"
-                            font.pixelSize: 15
-                        }
-                    }
-                }
+        spacing: 5
+
+        Label {
+
+            text: "Destination"
+
+            color: "#666666"
+        }
+
+        Label {
+
+            text: destinationName
+
+            font.pixelSize: 22
+
+            font.bold: true
+        }
+
+        Label {
+
+            text: destinationAddress
+
+            wrapMode: Text.WordWrap
+        }
+    }
+}
+/*******************
+ Fare Card
+ *******************/
+
+Rectangle {
+
+    width: parent.width - 20
+    height: 80
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    radius: 15
+
+    color: "white"
+
+    border.color: "#D3D3D3"
+
+    Row {
+
+        anchors.fill: parent
+        anchors.margins: 15
+
+        Label {
+
+            text: "Fare"
+
+            font.pixelSize: 18
+        }
+
+        Item {
+            width: 150
+        }
+
+        Label {
+
+            text:
+                "₹"
+                + appState.selectedFare
+
+            font.pixelSize: 28
+            font.bold: true
+        }
+    }
+}
+/*******************
+ Driver Card
+ *******************/
+
+Rectangle {
+
+    width: parent.width - 20
+    height: 180
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    radius: 15
+
+    color: "white"
+
+    border.color: "#D3D3D3"
+
+    Row {
+
+        anchors.fill: parent
+        anchors.margins: 15
+
+        spacing: 15
+
+        Image {
+
+            source:
+                "../../assets/images/agnik.jpeg"
+
+            width: 90
+            height: 90
+
+            fillMode:
+                Image.PreserveAspectCrop
+        }
+
+        Column {
+
+            spacing: 5
+
+            Label {
+
+                text: driverName
+
+                font.pixelSize: 22
+                font.bold: true
             }
 
+            Label {
 
-            /* ── DESTINATION CARD ──────────────────────────── */
-
-            Rectangle {
-
-                width:  rideScroll.width - 20
-                height: 110
-
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                radius:       15
-                color:        "white"
-                border.color: "#D3D3D3"
-
-                Column {
-
-                    anchors.fill:    parent
-                    anchors.margins: 15
-                    spacing:         5
-
-                    Label { text: "Destination"; color: "#666666" }
-
-                    Label {
-                        text:           destinationName
-                        font.pixelSize: 22
-                        font.bold:      true
-                    }
-
-                    Label {
-                        text:     destinationAddress
-                        wrapMode: Text.WordWrap
-                    }
-                }
+                text: vehicleNumber
             }
 
+            Label {
 
-            /* ── FARE CARD ─────────────────────────────────── */
-
-            Rectangle {
-
-                width:  rideScroll.width - 20
-                height: 80
-
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                radius:       15
-                color:        "white"
-                border.color: "#D3D3D3"
-
-                Row {
-
-                    anchors.fill:    parent
-                    anchors.margins: 15
-
-                    Label { text: "Fare"; font.pixelSize: 18 }
-
-                    Item { width: 150 }
-
-                    Label {
-                        text:           "₹" + appState.selectedFare
-                        font.pixelSize: 28
-                        font.bold:      true
-                    }
-                }
+                text:
+                    "★ "
+                    + driverRating
             }
 
+            Label {
 
-            /* ── DRIVER CARD ───────────────────────────────── */
-
-            Rectangle {
-
-                width:  rideScroll.width - 20
-                height: 140
-
-                anchors.horizontalCenter: parent.horizontalCenter
-
-                radius:       15
-                color:        "white"
-                border.color: "#D3D3D3"
-
-                Row {
-
-                    anchors.fill:    parent
-                    anchors.margins: 15
-                    spacing:         15
-
-                    Image {
-                        source:   "../../assets/image/agnik.jpeg"
-                        width:    80
-                        height:   80
-                        fillMode: Image.PreserveAspectCrop
-                    }
-
-                    Column {
-
-                        spacing: 5
-
-                        Label { text: driverName;   font.pixelSize: 22; font.bold: true }
-                        Label { text: vehicleNumber }
-                        Label { text: "★★★★★ " + driverRating }
-                        Label { text: appState.selectedVehicle }
-                    }
-                }
+                text:
+                    appState.selectedVehicle
             }
+        }
+    }
+}
+/*******************
+ Call + Message Buttons
+ *******************/
 
+Row {
 
-            /* ── CALL | MESSAGE | SOS ──────────────────────── */
+    spacing: 15
 
-            Row {
+    anchors.horizontalCenter:
+        parent.horizontalCenter
 
-                spacing: 12
-                anchors.horizontalCenter: parent.horizontalCenter
+    Button {
 
-                Button { text: "📞 Call" }
+        text: "📞 Call"
+    }
 
-                Button { text: "💬 Message" }
+    Button {
 
-                Button {
-                    text: "🚨 SOS"
-                    background: Rectangle { color: "#E53935"; radius: 8 }
-                }
-            }
+        text: "💬 Message"
+    }
+}
+/*******************
+ Trip Progress
+ *******************/
 
+Rectangle {
 
-            Item { height: 20 }
+    width: parent.width - 20
+    height: 100
 
-        } // Column
-    } // ScrollView
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    radius: 15
+
+    color: "white"
+
+    border.color: "#D3D3D3"
+
+    Row {
+
+        anchors.centerIn: parent
+
+        spacing: 40
+
+        Label {
+            text: "✓ Pickup"
+        }
+
+        Label {
+            text: "✓ On Trip"
+        }
+
+        Label {
+            text:
+                eta <= 3
+                ? "✓ Near Destination"
+                : "Near Destination"
+        }
+
+        Label {
+            text: "Completed"
+        }
+    }
+}
+
+/*******************
+ sos button
+ *******************/
+Button {
+
+    width: 200
+    height: 50
+
+    anchors.horizontalCenter:
+        parent.horizontalCenter
+
+    text: "🚨 SOS"
+
+    background: Rectangle {
+
+        color: "#E53935"
+
+        radius: 10
+    }
+    }
+}
+}
 }
