@@ -33,22 +33,37 @@ Page {
 
                 if (xhr.status === 200) {
 
-                    try {
+    try {
 
-                        var data = JSON.parse(xhr.responseText)
+        var data =
+            JSON.parse(
+                xhr.responseText
+            )
 
-                        if (data.address)
-                            shortAddress = data.address
+        console.log(
+            "Address Received:",
+            data.address
+        )
 
-                        if (data.full_address)
-                            fullAddress = data.full_address
+        console.log(
+            "Full Address:",
+            data.full_address
+        )
 
-                    } catch(e) {
+        if (data.address)
+            shortAddress = data.address
 
-                        console.log("JSON Error:", e)
-                    }
-                }
+        if (data.full_address)
+            fullAddress = data.full_address
 
+    } catch(e) {
+
+        console.log(
+            "JSON Error:",
+            e
+        )
+    }
+}
                 console.log("Short Address:", shortAddress)
                 console.log("Full Address:", fullAddress)
 
