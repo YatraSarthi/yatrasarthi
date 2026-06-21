@@ -2,6 +2,8 @@ from fastapi import FastAPI
 import requests
 import math
 import random
+import json
+import os
 from backend.sos import send_sos
 from backend.database import engine
 from backend.models import Base
@@ -11,6 +13,8 @@ print("===== THIS MAIN.PY IS RUNNING =====")
 app = FastAPI()
 
 search_cache = {}
+
+RECENT_FILE = "recent_places.json"
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -114,6 +118,10 @@ def reverse_geocode(lat: float, lon: float):
             f"{lat},{lon}"
     }
 
+
+# ----------------------------
+# Location Search
+# ----------------------------
 @app.get("/search-location")
 def search_location(query: str):
 
@@ -151,15 +159,14 @@ def search_location(query: str):
             for place in results:
 
                 places.append({
-
                     "name":
-                    place["display_name"],
-
+                        place["display_name"],
+                    "display_name":
+                        place["display_name"],
                     "lat":
-                    float(place["lat"]),
-
+                        float(place["lat"]),
                     "lon":
-                    float(place["lon"])
+                        float(place["lon"])
                 })
 
             search_cache[query] = places
@@ -179,6 +186,71 @@ def search_location(query: str):
         )
 
     return []
+
+
+# ----------------------------
+# Recent Places
+# ----------------------------
+@app.get("/recent-places")
+def get_recent_places():
+
+    if not os.path.exists(RECENT_FILE):
+        return []
+
+    try:
+
+        with open(RECENT_FILE, "r") as f:
+            return json.load(f)
+
+    except Exception as e:
+
+        print("Recent Places Read Error:", e)
+        return []
+
+
+@app.post("/recent-places")
+def save_recent_place(
+    name: str,
+    lat: float,
+    lon: float
+):
+
+    try:
+
+        places = []
+
+        if os.path.exists(RECENT_FILE):
+
+            with open(RECENT_FILE, "r") as f:
+                places = json.load(f)
+
+        # Remove duplicate entry if same name exists
+        places = [
+            p for p in places
+            if p["name"] != name
+        ]
+
+        # Insert new entry at the top
+        places.insert(0, {
+            "name": name,
+            "lat": lat,
+            "lon": lon
+        })
+
+        # Keep only the 5 most recent
+        places = places[:5]
+
+        with open(RECENT_FILE, "w") as f:
+            json.dump(places, f, indent=2)
+
+        return {"status": "ok"}
+
+    except Exception as e:
+
+        print("Recent Places Write Error:", e)
+        return {"status": "error", "detail": str(e)}
+
+
 # ----------------------------
 # Fare Estimation
 # ----------------------------
@@ -219,6 +291,7 @@ def estimate(
     cab_eta = max(4, round(distance * 2))
 
     return {
+
         "distance": distance,
 
         "bike": {
@@ -243,7 +316,8 @@ def estimate(
             "routeMatch": 91,
             "co2Saved": 2.1
         }
-}
+    }
+
 
 # ----------------------------
 # Route Preview
@@ -276,6 +350,7 @@ def route(
     return {
         "routes": []
     }
+
 
 # ----------------------------
 # Driver Simulation
@@ -405,11 +480,11 @@ def driver_location():
 
         driver_distance = round(
             math.sqrt(
-            (pickup_lat_global - driver_lat) ** 2 +
-            (pickup_lon_global - driver_lon) ** 2
+                (pickup_lat_global - driver_lat) ** 2 +
+                (pickup_lon_global - driver_lon) ** 2
             ) * 111,
             1
-)
+        )
 
         driver_step += 1
 
@@ -427,6 +502,11 @@ def driver_location():
 
         "arrived": arrived
     }
+
+
+# ----------------------------
+# Pickup Route
+# ----------------------------
 @app.get("/pickup-route")
 def pickup_route(
     driver_lat: float,
@@ -459,6 +539,7 @@ def pickup_route(
     return {
         "routes": []
     }
+
 
 # ----------------------------
 # SOS Endpoint
