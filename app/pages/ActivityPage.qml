@@ -12,11 +12,11 @@ Page {
     Component.onCompleted: { loadHistory() }
 
     onVisibleChanged: {
-        if (visible) {
-            if (appState) appState.showBottomBar = true
-            loadHistory()
-        }
+    if (visible) {
+        if (appState) appState.showBottomBar = true  // ADD THIS LINE
+        loadHistory()
     }
+}
 
     function loadHistory() {
         var xhr = new XMLHttpRequest()
@@ -81,14 +81,17 @@ Page {
 
                 Item { width: 1; height: 12 }
 
+                // ── Stats card — clip stops circle overflowing ────
                 Rectangle {
                     x: 16
                     width: parent.width - 32
                     height: 140
                     radius: 14
                     color: "#1565C0"
+                    // FIX: clip the decorative circle inside card
                     clip: true
 
+                    // Decorative circle — clipped to card
                     Rectangle {
                         width: 130; height: 130; radius: 65
                         color: "#ffffff15"
@@ -144,6 +147,7 @@ Page {
                     color: "#111"
                 }
 
+                // Empty state
                 Rectangle {
                     x: 16
                     width: parent.width - 32
@@ -168,6 +172,7 @@ Page {
                     }
                 }
 
+                // Ride cards
                 Column {
                     x: 16
                     width: parent.width - 32
@@ -183,6 +188,7 @@ Page {
                             color: "white"
                             border.color: "#EEEEEE"
 
+                            // Left accent
                             Rectangle {
                                 width: 4
                                 height: parent.height - 28

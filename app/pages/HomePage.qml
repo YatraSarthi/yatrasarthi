@@ -7,8 +7,7 @@ Page {
     property var appState
 
     // Signal to tell Main.qml to switch tab
-    // (renamed from switchTab to avoid shadowing Main.qml's switchTab() function)
-    signal requestTabChange(int tabIndex)
+    signal switchTab(int tabIndex)
 
     // No local footer — Main.qml owns the TabBar
     footer: null
@@ -27,8 +26,11 @@ Page {
 
     // Reload favourites every time Home tab becomes visible
     onVisibleChanged: {
-        if (visible) loadFavourites()
+    if (visible) {
+        if (appState) appState.showBottomBar = true  // ADD THIS LINE
+        loadFavourites()
     }
+}
 
     function loadFavourites() {
         var xhr = new XMLHttpRequest()
@@ -193,7 +195,7 @@ Page {
                                               "appState": appState })
                                     }
                                     contentItem: Image {
-                                        source: Qt.resolvedUrl("../../assets/icons/map.png")
+                                        source: "../../assets/icons/map.png"
                                         width: 18; height: 18
                                         fillMode: Image.PreserveAspectFit
                                         anchors.centerIn: parent
@@ -262,7 +264,7 @@ Page {
                                               "appState": appState })
                                     }
                                     contentItem: Image {
-                                        source: Qt.resolvedUrl("../../assets/icons/map.png")
+                                        source: "../../assets/icons/map.png"
                                         width: 18; height: 18
                                         fillMode: Image.PreserveAspectFit
                                         anchors.centerIn: parent
@@ -291,7 +293,7 @@ Page {
                             anchors.centerIn: parent
                             spacing: 8
                             Image {
-                                source: Qt.resolvedUrl("../../assets/icons/pickup.png")
+                                source: "../../assets/icons/pickup.png"
                                 width: 16; height: 16
                                 fillMode: Image.PreserveAspectFit
                                 anchors.verticalCenter: parent.verticalCenter
@@ -328,7 +330,7 @@ Page {
                             anchors.centerIn: parent
                             spacing: 10
                             Image {
-                                source: Qt.resolvedUrl("../../assets/icons/rider.png")
+                                source: "../../assets/icons/rider.png"
                                 width: 24; height: 24
                                 fillMode: Image.PreserveAspectFit
                                 anchors.verticalCenter: parent.verticalCenter
@@ -343,9 +345,9 @@ Page {
                     }
 
                     // ── Quick Actions ─────────────────────────────
-                    // SOS    -> Services tab (tab 1), triggers SOS card
-                    // History -> Activity tab (tab 2)
-                    // Queue  -> Services tab (tab 1)
+                    // Route removed. SOS → Services(tab1),
+                    // History → Activity(tab2),
+                    // Queue → Services(tab1)
                     Label {
                         x: 16
                         text: "Quick Actions"
@@ -358,7 +360,7 @@ Page {
                         width: parent.width - 32
                         spacing: 10
 
-                        // SOS — goes to Services tab, SOS card
+                        // SOS — goes to Services tab
                         Rectangle {
                             width: (parent.width - 20) / 3
                             height: 72
@@ -372,7 +374,7 @@ Page {
                                 Image {
                                     anchors.horizontalCenter:
                                         parent.horizontalCenter
-                                    source: Qt.resolvedUrl("../../assets/icons/sos.png")
+                                    source: "../../assets/icons/sos.png"
                                     width: 26; height: 26
                                     fillMode: Image.PreserveAspectFit
                                 }
@@ -388,12 +390,8 @@ Page {
 
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: {
-                                    console.log("SOS clicked")
-                                    // Tell Services page which action to focus on arrival
-                                    appState.quickAction = "sos"
-                                    requestTabChange(1)
-                                }
+                                // Switch to Services tab (index 1)
+                                onClicked: switchTab(1)
                             }
                         }
 
@@ -411,7 +409,7 @@ Page {
                                 Image {
                                     anchors.horizontalCenter:
                                         parent.horizontalCenter
-                                    source: Qt.resolvedUrl("../../assets/icons/rider.png")
+                                    source: "../../assets/icons/rider.png"
                                     width: 26; height: 26
                                     fillMode: Image.PreserveAspectFit
                                 }
@@ -427,11 +425,8 @@ Page {
 
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: {
-                                    console.log("History clicked")
-                                    appState.quickAction = ""
-                                    requestTabChange(2)
-                                }
+                                // Switch to Activity tab (index 2)
+                                onClicked: switchTab(2)
                             }
                         }
 
@@ -449,7 +444,7 @@ Page {
                                 Image {
                                     anchors.horizontalCenter:
                                         parent.horizontalCenter
-                                    source: Qt.resolvedUrl("../../assets/icons/star.png")
+                                    source: "../../assets/icons/star.png"
                                     width: 26; height: 26
                                     fillMode: Image.PreserveAspectFit
                                 }
@@ -465,11 +460,8 @@ Page {
 
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: {
-                                    console.log("Queue clicked")
-                                    appState.quickAction = "queue"
-                                    requestTabChange(1)
-                                }
+                                // Switch to Services tab (index 1)
+                                onClicked: switchTab(1)
                             }
                         }
                     }
@@ -685,7 +677,7 @@ Page {
                             color: "#E3F2FD"
                             anchors.verticalCenter: parent.verticalCenter
                             Image {
-                                source: Qt.resolvedUrl("../../assets/icons/pickup.png")
+                                source: "../../assets/icons/pickup.png"
                                 width: 14; height: 14
                                 fillMode: Image.PreserveAspectFit
                                 anchors.centerIn: parent
@@ -779,7 +771,7 @@ Page {
                             color: "#FFEBEE"
                             anchors.verticalCenter: parent.verticalCenter
                             Image {
-                                source: Qt.resolvedUrl("../../assets/icons/destination.png")
+                                source: "../../assets/icons/destination.png"
                                 width: 14; height: 14
                                 fillMode: Image.PreserveAspectFit
                                 anchors.centerIn: parent

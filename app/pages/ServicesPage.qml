@@ -11,13 +11,12 @@ Page {
 
     // React whenever this page becomes visible AND there's a pending
     // quick action queued from HomePage (sos / queue)
-    // Also restore the bottom bar (safety net)
     onVisibleChanged: {
-        if (visible) {
-            if (appState) appState.showBottomBar = true
-            handleQuickAction()
-        }
+    if (visible) {
+        if (appState) appState.showBottomBar = true  // ADD THIS LINE
+        handleQuickAction()
     }
+}
 
     Component.onCompleted: handleQuickAction()
 
@@ -154,6 +153,7 @@ Page {
                             radius: 14
                             color: modelData.bg
                             border.color: modelData.bd
+                            // Briefly highlight the SOS card when arriving via Quick Action
                             border.width: (modelData.label === "SOS"
                                            && appState
                                            && appState.quickAction === "sos")
@@ -194,6 +194,7 @@ Page {
                                 }
                             }
 
+                            // Ripple overlay on hover
                             Rectangle {
                                 anchors.fill: parent
                                 radius: parent.radius
@@ -212,7 +213,11 @@ Page {
                                     if (modelData.label === "SOS") {
                                         console.log("SOS card tapped directly")
                                         triggerSos()
-                                    } else {
+                                    }
+                                    // For ride types, set preferred
+                                    // vehicle and switch to Home tab
+                                    // so user can pick locations
+                                    else {
                                         appState.preferredVehicle =
                                             modelData.label
                                     }

@@ -7,11 +7,9 @@ Page {
     property var appState
 
     footer: null
-
-    // Restore bottom bar whenever Account tab becomes visible
     onVisibleChanged: {
-        if (visible && appState) appState.showBottomBar = true
-    }
+    if (visible && appState) appState.showBottomBar = true  // ADD THIS BLOCK
+}
 
     property var profileItems: [
         { icon: Qt.resolvedUrl("../../assets/icons/driver.png"), label: "Edit Profile", sub: "Name, photo, email" },
