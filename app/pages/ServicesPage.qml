@@ -9,6 +9,33 @@ Page {
     // Page has no footer — footer lives in Main.qml ApplicationWindow
     footer: null
 
+    // React whenever this page becomes visible AND there's a pending
+    // quick action queued from HomePage (sos / queue)
+    onVisibleChanged: {
+        if (visible) handleQuickAction()
+    }
+
+    Component.onCompleted: handleQuickAction()
+
+    function handleQuickAction() {
+        if (!appState) return
+
+        if (appState.quickAction === "sos") {
+            console.log("Auto-triggering SOS from Quick Actions")
+            triggerSos()
+            appState.quickAction = ""  // consume it so it doesn't refire
+        } else if (appState.quickAction === "queue") {
+            console.log("Landed on Services via Queue quick action")
+            appState.quickAction = ""  // consume it
+        }
+    }
+
+    function triggerSos() {
+        var xhr = new XMLHttpRequest()
+        xhr.open("GET", "http://127.0.0.1:8000/sos", true)
+        xhr.send()
+    }
+
     ScrollView {
         anchors.fill: parent
         contentWidth: width
@@ -117,11 +144,17 @@ Page {
                         ]
 
                         delegate: Rectangle {
+                            id: serviceCard
                             width: (parent.width - 12) / 2
                             height: 95
                             radius: 14
                             color: modelData.bg
                             border.color: modelData.bd
+                            // Briefly highlight the SOS card when arriving via Quick Action
+                            border.width: (modelData.label === "SOS"
+                                           && appState
+                                           && appState.quickAction === "sos")
+                                          ? 2 : 1
                             opacity: modelData.available ? 1.0 : 0.55
 
                             Column {
@@ -131,8 +164,9 @@ Page {
                                 Image {
                                     anchors.horizontalCenter:
                                         parent.horizontalCenter
-                                    source: "../../assets/icons/"
-                                            + modelData.icon
+                                    source: Qt.resolvedUrl(
+                                            "../../assets/icons/"
+                                            + modelData.icon)
                                     width: 32; height: 32
                                     fillMode: Image.PreserveAspectFit
                                 }
@@ -174,12 +208,8 @@ Page {
 
                                 onClicked: {
                                     if (modelData.label === "SOS") {
-                                        var xhr = new XMLHttpRequest()
-                                        xhr.open(
-                                            "GET",
-                                            "http://127.0.0.1:8000/sos",
-                                            true)
-                                        xhr.send()
+                                        console.log("SOS card tapped directly")
+                                        triggerSos()
                                     }
                                     // For ride types, set preferred
                                     // vehicle and switch to Home tab

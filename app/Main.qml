@@ -125,7 +125,10 @@ ApplicationWindow {
             appStack: homeStack
             appState: appState
             // Pass the window's switchTab function down
-            onSwitchTab: switchTab(tabIndex)
+            // (HomePage emits requestTabChange, handled here)
+            onRequestTabChange: {
+                switchTab(tabIndex)
+            }
         }
     }
 

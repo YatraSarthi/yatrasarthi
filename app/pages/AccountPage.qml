@@ -9,21 +9,21 @@ Page {
     footer: null
 
     property var profileItems: [
-        { icon: "../../assets/icons/driver.png", label: "Edit Profile", sub: "Name, photo, email" },
-        { icon: "../../assets/icons/star.png", label: "Payment Methods", sub: "UPI, cards, wallets" },
-        { icon: "../../assets/icons/sos.png", label: "Emergency Contacts", sub: "SOS contacts" }
+        { icon: Qt.resolvedUrl("../../assets/icons/driver.png"), label: "Edit Profile", sub: "Name, photo, email" },
+        { icon: Qt.resolvedUrl("../../assets/icons/star.png"), label: "Payment Methods", sub: "UPI, cards, wallets" },
+        { icon: Qt.resolvedUrl("../../assets/icons/sos.png"), label: "Emergency Contacts", sub: "SOS contacts" }
     ]
 
     property var preferenceItems: [
-        { icon: "../../assets/icons/destination.png", label: "Notifications", sub: "Ride alerts, offers" },
-        { icon: "../../assets/icons/map.png", label: "Language", sub: "English" },
-        { icon: "../../assets/icons/star.png", label: "Dark Mode", sub: "Off" }
+        { icon: Qt.resolvedUrl("../../assets/icons/destination.png"), label: "Notifications", sub: "Ride alerts, offers" },
+        { icon: Qt.resolvedUrl("../../assets/icons/map.png"), label: "Language", sub: "English" },
+        { icon: Qt.resolvedUrl("../../assets/icons/star.png"), label: "Dark Mode", sub: "Off" }
     ]
 
     property var supportItems: [
-        { icon: "../../assets/icons/rider.png", label: "Help & Support", sub: "FAQs, chat" },
-        { icon: "../../assets/icons/star.png", label: "Rate the App", sub: "Tell us what you think" },
-        { icon: "../../assets/icons/map.png", label: "Privacy Policy", sub: "" }
+        { icon: Qt.resolvedUrl("../../assets/icons/rider.png"), label: "Help & Support", sub: "FAQs, chat" },
+        { icon: Qt.resolvedUrl("../../assets/icons/star.png"), label: "Rate the App", sub: "Tell us what you think" },
+        { icon: Qt.resolvedUrl("../../assets/icons/map.png"), label: "Privacy Policy", sub: "" }
     ]
 
     property var accountSections: [
@@ -66,7 +66,7 @@ Page {
                         anchors.horizontalCenter: parent.horizontalCenter
 
                         Image {
-                            source: "../../assets/icons/driver.png"
+                            source: Qt.resolvedUrl("../../assets/icons/driver.png")
                             width: 38; height: 38
                             fillMode: Image.PreserveAspectFit
                             anchors.centerIn: parent
