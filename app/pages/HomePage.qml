@@ -552,8 +552,7 @@ Page {
                                     }
 
                                     Rectangle {
-                                        visible: index 
-                                            favourites.length - 1
+                                        visible: index < favourites.length - 1
                                         anchors.bottom: parent.bottom
                                         anchors.left: parent.left
                                         anchors.right: parent.right

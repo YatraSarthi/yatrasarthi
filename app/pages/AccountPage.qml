@@ -195,9 +195,7 @@ Page {
                                         }
 
                                         Rectangle {
-                                            visible: index 
-                                                modelData.items.length
-                                                - 1
+                                            visible: index < modelData.items.length - 1
                                             anchors.bottom: parent.bottom
                                             anchors.left: parent.left
                                             anchors.right: parent.right
