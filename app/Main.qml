@@ -3,6 +3,7 @@ import QtQuick.Controls 2.12
 import "pages"
 
 ApplicationWindow {
+
     visible: true
     width: 400
     height: 700
@@ -12,12 +13,156 @@ ApplicationWindow {
         id: appState
     }
 
-    StackView {
-        id: stack
-        anchors.fill: parent
+    // Track which tab is active
+    property int currentTab: 0
 
+    // ── Bottom Navigation ─────────────────────────────────────────
+    footer: TabBar {
+
+        id: bottomNav
+        currentIndex: currentTab
+
+        background: Rectangle {
+            color: "white"
+            Rectangle {
+                anchors.top: parent.top
+                width: parent.width
+                height: 1
+                color: "#E0E0E0"
+            }
+        }
+
+        onCurrentIndexChanged: {
+            currentTab = currentIndex
+        }
+
+        TabButton {
+            contentItem: Column {
+                anchors.centerIn: parent
+                spacing: 2
+                Image {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    source: "assets/icons/pickup.png"
+                    width: 22; height: 22
+                    fillMode: Image.PreserveAspectFit
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Home"
+                    font.pixelSize: 10
+                    color: currentTab === 0 ? "#1976D2" : "#888"
+                }
+            }
+        }
+
+        TabButton {
+            contentItem: Column {
+                anchors.centerIn: parent
+                spacing: 2
+                Image {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    source: "assets/icons/auto.png"
+                    width: 22; height: 22
+                    fillMode: Image.PreserveAspectFit
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Services"
+                    font.pixelSize: 10
+                    color: currentTab === 1 ? "#1976D2" : "#888"
+                }
+            }
+        }
+
+        TabButton {
+            contentItem: Column {
+                anchors.centerIn: parent
+                spacing: 2
+                Image {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    source: "assets/icons/rider.png"
+                    width: 22; height: 22
+                    fillMode: Image.PreserveAspectFit
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Activity"
+                    font.pixelSize: 10
+                    color: currentTab === 2 ? "#1976D2" : "#888"
+                }
+            }
+        }
+
+        TabButton {
+            contentItem: Column {
+                anchors.centerIn: parent
+                spacing: 2
+                Image {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    source: "assets/icons/driver.png"
+                    width: 22; height: 22
+                    fillMode: Image.PreserveAspectFit
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "Account"
+                    font.pixelSize: 10
+                    color: currentTab === 3 ? "#1976D2" : "#888"
+                }
+            }
+        }
+    }
+
+    // ── Each tab has its own StackView ────────────────────────────
+    // This means navigating inside Home (e.g. to MapPage or
+    // ResultsPage) doesn't affect the Services/Activity/Account tabs
+    // and the bottom bar stays visible throughout.
+
+    // HOME tab
+    StackView {
+        id: homeStack
+        anchors.fill: parent
+        visible: currentTab === 0
+
+        // Push HomePage as the root and wire up props
         initialItem: HomePage {
-            appStack: stack
+            appStack: homeStack
+            appState: appState
+        }
+    }
+
+    // SERVICES tab
+    StackView {
+        id: servicesStack
+        anchors.fill: parent
+        visible: currentTab === 1
+
+        initialItem: ServicesPage {
+            appStack: servicesStack
+            appState: appState
+        }
+    }
+
+    // ACTIVITY tab
+    StackView {
+        id: activityStack
+        anchors.fill: parent
+        visible: currentTab === 2
+
+        initialItem: ActivityPage {
+            appStack: activityStack
+            appState: appState
+        }
+    }
+
+    // ACCOUNT tab
+    StackView {
+        id: accountStack
+        anchors.fill: parent
+        visible: currentTab === 3
+
+        initialItem: AccountPage {
+            appStack: accountStack
             appState: appState
         }
     }

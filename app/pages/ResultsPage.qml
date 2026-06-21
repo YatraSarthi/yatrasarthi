@@ -13,59 +13,112 @@ Page {
     property int selectedFare: 0
     property int selectedEta: 0
 
-    title: "Ride Preview"
+    // ── Header ────────────────────────────────────────────────────
+    header: Rectangle {
 
+        width: parent.width
+        height: 60
+        color: "#1976D2"
+
+        Row {
+            anchors.fill: parent
+            anchors.leftMargin: 8
+            anchors.rightMargin: 16
+            spacing: 8
+
+            // Back button
+            ToolButton {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 44; height: 44
+
+                contentItem: Text {
+                    text: "‹"
+                    font.pixelSize: 28
+                    color: "white"
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                onClicked: {
+                    appStack.pop()
+                }
+            }
+
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+                width: parent.width - 52
+
+                Label {
+                    text: "Choose a Ride"
+                    font.pixelSize: 17
+                    font.bold: true
+                    color: "white"
+                }
+
+                Label {
+                    text: {
+                        var from = appState.pickupLocation
+                        var to   = appState.destinationLocation
+                        var fp   = from.split(",")[0].trim()
+                        var tp   = to.split(",")[0].trim()
+                        return fp + "  →  " + tp
+                    }
+                    font.pixelSize: 11
+                    color: "#B3E5FC"
+                    width: parent.width
+                    elide: Text.ElideRight
+                }
+            }
+        }
+    }
+
+    // ── Helper functions ──────────────────────────────────────────
     function getVehicleIcon(vehicle) {
+        if (vehicle === "Bike")    return "../../assets/icons/bike.png"
+        if (vehicle === "Auto")    return "../../assets/icons/auto.png"
+        if (vehicle === "Cab")     return "../../assets/icons/cab.png"
+        if (vehicle === "Carpool") return "../../assets/icons/rider.png"
+        return "../../assets/icons/rider.png"
+    }
 
-        if (vehicle === "Bike")
-            return "../../assets/icons/bike.png"
+    function getVehicleColor(vehicle) {
+        if (vehicle === "Bike")    return "#E8F5E9"
+        if (vehicle === "Auto")    return "#FFF8E1"
+        if (vehicle === "Cab")     return "#E3F2FD"
+        if (vehicle === "Carpool") return "#F3E5F5"
+        return "#F5F5F5"
+    }
 
-        else if (vehicle === "Auto")
-            return "../../assets/icons/auto.png"
-
-        else if (vehicle === "Cab")
-            return "../../assets/icons/cab.png"
-        
-        else if (vehicle === "Cab")
-            return "../../assets/icons/cab.png"
-
-        else if (vehicle === "Carpool")
-           return "../../assets/icons/carpool.png"
-
-        return ""
+    function getVehicleAccent(vehicle) {
+        if (vehicle === "Bike")    return "#2E7D32"
+        if (vehicle === "Auto")    return "#F57F17"
+        if (vehicle === "Cab")     return "#1565C0"
+        if (vehicle === "Carpool") return "#6A1B9A"
+        return "#1976D2"
     }
 
     function fetchEstimate() {
-
         var xhr = new XMLHttpRequest()
-
         xhr.onreadystatechange = function() {
-
             if (xhr.readyState === XMLHttpRequest.DONE) {
-
                 console.log("Estimate Status:", xhr.status)
-                console.log("Estimate Response:", xhr.responseText)
-
                 if (xhr.status === 200) {
-
                     rideData = JSON.parse(xhr.responseText)
-
+                    // Default selection: Bike
                     selectedVehicle = "Bike"
-                    selectedFare = rideData.bike.fare
-                    selectedEta = rideData.bike.eta
-
+                    selectedFare    = rideData.bike.fare
+                    selectedEta     = rideData.bike.eta
                     console.log("rideData loaded")
                 }
             }
         }
-
         var url =
-                "http://127.0.0.1:8000/estimate"
-                + "?pickup_lat=" + appState.pickupLat
-                + "&pickup_lon=" + appState.pickupLon
-                + "&destination_lat=" + appState.destinationLat
-                + "&destination_lon=" + appState.destinationLon
-
+            "http://127.0.0.1:8000/estimate"
+            + "?pickup_lat="      + appState.pickupLat
+            + "&pickup_lon="      + appState.pickupLon
+            + "&destination_lat=" + appState.destinationLat
+            + "&destination_lon=" + appState.destinationLon
         xhr.open("GET", url, true)
         xhr.send()
     }
@@ -74,355 +127,461 @@ Page {
         fetchEstimate()
     }
 
+    // ── Body ──────────────────────────────────────────────────────
     Column {
 
         anchors.fill: parent
-        spacing: 10
+        spacing: 0
 
-        /*
-         * HEADER
-         */
-
-        Row {
-
-            spacing: 10
-
-            anchors.left: parent.left
-            anchors.leftMargin: 10
-            anchors.topMargin: 10
-
-            Button {
-
-                text: "← Back"
-
-                onClicked: {
-                    appStack.pop()
-                }
-            }
-
-            Label {
-
-                text: "Ride Preview"
-
-                font.pixelSize: 20
-                font.bold: true
-
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
-
-        /*
-         * ROUTE MAP
-         */
-
+        // ── Route Map ─────────────────────────────────────────────
         Rectangle {
 
             width: parent.width
-            height: 220
-
-            border.color: "#D3D3D3"
+            height: 200
+            color: "#E8EAF6"
 
             WebEngineView {
-    id: routeMap
+                id: routeMap
+                anchors.fill: parent
+                url: Qt.resolvedUrl("../web/route.html")
 
-    anchors.fill: parent
+                onLoadingChanged: {
+                    if (loadRequest.status ===
+                            WebEngineLoadRequest.LoadSucceededStatus) {
+                        console.log("Route map loaded")
+                        runJavaScript(
+                            "setRoute("
+                            + appState.pickupLat   + ","
+                            + appState.pickupLon   + ","
+                            + appState.destinationLat + ","
+                            + appState.destinationLon
+                            + ")"
+                        )
+                    }
+                }
+            }
 
-    url: Qt.resolvedUrl("../web/route.html")
+            // Distance badge over the map
+            Rectangle {
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.margins: 10
+                height: 26
+                width: distBadge.width + 20
+                radius: 13
+                color: "#CC1976D2"
 
-    onLoadingChanged: {
-
-        if (loadRequest.status ===
-                WebEngineLoadRequest.LoadSucceededStatus) {
-
-            console.log("Route map loaded")
-
-            runJavaScript(
-                "setRoute("
-                + appState.pickupLat + ","
-                + appState.pickupLon + ","
-                + appState.destinationLat + ","
-                + appState.destinationLon
-                + ")"
-            )
+                Label {
+                    id: distBadge
+                    anchors.centerIn: parent
+                    text: rideData
+                          ? (rideData.distance >= 1
+                             ? rideData.distance.toFixed(1) + " km"
+                             : Math.round(rideData.distance * 1000) + " m")
+                          : ""
+                    font.pixelSize: 12
+                    font.bold: true
+                    color: "white"
+                }
+            }
         }
-    }
-}
-        }
 
-        /*
-         * VEHICLES
-         */
-
+        // ── Vehicle list ──────────────────────────────────────────
         ListView {
 
-            width: parent.width
-            height: 280
+            id: vehicleList
 
+            width: parent.width
+            // Fill remaining height minus the Choose button bar
+            height: parent.height - 200 - 80
+
+            topMargin: 12
+            bottomMargin: 8
             spacing: 10
             clip: true
 
-            model: rideData
-                   ? [
-                        {
-                            "vehicle": "Bike",
-                            "fare": rideData.bike.fare,
-                            "eta": rideData.bike.eta
-                        },
-                        {
-                            "vehicle": "Auto",
-                            "fare": rideData.auto.fare,
-                            "eta": rideData.auto.eta
-                        },
-                        {
-                            "vehicle": "Cab",
-                            "fare": rideData.cab.fare,
-                            "eta": rideData.cab.eta
-                        },
-                        {
-                            "vehicle": "Carpool",
-                            "fare": Math.round(rideData.cab.fare * 0.6),
-                            "eta": rideData.cab.eta + 2,
-                            "availableSeats": 2,
-                            "routeMatch": 92,
-                            "co2Saved": 1.8
-                        }
-                     ]
-                   : []
+            model: rideData ? [
+                {
+                    vehicle: "Bike",
+                    fare: rideData.bike.fare,
+                    eta:  rideData.bike.eta,
+                    desc: "Fastest option",
+                    availableSeats: 0,
+                    routeMatch: 0,
+                    co2Saved: 0.0
+                },
+                {
+                    vehicle: "Auto",
+                    fare: rideData.auto.fare,
+                    eta:  rideData.auto.eta,
+                    desc: "Comfortable 3-wheeler",
+                    availableSeats: 0,
+                    routeMatch: 0,
+                    co2Saved: 0.0
+                },
+                {
+                    vehicle: "Cab",
+                    fare: rideData.cab.fare,
+                    eta:  rideData.cab.eta,
+                    desc: "AC sedan",
+                    availableSeats: 0,
+                    routeMatch: 0,
+                    co2Saved: 0.0
+                },
+                {
+                    vehicle: "Carpool",
+                    // FIX: use backend carpool fare directly
+                    fare: rideData.carpool.fare,
+                    eta:  rideData.carpool.eta,
+                    desc: "Share & save",
+                    availableSeats: rideData.carpool.availableSeats,
+                    routeMatch:     rideData.carpool.routeMatch,
+                    co2Saved:       rideData.carpool.co2Saved
+                }
+            ] : []
 
             delegate: Rectangle {
 
-                width: ListView.view.width - 20
-                height: 90
+                width: vehicleList.width - 24
+                x: 12
+                height: modelData.vehicle === "Carpool" ? 102 : 86
+                radius: 14
 
-                x: 10
-
-                radius: 12
-
+                // Selected = tinted background in vehicle colour
                 color: selectedVehicle === modelData.vehicle
-                       ? "#E8F5E9"
+                       ? getVehicleColor(modelData.vehicle)
                        : "white"
 
                 border.color: selectedVehicle === modelData.vehicle
-                               ? "#4CAF50"
-                               : "#D3D3D3"
-
-                border.width: 2
-
-                scale: 1.0
+                              ? getVehicleAccent(modelData.vehicle)
+                              : "#EEEEEE"
+                border.width: selectedVehicle === modelData.vehicle
+                              ? 2 : 1
 
                 Behavior on scale {
+                    NumberAnimation { duration: 120 }
+                }
 
-                    NumberAnimation {
-                        duration: 150
-                    }
+                // Left accent strip when selected
+                Rectangle {
+                    visible: selectedVehicle === modelData.vehicle
+                    width: 4
+                    height: parent.height - 20
+                    radius: 2
+                    color: getVehicleAccent(modelData.vehicle)
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
                 }
 
                 Row {
-
                     anchors.fill: parent
-                    anchors.margins: 15
+                    anchors.leftMargin: 16
+                    anchors.rightMargin: 16
+                    anchors.topMargin: 0
+                    spacing: 14
 
-                    spacing: 20
+                    // Vehicle icon in a tinted circle
+                    Rectangle {
+                        width: 48; height: 48
+                        radius: 24
+                        color: getVehicleColor(modelData.vehicle)
+                        anchors.verticalCenter: parent.verticalCenter
 
-                    Image {
-
-                        source: getVehicleIcon(modelData.vehicle)
-
-                        width: 48
-                        height: 48
-
-                        fillMode: Image.PreserveAspectFit
+                        Image {
+                            source: getVehicleIcon(modelData.vehicle)
+                            width: 28; height: 28
+                            fillMode: Image.PreserveAspectFit
+                            anchors.centerIn: parent
+                        }
                     }
 
+                    // Name + ETA + extras
                     Column {
-
-                        spacing: 5
-
                         anchors.verticalCenter: parent.verticalCenter
+                        spacing: 3
+                        width: parent.width - 48 - 14 - 70 - 14
 
                         Text {
-
                             text: modelData.vehicle
-
-                            font.pixelSize: 18
+                            font.pixelSize: 16
                             font.bold: true
+                            color: "#111"
                         }
 
                         Text {
-
-                            text: "ETA " + modelData.eta + " min"
-
-                            color: "#555555"
+                            text: modelData.desc
+                                  + "  ·  "
+                                  + modelData.eta + " min"
+                            font.pixelSize: 12
+                            color: "#888"
                         }
-                        Text {
 
-    visible:
-        modelData.vehicle === "Carpool"
+                        // Carpool extras row
+                        Row {
+                            visible: modelData.vehicle === "Carpool"
+                            spacing: 8
 
-    text:
-        modelData.availableSeats
-        + " seats • "
-        + modelData.routeMatch
-        + "% route match"
+                            Rectangle {
+                                height: 20
+                                width: seatsLabel.width + 12
+                                radius: 10
+                                color: "#E8F5E9"
 
-    color: "#4CAF50"
+                                Label {
+                                    id: seatsLabel
+                                    anchors.centerIn: parent
+                                    text: modelData.availableSeats
+                                          + " seats"
+                                    font.pixelSize: 10
+                                    color: "#2E7D32"
+                                }
+                            }
 
-    font.pixelSize: 12
-}
+                            Rectangle {
+                                height: 20
+                                width: matchLabel.width + 12
+                                radius: 10
+                                color: "#E3F2FD"
+
+                                Label {
+                                    id: matchLabel
+                                    anchors.centerIn: parent
+                                    text: modelData.routeMatch
+                                          + "% match"
+                                    font.pixelSize: 10
+                                    color: "#1565C0"
+                                }
+                            }
+
+                            Rectangle {
+                                height: 20
+                                width: co2Label.width + 12
+                                radius: 10
+                                color: "#F1F8E9"
+
+                                Label {
+                                    id: co2Label
+                                    anchors.centerIn: parent
+                                    text: "🌱 "
+                                          + modelData.co2Saved
+                                          + " kg"
+                                    font.pixelSize: 10
+                                    color: "#558B2F"
+                                }
+                            }
+                        }
                     }
 
-                    Item {
-                        width: 80
-                    }
-
-                    Text {
-
+                    // Fare — right aligned
+                    Column {
                         anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+                        width: 70
 
-                        text: "₹" + modelData.fare
+                        Text {
+                            anchors.right: parent.right
+                            text: "₹" + modelData.fare
+                            font.pixelSize: 20
+                            font.bold: true
+                            color: getVehicleAccent(modelData.vehicle)
+                        }
 
-                        font.pixelSize: 22
-                        font.bold: true
+                        // Carpool shows savings vs Cab
+                        Text {
+                            anchors.right: parent.right
+                            visible: modelData.vehicle === "Carpool"
+                                     && rideData !== null
+                            text: rideData
+                                  ? "save ₹"
+                                    + (rideData.cab.fare - modelData.fare)
+                                  : ""
+                            font.pixelSize: 10
+                            color: "#2E7D32"
+                        }
                     }
                 }
 
                 MouseArea {
-
                     anchors.fill: parent
-
                     hoverEnabled: true
 
-                    onEntered: {
-                        parent.scale = 1.03
+                    onEntered: { parent.scale = 1.02 }
+                    onExited  : { parent.scale = 1.0  }
+
+                    onClicked: {
+                        selectedVehicle = modelData.vehicle
+                        selectedFare    = modelData.fare
+                        selectedEta     = modelData.eta
+
+                        if (modelData.vehicle === "Carpool") {
+                            appState.availableSeats = modelData.availableSeats
+                            appState.routeMatch     = modelData.routeMatch
+                            appState.co2Saved       = modelData.co2Saved
+                        } else {
+                            appState.availableSeats = 0
+                            appState.routeMatch     = 0
+                            appState.co2Saved       = 0
+                        }
+
+                        console.log(selectedVehicle + " selected")
+                    }
+                }
+            }
+        }
+
+        // ── Choose button bar ─────────────────────────────────────
+        Rectangle {
+            width: parent.width
+            height: 80
+            color: "white"
+
+            // Top separator
+            Rectangle {
+                anchors.top: parent.top
+                width: parent.width
+                height: 1
+                color: "#EEEEEE"
+            }
+
+            Row {
+                anchors.centerIn: parent
+                spacing: 12
+
+                // Fare summary chip
+                Rectangle {
+                    height: 48
+                    width: fareChip.width + 24
+                    radius: 12
+                    color: "#F5F5F5"
+                    border.color: "#E0E0E0"
+                    visible: selectedVehicle !== ""
+
+                    Label {
+                        id: fareChip
+                        anchors.centerIn: parent
+                        text: "₹" + selectedFare
+                              + "  ·  " + selectedEta + " min"
+                        font.pixelSize: 14
+                        font.bold: true
+                        color: "#333"
+                    }
+                }
+
+                // Choose button
+                Button {
+                    width: 160
+                    height: 48
+                    enabled: selectedVehicle !== ""
+
+                    background: Rectangle {
+                        color: selectedVehicle !== ""
+                               ? "#1976D2"
+                               : "#BDBDBD"
+                        radius: 12
                     }
 
-                    onExited: {
-
-                        if (selectedVehicle !== modelData.vehicle)
-                            parent.scale = 1.0
+                    contentItem: Text {
+                        text: selectedVehicle !== ""
+                              ? "Book " + selectedVehicle
+                              : "Select a ride"
+                        font.pixelSize: 15
+                        font.bold: true
+                        color: "white"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
                     }
 
                     onClicked: {
+                        // Save state
+                        appState.selectedVehicle = selectedVehicle
+                        appState.selectedFare    = selectedFare
+                        appState.selectedEta     = selectedEta
 
-                        selectedVehicle = modelData.vehicle
-                        selectedFare = modelData.fare
-                        selectedEta = modelData.eta
+                        // ── Save to ride history ──────────────────
+                        var xhr = new XMLHttpRequest()
+                        xhr.open(
+                            "POST",
+                            "http://127.0.0.1:8000/ride-history"
+                            + "?pickup="
+                            + encodeURIComponent(
+                                appState.pickupLocation)
+                            + "&destination="
+                            + encodeURIComponent(
+                                appState.destinationLocation)
+                            + "&vehicle="
+                            + encodeURIComponent(selectedVehicle)
+                            + "&fare=" + selectedFare
+                            + "&distance="
+                            + (rideData ? rideData.distance : 0)
+                            + "&co2_saved="
+                            + appState.co2Saved,
+                            true
+                        )
+                        xhr.send()
 
-                        if (modelData.vehicle === "Carpool") {
-
-                                appState.availableSeats =
-                                    modelData.availableSeats
-
-                                appState.routeMatch =
-                                    modelData.routeMatch
-
-                                appState.co2Saved =
-                                    modelData.co2Saved
-    }
-
-    console.log(selectedVehicle + " selected")
-}
+                        // ── Navigate to BookingPage ───────────────
+                        appStack.push(
+                            Qt.resolvedUrl("BookingPage.qml"),
+                            {
+                                "appStack": appStack,
+                                "appState": appState
+                            }
+                        )
+                    }
                 }
             }
         }
-
-        /*
-         * CHOOSE BUTTON
-         */
-
-        Button {
-
-    anchors.horizontalCenter: parent.horizontalCenter
-
-    width: parent.width * 0.7
-    height: 50
-
-    text: "Choose " + selectedVehicle
-
-    enabled: selectedVehicle !== ""
-
-    onClicked: {
-
-        appState.selectedVehicle = selectedVehicle
-        appState.selectedFare = selectedFare
-        appState.selectedEta = selectedEta
-
-        if (selectedVehicle !== "Carpool") {
-
-         appState.availableSeats = 0
-         appState.routeMatch = 0
-        appState.co2Saved = 0
-}
-
-        appStack.push(
-            Qt.resolvedUrl("BookingPage.qml"),
-            {
-                "appStack": appStack,
-                "appState": appState
-            }
-        )
-    }
-}
     }
 
-    /*
-     * SOS
-     */
-
-    Button {
-
-        width: 80
-        height: 50
+    // ── Floating SOS button ───────────────────────────────────────
+    Rectangle {
+        width: 60; height: 60
+        radius: 30
+        color: "#E53935"
+        z: 100
 
         anchors.right: parent.right
         anchors.bottom: parent.bottom
+        anchors.rightMargin: 16
+        anchors.bottomMargin: 96   // sits above the Choose bar
 
-        anchors.rightMargin: 20
-        anchors.bottomMargin: 20
-
-        z: 100
-
-        background: Rectangle {
-
-            color: "#E53935"
-
-            radius: 25
+        // Shadow
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -2
+            radius: parent.radius + 2
+            color: "transparent"
+            border.color: "#44E53935"
+            z: -1
         }
 
-        onClicked: {
-
-            appStack.push(
-                Qt.resolvedUrl("SOSPage.qml"),
-                {
-                    "appStack": appStack
-                }
-            )
-        }
-
-        contentItem: Row {
-
+        Column {
             anchors.centerIn: parent
-
-            spacing: 6
+            spacing: 2
 
             Image {
-
+                anchors.horizontalCenter: parent.horizontalCenter
                 source: "../../assets/icons/sos.png"
-
-                width: 22
-                height: 22
-
+                width: 22; height: 22
                 fillMode: Image.PreserveAspectFit
             }
 
             Text {
-
+                anchors.horizontalCenter: parent.horizontalCenter
                 text: "SOS"
-
                 color: "white"
-
                 font.bold: true
-                font.pixelSize: 16
+                font.pixelSize: 10
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                appStack.push(
+                    Qt.resolvedUrl("SOSPage.qml"),
+                    { "appStack": appStack }
+                )
             }
         }
     }
