@@ -505,6 +505,24 @@ def driver_location():
 
 
 # ----------------------------
+# reset driver simulation
+# ----------------------------
+
+
+@app.get("/reset-driver")
+def reset_driver():
+
+    global driver_step
+    global driver_distance
+
+    driver_step = 0
+    driver_distance = 0
+
+    return {
+        "message": "Driver reset"
+    }
+
+# ----------------------------
 # Pickup Route
 # ----------------------------
 @app.get("/pickup-route")
