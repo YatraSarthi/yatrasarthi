@@ -120,18 +120,20 @@ ApplicationWindow {
 
     // ── Stacks ───────────────────────────────────────────────────────────────
 
-    StackView {
-        id:          homeStack
-        anchors.fill: parent
-        visible:     currentTab === 0
-        initialItem: HomePage {
-            appStack:      homeStack
-            appState:      appState
-            onRequestTabChange: {
-                switchTab(tabIndex)
-            }
-        }
-    }
+    HomePage {
+    id:       homePage
+    visible:  false
+    appStack: homeStack
+    appState: appState
+    onRequestTabChange: switchTab(tabIndex)
+}
+
+StackView {
+    id:           homeStack
+    anchors.fill: parent
+    visible:      currentTab === 0
+    initialItem:  homePage
+}
 
     StackView {
         id:          servicesStack
