@@ -24,7 +24,7 @@ ApplicationWindow {
     footer: TabBar {
 
         id:      bottomNav
-        visible: appState.showBottomBar   // <-- KEY FIX
+        visible: appState.showBottomBar
         height:  visible ? implicitHeight : 0
 
         currentIndex: currentTab
@@ -120,46 +120,48 @@ ApplicationWindow {
 
     // ── Stacks ───────────────────────────────────────────────────────────────
 
-    HomePage {
-    id:       homePage
-    visible:  false
-    appStack: homeStack
-    appState: appState
-    onRequestTabChange: switchTab(tabIndex)
-}
+    StackView {
+        id:           homeStack
+        anchors.fill: parent
+        visible:      currentTab === 0
 
-StackView {
-    id:           homeStack
-    anchors.fill: parent
-    visible:      currentTab === 0
-    initialItem:  homePage
-}
+        Component.onCompleted: {
+            var page = push(Qt.resolvedUrl("pages/HomePage.qml"))
+            page.appStack = homeStack
+            page.appState = appState
+        }
+
+        Connections {
+            target: homeStack.currentItem
+            onRequestTabChange: switchTab(tabIndex)
+        }
+    }
 
     StackView {
-        id:          servicesStack
+        id:           servicesStack
         anchors.fill: parent
-        visible:     currentTab === 1
-        initialItem: ServicesPage {
+        visible:      currentTab === 1
+        initialItem:  ServicesPage {
             appStack: servicesStack
             appState: appState
         }
     }
 
     StackView {
-        id:          activityStack
+        id:           activityStack
         anchors.fill: parent
-        visible:     currentTab === 2
-        initialItem: ActivityPage {
+        visible:      currentTab === 2
+        initialItem:  ActivityPage {
             appStack: activityStack
             appState: appState
         }
     }
 
     StackView {
-        id:          accountStack
+        id:           accountStack
         anchors.fill: parent
-        visible:     currentTab === 3
-        initialItem: AccountPage {
+        visible:      currentTab === 3
+        initialItem:  AccountPage {
             appStack: accountStack
             appState: appState
         }
