@@ -9,36 +9,27 @@ Page {
     footer: null
 
     property var profileItems: [
-        { icon: "../../assets/icons/driver.png",
-          label: "Edit Profile",    sub: "Name, photo, email" },
-        { icon: "../../assets/icons/star.png",
-          label: "Payment Methods", sub: "UPI, cards, wallets" },
-        { icon: "../../assets/icons/sos.png",
-          label: "Emergency Contacts", sub: "SOS contacts" }
+        { icon: "../../assets/icons/driver.png", label: "Edit Profile", sub: "Name, photo, email" },
+        { icon: "../../assets/icons/star.png", label: "Payment Methods", sub: "UPI, cards, wallets" },
+        { icon: "../../assets/icons/sos.png", label: "Emergency Contacts", sub: "SOS contacts" }
     ]
 
     property var preferenceItems: [
-        { icon: "../../assets/icons/destination.png",
-          label: "Notifications",   sub: "Ride alerts, offers" },
-        { icon: "../../assets/icons/map.png",
-          label: "Language",        sub: "English" },
-        { icon: "../../assets/icons/star.png",
-          label: "Dark Mode",       sub: "Off" }
+        { icon: "../../assets/icons/destination.png", label: "Notifications", sub: "Ride alerts, offers" },
+        { icon: "../../assets/icons/map.png", label: "Language", sub: "English" },
+        { icon: "../../assets/icons/star.png", label: "Dark Mode", sub: "Off" }
     ]
 
     property var supportItems: [
-        { icon: "../../assets/icons/rider.png",
-          label: "Help & Support",  sub: "FAQs, chat" },
-        { icon: "../../assets/icons/star.png",
-          label: "Rate the App",    sub: "Tell us what you think" },
-        { icon: "../../assets/icons/map.png",
-          label: "Privacy Policy",  sub: "" }
+        { icon: "../../assets/icons/rider.png", label: "Help & Support", sub: "FAQs, chat" },
+        { icon: "../../assets/icons/star.png", label: "Rate the App", sub: "Tell us what you think" },
+        { icon: "../../assets/icons/map.png", label: "Privacy Policy", sub: "" }
     ]
 
     property var accountSections: [
-        { title: "PROFILE",     items: profileItems },
+        { title: "PROFILE", items: profileItems },
         { title: "PREFERENCES", items: preferenceItems },
-        { title: "SUPPORT",     items: supportItems }
+        { title: "SUPPORT", items: supportItems }
     ]
 
     ScrollView {
@@ -50,7 +41,6 @@ Page {
             width: parent.width
             spacing: 0
 
-            // ── Profile header — clip the deco circle ─────────────
             Rectangle {
                 width: parent.width
                 height: 150
@@ -104,10 +94,6 @@ Page {
 
                 Item { width: 1; height: 14 }
 
-                // Section builder — uses a stable named property
-                // (accountSections) instead of an inline array literal,
-                // and every modelData access is guarded since Repeater
-                // can evaluate a delegate before modelData is bound.
                 Repeater {
                     model: accountSections
 
@@ -116,17 +102,17 @@ Page {
                         width: parent.width - 32
                         spacing: 6
 
+                        property var section: modelData
+
                         Label {
-                            text: modelData ? modelData.title : ""
+                            text: section ? section.title : ""
                             font.pixelSize: 11; font.bold: true
                             color: "#AAAAAA"; leftPadding: 4
                         }
 
                         Rectangle {
                             width: parent.width
-                            height: modelData
-                                    ? modelData.items.length * 60
-                                    : 0
+                            height: section ? (section.items.length * 60) : 0
                             radius: 14; color: "white"
                             border.color: "#EEEEEE"; clip: true
 
@@ -136,14 +122,13 @@ Page {
 
                                 Repeater {
                                     id: innerRepeater
-                                    model: modelData ? modelData.items : []
+                                    model: section ? section.items : []
 
                                     delegate: Rectangle {
                                         width: parent.width
                                         height: 60
-                                        color: rMouse.containsMouse
-                                               ? "#F8F8F8"
-                                               : "transparent"
+                                        property var item: modelData
+                                        color: rMouse.containsMouse ? "#F8F8F8" : "transparent"
 
                                         Row {
                                             anchors.fill: parent
@@ -155,46 +140,31 @@ Page {
                                                 width: 36; height: 36
                                                 radius: 18
                                                 color: "#F5F5F5"
-                                                anchors.verticalCenter:
-                                                    parent.verticalCenter
+                                                anchors.verticalCenter: parent.verticalCenter
 
                                                 Image {
-                                                    source: modelData
-                                                            ? modelData.icon
-                                                            : ""
+                                                    source: item ? item.icon : ""
                                                     width: 20; height: 20
-                                                    fillMode:
-                                                        Image.PreserveAspectFit
-                                                    anchors.centerIn:
-                                                        parent
+                                                    fillMode: Image.PreserveAspectFit
+                                                    anchors.centerIn: parent
                                                 }
                                             }
 
                                             Column {
-                                                anchors.verticalCenter:
-                                                    parent.verticalCenter
+                                                anchors.verticalCenter: parent.verticalCenter
                                                 spacing: 2
-                                                width: parent.width
-                                                       - 36 - 14
-                                                       - 20 - 32
+                                                width: parent.width - 36 - 14 - 20 - 32
 
                                                 Label {
-                                                    text: modelData
-                                                          ? modelData.label
-                                                          : ""
+                                                    text: item ? item.label : ""
                                                     font.pixelSize: 14
                                                     color: "#111"
                                                 }
                                                 Label {
-                                                    text: modelData
-                                                          ? modelData.sub
-                                                          : ""
+                                                    text: item ? item.sub : ""
                                                     font.pixelSize: 11
                                                     color: "#AAA"
-                                                    visible:
-                                                        modelData
-                                                        && modelData.sub
-                                                        !== ""
+                                                    visible: item ? (item.sub !== "") : false
                                                 }
                                             }
 
@@ -202,16 +172,12 @@ Page {
                                                 text: "›"
                                                 font.pixelSize: 22
                                                 color: "#CCCCCC"
-                                                anchors.verticalCenter:
-                                                    parent.verticalCenter
+                                                anchors.verticalCenter: parent.verticalCenter
                                             }
                                         }
 
                                         Rectangle {
-                                            visible: modelData
-                                                     && index 
-                                                        innerRepeater.count
-                                                        - 1
+                                            visible: item ? (index < innerRepeater.count - 1) : false
                                             anchors.bottom: parent.bottom
                                             anchors.left: parent.left
                                             anchors.right: parent.right
@@ -223,12 +189,7 @@ Page {
                                             id: rMouse
                                             anchors.fill: parent
                                             hoverEnabled: true
-                                            onClicked: {
-                                                if (modelData)
-                                                    console.log(
-                                                        "Tapped:",
-                                                        modelData.label)
-                                            }
+                                            onClicked: { if (item) console.log("Tapped:", item.label) }
                                         }
                                     }
                                 }
