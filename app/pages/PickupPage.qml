@@ -366,12 +366,27 @@ Page {
                     // Fix 1: call startDriver() here (not in Component.onCompleted)
                     // so the WebView is fully ready before we inject JS
                     onLoadingChanged: {
-                        if (loadRequest.status ===
-                                WebEngineView.LoadSucceededStatus) {
-                            console.log("Sarthi map loaded — calling startDriver()")
-                            startDriver()
-                        }
-                    }
+
+    if (
+        loadRequest.status ===
+        WebEngineLoadRequest
+        .LoadSucceededStatus
+    ) {
+
+        console.log(
+            "Sarthi map loaded"
+        )
+
+        routeMap.runJavaScript(
+
+            "setVehicleType('"
+            + appState.selectedVehicle
+            + "')"
+        )
+
+        startDriver()
+    }
+}
                 }
             }
 
@@ -507,14 +522,46 @@ Page {
                         anchors.horizontalCenter: parent.horizontalCenter
 
                         Button {
-                            text:      "📞 Call"
-                            onClicked: console.log("Call Sarthi")
-                        }
 
-                        Button {
-                            text:      "💬 Message"
-                            onClicked: console.log("Message Sarthi")
-                        }
+    width: 120
+    height: 45
+
+    contentItem: Row {
+
+        anchors.centerIn: parent
+        spacing: 8
+
+        Image {
+            source: "../../assets/icons/phone.png"
+            width: 20
+            height: 20
+        }
+
+        Text {
+            text: "Call"
+        }
+    }
+}Button {
+
+    width: 120
+    height: 45
+
+    contentItem: Row {
+
+        anchors.centerIn: parent
+        spacing: 8
+
+        Image {
+            source: "../../assets/icons/message.png"
+            width: 20
+            height: 20
+        }
+
+        Text {
+            text: "Message"
+        }
+    }
+}
                     }
                 }
             }

@@ -85,17 +85,45 @@ var pickupIcon = L.icon({
  * Driver Icon
  */
 
-var driverIcon = L.icon({
+var driverIcon = null;
 
-    iconUrl:
-        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png",
+function setVehicleType(vehicleType) {
 
-    shadowUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+    var iconPath =
+        "../../assets/icons/cab.png";
 
-    iconSize: [25,41],
-    iconAnchor: [12,41]
-});
+    if (vehicleType === "Bike") {
+
+        iconPath =
+            "../../assets/icons/bike.png";
+    }
+
+    else if (vehicleType === "Auto") {
+
+        iconPath =
+            "../../assets/icons/auto.png";
+    }
+
+    else if (vehicleType === "Cab") {
+
+        iconPath =
+            "../../assets/icons/cab.png";
+    }
+
+    else if (vehicleType === "Carpool") {
+
+        iconPath =
+            "../../assets/icons/carpool.png";
+    }
+
+    driverIcon = L.icon({
+
+        iconUrl: iconPath,
+
+        iconSize: [45,45],
+        iconAnchor: [22,22]
+    });
+}
 
 
 /*

@@ -1,6 +1,7 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import QtWebEngine 1.10
+import QtQuick 2.12
 
 Page {
 
@@ -114,7 +115,9 @@ Page {
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        Item { Layout.fillWidth: true; width: 1 }
+                        Item { width: parent.width
+                        height: 1
+                        }
 
                         // Vehicle type pill
                         Rectangle {
@@ -323,46 +326,47 @@ Page {
                 }
 
                 // ── Fare card ────────────────────────────────────────────────
-                Rectangle {
-                    width:        parent.width
-                    height:       56
-                    radius:       14
-                    color:        "white"
-                    border.color: "#E8E8E8"
 
-                    Row {
-                        anchors {
-                            left:           parent.left
-                            right:          parent.right
-                            verticalCenter: parent.verticalCenter
-                            leftMargin:     16
-                            rightMargin:    16
-                        }
+Rectangle {
 
-                        Label {
-                            text:           "Fare"
-                            font.pixelSize: 15
-                            color:          "#555555"
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
+    width: parent.width
+    height: 56
 
-                        Item { width: 1; height: 1; Layout.fillWidth: true
-                               // spacer hack: use anchors on the fare label instead
-                        }
+    radius: 14
 
-                        Label {
-                            anchors {
-                                right:          parent.right
-                                verticalCenter: parent.verticalCenter
-                            }
-                            text:           "₹" + appState.selectedFare
-                            font.pixelSize: 26
-                            font.bold:      true
-                            color:          "#1976D2"
-                        }
-                    }
-                }
+    color: "white"
 
+    border.color: "#E8E8E8"
+
+    Row {
+
+        anchors {
+            left: parent.left
+            right: parent.right
+            verticalCenter: parent.verticalCenter
+            leftMargin: 16
+            rightMargin: 16
+        }
+
+        Label {
+            text: "Fare"
+            font.pixelSize: 15
+            color: "#555555"
+        }
+
+        Item {
+            width: 120
+            height: 1
+        }
+
+        Label {
+            text: "₹" + appState.selectedFare
+            font.pixelSize: 26
+            font.bold: true
+            color: "#1976D2"
+        }
+    }
+}
                 // ── Driver card ──────────────────────────────────────────────
                 Rectangle {
                     width:        parent.width
