@@ -5,16 +5,12 @@ Page {
 
     property var appStack
     property var appState
-
     property var rideHistory: []
 
     footer: null
 
-    Component.onCompleted: {
-        loadHistory()
-    }
+    Component.onCompleted: { loadHistory() }
 
-    // Reload every time this tab becomes visible
     onVisibleChanged: {
         if (visible) loadHistory()
     }
@@ -32,7 +28,6 @@ Page {
         xhr.send()
     }
 
-    // Computed helpers
     function totalDistance() {
         var d = 0
         for (var i = 0; i < rideHistory.length; i++)
@@ -63,19 +58,16 @@ Page {
             width: parent.width
             spacing: 0
 
-            // ── Header ────────────────────────────────────────────
             Rectangle {
                 width: parent.width
                 height: 65
                 color: "#1976D2"
-
                 Label {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: parent.left
                     anchors.leftMargin: 20
                     text: "Activity"
-                    font.pixelSize: 22
-                    font.bold: true
+                    font.pixelSize: 22; font.bold: true
                     color: "white"
                 }
             }
@@ -86,19 +78,20 @@ Page {
 
                 Item { width: 1; height: 12 }
 
-                // ── Stats Card ────────────────────────────────────
+                // ── Stats card — clip stops circle overflowing ────
                 Rectangle {
                     x: 16
                     width: parent.width - 32
                     height: 140
                     radius: 14
                     color: "#1565C0"
+                    // FIX: clip the decorative circle inside card
+                    clip: true
 
-                    // Subtle top-right circle decoration
+                    // Decorative circle — clipped to card
                     Rectangle {
-                        width: 120; height: 120
-                        radius: 60
-                        color: "#ffffff10"
+                        width: 130; height: 130; radius: 65
+                        color: "#ffffff15"
                         anchors.right: parent.right
                         anchors.top: parent.top
                         anchors.rightMargin: -30
@@ -109,96 +102,74 @@ Page {
                         anchors.fill: parent
                         anchors.margins: 20
                         columns: 2
-                        rowSpacing: 18
+                        rowSpacing: 16
                         columnSpacing: 0
 
                         Repeater {
                             model: [
                                 { val: rideHistory.length + "",
-                                  lbl: "Total Rides",
-                                  icon: "🚕" },
+                                  lbl: "Total Rides" },
                                 { val: totalDistance() + " km",
-                                  lbl: "Distance",
-                                  icon: "📍" },
+                                  lbl: "Distance" },
                                 { val: "₹" + totalSpent(),
-                                  lbl: "Money Spent",
-                                  icon: "💳" },
+                                  lbl: "Money Spent" },
                                 { val: totalCo2() + " kg",
-                                  lbl: "CO₂ Saved",
-                                  icon: "🌱" }
+                                  lbl: "CO2 Saved" }
                             ]
-                            delegate: Row {
+
+                            delegate: Column {
                                 width: (parent.width) / 2
-                                spacing: 8
+                                spacing: 2
 
-                                Text {
-                                    text: modelData.icon
-                                    font.pixelSize: 18
-                                    anchors.verticalCenter:
-                                        parent.verticalCenter
+                                Label {
+                                    text: modelData.val
+                                    font.pixelSize: 20
+                                    font.bold: true
+                                    color: "white"
                                 }
-
-                                Column {
-                                    spacing: 1
-                                    anchors.verticalCenter:
-                                        parent.verticalCenter
-
-                                    Label {
-                                        text: modelData.val
-                                        font.pixelSize: 18
-                                        font.bold: true
-                                        color: "white"
-                                    }
-                                    Label {
-                                        text: modelData.lbl
-                                        font.pixelSize: 10
-                                        color: "#B3E5FC"
-                                    }
+                                Label {
+                                    text: modelData.lbl
+                                    font.pixelSize: 10
+                                    color: "#B3E5FC"
                                 }
                             }
                         }
                     }
                 }
 
-                // ── Ride History label ────────────────────────────
                 Label {
                     x: 16
                     text: "Ride History"
-                    font.bold: true
-                    font.pixelSize: 15
+                    font.bold: true; font.pixelSize: 15
                     color: "#111"
                 }
 
-                // ── Empty state ───────────────────────────────────
+                // Empty state
                 Rectangle {
                     x: 16
                     width: parent.width - 32
                     height: 90
                     visible: rideHistory.length === 0
-                    radius: 14
-                    color: "#F5F5F5"
+                    radius: 14; color: "#F5F5F5"
                     border.color: "#E0E0E0"
 
                     Column {
                         anchors.centerIn: parent
                         spacing: 6
-
                         Text {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: "🚗"
-                            font.pixelSize: 28
-                        }
-
-                        Label {
-                            anchors.horizontalCenter: parent.horizontalCenter
                             text: "No rides yet"
-                            color: "#999"
-                            font.pixelSize: 14
+                            font.pixelSize: 15; color: "#999"
+                        }
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: "Book your first ride from Home"
+                            font.pixelSize: 12; color: "#BBB"
                         }
                     }
                 }
 
-                // ── Ride cards ────────────────────────────────────
+                // Ride cards
                 Column {
                     x: 16
                     width: parent.width - 32
@@ -214,14 +185,12 @@ Page {
                             color: "white"
                             border.color: "#EEEEEE"
 
-                            // Left colour accent bar
+                            // Left accent
                             Rectangle {
                                 width: 4
                                 height: parent.height - 28
-                                radius: 2
-                                color: "#1976D2"
+                                radius: 2; color: "#1976D2"
                                 anchors.left: parent.left
-                                anchors.leftMargin: 0
                                 anchors.verticalCenter:
                                     parent.verticalCenter
                             }
@@ -234,39 +203,33 @@ Page {
                                 anchors.bottomMargin: 12
                                 spacing: 7
 
-                                // Date + fare
                                 Row {
                                     width: parent.width
-
                                     Label {
                                         text: modelData.date || ""
                                         font.pixelSize: 11
                                         color: "#AAA"
-                                        width: parent.width - fareLabel.width
+                                        width: parent.width
+                                               - fareLabel.width
                                     }
-
                                     Label {
                                         id: fareLabel
-                                        text: "₹" + (modelData.fare || 0)
+                                        text: "₹" + (modelData.fare
+                                              || 0)
                                         font.pixelSize: 15
                                         font.bold: true
                                         color: "#1976D2"
                                     }
                                 }
 
-                                // Pickup
                                 Row {
-                                    spacing: 8
-                                    width: parent.width
-
+                                    spacing: 8; width: parent.width
                                     Rectangle {
-                                        width: 8; height: 8
-                                        radius: 4
+                                        width: 8; height: 8; radius: 4
                                         color: "#1976D2"
                                         anchors.verticalCenter:
                                             parent.verticalCenter
                                     }
-
                                     Label {
                                         text: modelData.pickup || ""
                                         font.pixelSize: 12
@@ -276,21 +239,17 @@ Page {
                                     }
                                 }
 
-                                // Destination
                                 Row {
-                                    spacing: 8
-                                    width: parent.width
-
+                                    spacing: 8; width: parent.width
                                     Rectangle {
-                                        width: 8; height: 8
-                                        radius: 2
+                                        width: 8; height: 8; radius: 2
                                         color: "#E53935"
                                         anchors.verticalCenter:
                                             parent.verticalCenter
                                     }
-
                                     Label {
-                                        text: modelData.destination || ""
+                                        text: modelData.destination
+                                              || ""
                                         font.pixelSize: 12
                                         color: "#333"
                                         width: parent.width - 16
@@ -298,18 +257,14 @@ Page {
                                     }
                                 }
 
-                                // Vehicle chip
                                 Row {
                                     spacing: 8
-
                                     Rectangle {
                                         height: 22
-                                        width: chipText.width + 16
-                                        radius: 11
-                                        color: "#E3F2FD"
-
+                                        width: chipTxt.width + 16
+                                        radius: 11; color: "#E3F2FD"
                                         Label {
-                                            id: chipText
+                                            id: chipTxt
                                             anchors.centerIn: parent
                                             text: modelData.vehicle
                                                   || "Cab"
@@ -317,15 +272,12 @@ Page {
                                             color: "#1976D2"
                                         }
                                     }
-
                                     Rectangle {
                                         height: 22
-                                        width: distText.width + 16
-                                        radius: 11
-                                        color: "#F5F5F5"
-
+                                        width: distTxt.width + 16
+                                        radius: 11; color: "#F5F5F5"
                                         Label {
-                                            id: distText
+                                            id: distTxt
                                             anchors.centerIn: parent
                                             text: (modelData.distance
                                                    || 0) + " km"

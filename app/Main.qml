@@ -13,10 +13,14 @@ ApplicationWindow {
         id: appState
     }
 
-    // Track which tab is active
     property int currentTab: 0
 
-    // ── Bottom Navigation ─────────────────────────────────────────
+    // Expose a function child pages can call to switch tabs
+    function switchTab(index) {
+        currentTab = index
+        bottomNav.currentIndex = index
+    }
+
     footer: TabBar {
 
         id: bottomNav
@@ -113,54 +117,42 @@ ApplicationWindow {
         }
     }
 
-    // ── Each tab has its own StackView ────────────────────────────
-    // This means navigating inside Home (e.g. to MapPage or
-    // ResultsPage) doesn't affect the Services/Activity/Account tabs
-    // and the bottom bar stays visible throughout.
-
-    // HOME tab
     StackView {
         id: homeStack
         anchors.fill: parent
         visible: currentTab === 0
-
-        // Push HomePage as the root and wire up props
         initialItem: HomePage {
             appStack: homeStack
             appState: appState
+            // Pass the window's switchTab function down
+            onSwitchTab: switchTab(tabIndex)
         }
     }
 
-    // SERVICES tab
     StackView {
         id: servicesStack
         anchors.fill: parent
         visible: currentTab === 1
-
         initialItem: ServicesPage {
             appStack: servicesStack
             appState: appState
         }
     }
 
-    // ACTIVITY tab
     StackView {
         id: activityStack
         anchors.fill: parent
         visible: currentTab === 2
-
         initialItem: ActivityPage {
             appStack: activityStack
             appState: appState
         }
     }
 
-    // ACCOUNT tab
     StackView {
         id: accountStack
         anchors.fill: parent
         visible: currentTab === 3
-
         initialItem: AccountPage {
             appStack: accountStack
             appState: appState
