@@ -567,6 +567,72 @@ def sos():
     return send_sos()
 
 
+# ----------------------------
+# Favourites
+# ----------------------------
+favourites_store = [
+    {
+        "label": "Home",
+        "emoji": "🏠",
+        "color": "#E3F2FD",
+        "name": "",
+        "lat": 0,
+        "lon": 0
+    },
+    {
+        "label": "Work",
+        "emoji": "💼",
+        "color": "#FFF3E0",
+        "name": "",
+        "lat": 0,
+        "lon": 0
+    }
+]
+
+
+@app.get("/favourites")
+def get_favourites():
+    return favourites_store
+
+
+# ----------------------------
+# Ride History
+# ----------------------------
+ride_history_store = []
+
+
+@app.get("/ride-history")
+def get_ride_history():
+    return ride_history_store
+
+
+@app.post("/ride-history")
+def add_ride_history(
+    pickup: str,
+    destination: str,
+    vehicle: str,
+    fare: float,
+    distance: float,
+    co2_saved: float
+):
+
+    entry = {
+        "date": "Today",
+        "pickup": pickup,
+        "destination": destination,
+        "vehicle": vehicle,
+        "fare": fare,
+        "distance": distance,
+        "co2Saved": co2_saved
+    }
+
+    ride_history_store.append(entry)
+
+    return {
+        "status": "ok"
+    }
+
+
 Base.metadata.create_all(bind=engine)
 
 print("Loaded main.py with SOS and Route endpoints")

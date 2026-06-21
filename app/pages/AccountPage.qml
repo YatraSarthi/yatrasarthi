@@ -35,6 +35,12 @@ Page {
           label: "Privacy Policy",  sub: "" }
     ]
 
+    property var accountSections: [
+        { title: "PROFILE",     items: profileItems },
+        { title: "PREFERENCES", items: preferenceItems },
+        { title: "SUPPORT",     items: supportItems }
+    ]
+
     ScrollView {
         anchors.fill: parent
         contentWidth: width
@@ -49,7 +55,6 @@ Page {
                 width: parent.width
                 height: 150
                 color: "#1976D2"
-                // FIX: clip stops yellow circle going outside header
                 clip: true
 
                 Rectangle {
@@ -99,14 +104,12 @@ Page {
 
                 Item { width: 1; height: 14 }
 
-                // Section builder — 3 explicit sections to avoid
-                // nested-array parser errors
+                // Section builder — uses a stable named property
+                // (accountSections) instead of an inline array literal,
+                // and every modelData access is guarded since Repeater
+                // can evaluate a delegate before modelData is bound.
                 Repeater {
-                    model: [
-                        { title: "PROFILE",     items: profileItems },
-                        { title: "PREFERENCES", items: preferenceItems },
-                        { title: "SUPPORT",     items: supportItems }
-                    ]
+                    model: accountSections
 
                     delegate: Column {
                         x: 16
@@ -114,14 +117,16 @@ Page {
                         spacing: 6
 
                         Label {
-                            text: modelData.title
+                            text: modelData ? modelData.title : ""
                             font.pixelSize: 11; font.bold: true
                             color: "#AAAAAA"; leftPadding: 4
                         }
 
                         Rectangle {
                             width: parent.width
-                            height: modelData.items.length * 60
+                            height: modelData
+                                    ? modelData.items.length * 60
+                                    : 0
                             radius: 14; color: "white"
                             border.color: "#EEEEEE"; clip: true
 
@@ -130,7 +135,8 @@ Page {
                                 spacing: 0
 
                                 Repeater {
-                                    model: modelData.items
+                                    id: innerRepeater
+                                    model: modelData ? modelData.items : []
 
                                     delegate: Rectangle {
                                         width: parent.width
@@ -153,7 +159,9 @@ Page {
                                                     parent.verticalCenter
 
                                                 Image {
-                                                    source: modelData.icon
+                                                    source: modelData
+                                                            ? modelData.icon
+                                                            : ""
                                                     width: 20; height: 20
                                                     fillMode:
                                                         Image.PreserveAspectFit
@@ -171,16 +179,21 @@ Page {
                                                        - 20 - 32
 
                                                 Label {
-                                                    text: modelData.label
+                                                    text: modelData
+                                                          ? modelData.label
+                                                          : ""
                                                     font.pixelSize: 14
                                                     color: "#111"
                                                 }
                                                 Label {
-                                                    text: modelData.sub
+                                                    text: modelData
+                                                          ? modelData.sub
+                                                          : ""
                                                     font.pixelSize: 11
                                                     color: "#AAA"
                                                     visible:
-                                                        modelData.sub
+                                                        modelData
+                                                        && modelData.sub
                                                         !== ""
                                                 }
                                             }
@@ -195,7 +208,10 @@ Page {
                                         }
 
                                         Rectangle {
-                                            visible: index < modelData.items.length - 1
+                                            visible: modelData
+                                                     && index 
+                                                        innerRepeater.count
+                                                        - 1
                                             anchors.bottom: parent.bottom
                                             anchors.left: parent.left
                                             anchors.right: parent.right
@@ -208,8 +224,10 @@ Page {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             onClicked: {
-                                                console.log("Tapped:",
-                                                    modelData.label)
+                                                if (modelData)
+                                                    console.log(
+                                                        "Tapped:",
+                                                        modelData.label)
                                             }
                                         }
                                     }
