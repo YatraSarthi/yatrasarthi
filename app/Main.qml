@@ -5,9 +5,9 @@ import "pages"
 ApplicationWindow {
 
     visible: true
-    width: 400
-    height: 700
-    title: "YatraSarthi"
+    width:   400
+    height:  700
+    title:   "YatraSarthi"
 
     AppState {
         id: appState
@@ -15,30 +15,31 @@ ApplicationWindow {
 
     property int currentTab: 0
 
-    // Expose a function child pages can call to switch tabs
     function switchTab(index) {
         currentTab = index
         bottomNav.currentIndex = index
     }
 
+    // ── Bottom nav — hidden whenever a full-screen page is active ────────────
     footer: TabBar {
 
-        id: bottomNav
+        id:      bottomNav
+        visible: appState.showBottomBar   // <-- KEY FIX
+        height:  visible ? implicitHeight : 0
+
         currentIndex: currentTab
 
         background: Rectangle {
             color: "white"
             Rectangle {
                 anchors.top: parent.top
-                width: parent.width
+                width:  parent.width
                 height: 1
-                color: "#E0E0E0"
+                color:  "#E0E0E0"
             }
         }
 
-        onCurrentIndexChanged: {
-            currentTab = currentIndex
-        }
+        onCurrentIndexChanged: currentTab = currentIndex
 
         TabButton {
             contentItem: Column {
@@ -46,34 +47,15 @@ ApplicationWindow {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: Qt.resolvedUrl("../assets/icons/pickup.png")
+                    source:   Qt.resolvedUrl("../assets/icons/pickup.png")
                     width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Home"
+                    text:           "Home"
                     font.pixelSize: 10
-                    color: currentTab === 0 ? "#1976D2" : "#888"
-                }
-            }
-        }
-
-        TabButton {
-            contentItem: Column {
-                anchors.centerIn: parent
-                spacing: 2
-                Image {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    source: Qt.resolvedUrl("../assets/icons/auto.png")
-                    width: 22; height: 22
-                    fillMode: Image.PreserveAspectFit
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Services"
-                    font.pixelSize: 10
-                    color: currentTab === 1 ? "#1976D2" : "#888"
+                    color:          currentTab === 0 ? "#1976D2" : "#888"
                 }
             }
         }
@@ -84,15 +66,15 @@ ApplicationWindow {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: Qt.resolvedUrl("../assets/icons/rider.png")
+                    source:   Qt.resolvedUrl("../assets/icons/auto.png")
                     width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Activity"
+                    text:           "Services"
                     font.pixelSize: 10
-                    color: currentTab === 2 ? "#1976D2" : "#888"
+                    color:          currentTab === 1 ? "#1976D2" : "#888"
                 }
             }
         }
@@ -103,29 +85,48 @@ ApplicationWindow {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: Qt.resolvedUrl("../assets/icons/driver.png")
+                    source:   Qt.resolvedUrl("../assets/icons/rider.png")
                     width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Account"
+                    text:           "Activity"
                     font.pixelSize: 10
-                    color: currentTab === 3 ? "#1976D2" : "#888"
+                    color:          currentTab === 2 ? "#1976D2" : "#888"
+                }
+            }
+        }
+
+        TabButton {
+            contentItem: Column {
+                anchors.centerIn: parent
+                spacing: 2
+                Image {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    source:   Qt.resolvedUrl("../assets/icons/driver.png")
+                    width: 22; height: 22
+                    fillMode: Image.PreserveAspectFit
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text:           "Account"
+                    font.pixelSize: 10
+                    color:          currentTab === 3 ? "#1976D2" : "#888"
                 }
             }
         }
     }
 
+    // ── Stacks ───────────────────────────────────────────────────────────────
+
     StackView {
-        id: homeStack
+        id:          homeStack
         anchors.fill: parent
-        visible: currentTab === 0
+        visible:     currentTab === 0
         initialItem: HomePage {
-            appStack: homeStack
-            appState: appState
-            // Pass the window's switchTab function down
-            // (HomePage emits requestTabChange, handled here)
+            appStack:      homeStack
+            appState:      appState
             onRequestTabChange: {
                 switchTab(tabIndex)
             }
@@ -133,9 +134,9 @@ ApplicationWindow {
     }
 
     StackView {
-        id: servicesStack
+        id:          servicesStack
         anchors.fill: parent
-        visible: currentTab === 1
+        visible:     currentTab === 1
         initialItem: ServicesPage {
             appStack: servicesStack
             appState: appState
@@ -143,9 +144,9 @@ ApplicationWindow {
     }
 
     StackView {
-        id: activityStack
+        id:          activityStack
         anchors.fill: parent
-        visible: currentTab === 2
+        visible:     currentTab === 2
         initialItem: ActivityPage {
             appStack: activityStack
             appState: appState
@@ -153,9 +154,9 @@ ApplicationWindow {
     }
 
     StackView {
-        id: accountStack
+        id:          accountStack
         anchors.fill: parent
-        visible: currentTab === 3
+        visible:     currentTab === 3
         initialItem: AccountPage {
             appStack: accountStack
             appState: appState
