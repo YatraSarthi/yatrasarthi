@@ -9,9 +9,40 @@ Page {
 
     property var pickupModel: []
     property var destinationModel: []
+    property var recentPlaces: []
 
     property bool suppressPickupFetch: false
     property bool suppressDestinationFetch: false
+
+    // ── Load recent places on page open ──────────────────────────
+    Component.onCompleted: {
+        loadRecentPlaces()
+    }
+
+    function loadRecentPlaces() {
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                var parsed = JSON.parse(xhr.responseText)
+                recentPlaces = parsed
+            }
+        }
+        xhr.open("GET", "http://127.0.0.1:8000/recent-places", true)
+        xhr.send()
+    }
+
+    function saveRecentPlace(name, lat, lon) {
+        var xhr = new XMLHttpRequest()
+        xhr.open(
+            "POST",
+            "http://127.0.0.1:8000/recent-places"
+            + "?name=" + encodeURIComponent(name)
+            + "&lat=" + lat
+            + "&lon=" + lon,
+            true
+        )
+        xhr.send()
+    }
 
     function fetchPickupSuggestions(query) {
         var xhr = new XMLHttpRequest()
@@ -20,7 +51,8 @@ Page {
                 pickupModel = JSON.parse(xhr.responseText)
             }
         }
-        xhr.open("GET", "http://127.0.0.1:8000/search-location?query=" + encodeURIComponent(query), true)
+        xhr.open("GET", "http://127.0.0.1:8000/search-location?query="
+            + encodeURIComponent(query), true)
         xhr.send()
     }
 
@@ -31,7 +63,8 @@ Page {
                 destinationModel = JSON.parse(xhr.responseText)
             }
         }
-        xhr.open("GET", "http://127.0.0.1:8000/search-location?query=" + encodeURIComponent(query), true)
+        xhr.open("GET", "http://127.0.0.1:8000/search-location?query="
+            + encodeURIComponent(query), true)
         xhr.send()
     }
 
@@ -70,9 +103,8 @@ Page {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: "../../assets/icons/home.png"
-                    width: 22
-                    height: 22
+                    source: "../../assets/icons/pickup.png"
+                    width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
                 Text {
@@ -90,9 +122,8 @@ Page {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: "../../assets/icons/services.png"
-                    width: 22
-                    height: 22
+                    source: "../../assets/icons/star.png"
+                    width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
                 Text {
@@ -110,9 +141,8 @@ Page {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: "../../assets/icons/history.png"
-                    width: 22
-                    height: 22
+                    source: "../../assets/icons/rider.png"
+                    width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
                 Text {
@@ -130,9 +160,8 @@ Page {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: "../../assets/icons/account.png"
-                    width: 22
-                    height: 22
+                    source: "../../assets/icons/driver.png"
+                    width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
                 Text {
@@ -145,437 +174,45 @@ Page {
         }
     }
 
-    // ── Scrollable Body ───────────────────────────────────────────
-    ScrollView {
+    // ── Main content ──────────────────────────────────────────────
+    // Outer Item fills the Page so we can use absolute z-layering
+    // for the dropdowns — they are children of this Item, not of the
+    // ScrollView, so they always float above everything else.
+    Item {
 
+        id: pageRoot
         anchors.fill: parent
-        contentWidth: parent.width
-        clip: true
 
-        ColumnLayout {
+        // ── Scrollable body (sits below dropdowns in z-order) ─────
+        ScrollView {
 
-            width: parent.width
-            spacing: 0
+            anchors.fill: parent
+            contentWidth: width
+            clip: true
 
-            // ── Header ───────────────────────────────────────────
-            Rectangle {
+            Column {
 
-                Layout.fillWidth: true
-                height: 70
+                width: parent.width
+                spacing: 0
 
-                color: "#1976D2"
-
-                RowLayout {
-
-                    anchors.fill: parent
-                    anchors.leftMargin: 20
-                    anchors.rightMargin: 20
-
-                    Label {
-                        text: "YatraSarthi"
-                        font.pixelSize: 24
-                        font.bold: true
-                        color: "white"
-                        Layout.fillWidth: true
-                    }
-
-                    Image {
-                        source: "../../assets/icons/account.png"
-                        width: 32
-                        height: 32
-                        fillMode: Image.PreserveAspectFit
-                    }
-                }
-            }
-
-            // ── Body padding wrapper ──────────────────────────────
-            ColumnLayout {
-
-                Layout.fillWidth: true
-                Layout.margins: 20
-                spacing: 16
-
-                // ── Current Location Card ─────────────────────────
+                // ── Header ────────────────────────────────────────
                 Rectangle {
 
-                    Layout.fillWidth: true
+                    width: parent.width
                     height: 70
-                    radius: 12
-                    color: "#F5F5F5"
-                    border.color: "#E0E0E0"
+                    color: "#1976D2"
 
-                    RowLayout {
-
-                        anchors.fill: parent
-                        anchors.margins: 14
-                        spacing: 12
-
-                        Image {
-                            source: "../../assets/icons/my_location.png"
-                            width: 26
-                            height: 26
-                            fillMode: Image.PreserveAspectFit
-                        }
-
-                        Column {
-                            spacing: 2
-                            Label {
-                                text: "Current Location"
-                                font.pixelSize: 11
-                                color: "#888"
-                            }
-                            Label {
-                                text: appState.pickupLocation !== ""
-                                      ? appState.pickupLocation
-                                      : "Bengaluru, Karnataka"
-                                font.pixelSize: 14
-                                font.bold: true
-                                color: "#222"
-                            }
-                        }
-                    }
-                }
-
-                // ── Search Card (Pickup + Destination) ───────────
-                // Outer Item: never clips so both dropdowns overlay freely.
-                Item {
-
-                    Layout.fillWidth: true
-
-                    // Base card is 130 px; each open dropdown adds
-                    // up to 140 px so siblings are never obscured.
-                    height: 130
-                           + (pickupModel.length      > 0 ? Math.min(pickupModel.length      * 45, 140) : 0)
-                           + (destinationModel.length > 0 ? Math.min(destinationModel.length * 45, 140) : 0)
-
-                    // ── White card background ─────────────────────
-                    Rectangle {
-                        id: searchCard
+                    Row {
+                        anchors.verticalCenter: parent.verticalCenter
                         anchors.left: parent.left
+                        anchors.leftMargin: 20
                         anchors.right: parent.right
-                        anchors.top: parent.top
-                        height: 130
-                        radius: 12
-                        color: "white"
-                        border.color: "#E0E0E0"
-
-                        // drop-shadow
-                        layer.enabled: true
-                        layer.effect: null
-                    }
-
-                    // ── Pickup row ────────────────────────────────
-                    RowLayout {
-
-                        id: pickupRow
-
-                        anchors.top: searchCard.top
-                        anchors.topMargin: 14
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 8
-                        height: 44
+                        anchors.rightMargin: 20
                         spacing: 8
 
-                        Rectangle {
-                            width: 10; height: 10; radius: 5
-                            color: "#1976D2"
-                        }
-
-                        TextField {
-
-                            id: pickupSearch
-
-                            Layout.fillWidth: true
-
-                            text: appState.pickupLocation
-
-                            placeholderText: "Pickup location"
-
-                            background: Item {}   // transparent — card is the bg
-
-                            font.pixelSize: 14
-
-                            onTextChanged: {
-                                if (suppressPickupFetch) {
-                                    suppressPickupFetch = false
-                                    return
-                                }
-                                if (!activeFocus) return
-                                if (text.length > 2) pickupTimer.restart()
-                            }
-                        }
-
-                        // Map button (pickup)
-                        ToolButton {
-                            implicitWidth: 36
-                            implicitHeight: 36
-                            onClicked: {
-                                appState.activeSelection = "pickup"
-                                appStack.push(Qt.resolvedUrl("MapPage.qml"),
-                                    { "appStack": appStack, "appState": appState })
-                            }
-                            contentItem: Image {
-                                source: "../../assets/icons/map.png"
-                                width: 18; height: 18
-                                fillMode: Image.PreserveAspectFit
-                                anchors.centerIn: parent
-                            }
-                        }
-                    }
-
-                    // ── Divider ───────────────────────────────────
-                    Rectangle {
-                        anchors.top: pickupRow.bottom
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 14
-                        height: 1
-                        color: "#EEEEEE"
-                    }
-
-                    // ── Destination row ───────────────────────────
-                    RowLayout {
-
-                        id: destinationRow
-
-                        anchors.top: pickupRow.bottom
-                        anchors.topMargin: 1      // sits right on divider
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.leftMargin: 14
-                        anchors.rightMargin: 8
-                        height: 44
-                        spacing: 8
-
-                        Rectangle {
-                            width: 10; height: 10; radius: 2
-                            color: "#E53935"
-                        }
-
-                        TextField {
-
-                            id: destinationSearch
-
-                            Layout.fillWidth: true
-
-                            text: appState.destinationLocation
-
-                            placeholderText: "Where to?"
-
-                            background: Item {}
-
-                            font.pixelSize: 14
-
-                            onTextChanged: {
-                                if (suppressDestinationFetch) {
-                                    suppressDestinationFetch = false
-                                    return
-                                }
-                                if (!activeFocus) return
-                                if (text.length > 2) destinationTimer.restart()
-                            }
-                        }
-
-                        // Map button (destination)
-                        ToolButton {
-                            implicitWidth: 36
-                            implicitHeight: 36
-                            onClicked: {
-                                appState.activeSelection = "destination"
-                                appStack.push(Qt.resolvedUrl("MapPage.qml"),
-                                    { "appStack": appStack, "appState": appState })
-                            }
-                            contentItem: Image {
-                                source: "../../assets/icons/map.png"
-                                width: 18; height: 18
-                                fillMode: Image.PreserveAspectFit
-                                anchors.centerIn: parent
-                            }
-                        }
-                    }
-
-                    // ── Pickup dropdown ───────────────────────────
-                    Rectangle {
-
-                        anchors.top: searchCard.top
-                        anchors.topMargin: 130     // flush below card
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-
-                        height: pickupModel.length > 0
-                                ? Math.min(pickupModel.length * 45, 140)
-                                : 0
-
-                        visible: pickupModel.length > 0
-
-                        z: 9999
-
-                        color: "white"
-                        border.color: "#D3D3D3"
-                        radius: 8
-
-                        ListView {
-                            anchors.fill: parent
-                            clip: true
-                            model: pickupModel
-                            delegate: Rectangle {
-                                width: parent.width
-                                height: 45
-                                border.color: "#EEEEEE"
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: 12
-                                    width: parent.width - 24
-                                    text: modelData.name
-                                    font.pixelSize: 13
-                                    elide: Text.ElideRight
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    onClicked: {
-                                        pickupTimer.stop()
-                                        appState.pickupLocation = modelData.name
-                                        appState.pickupLat      = modelData.lat
-                                        appState.pickupLon      = modelData.lon
-                                        pickupModel = []
-                                        pickupSearch.focus = false
-                                        pickupSearch.text  = modelData.name
-                                        pickupSearch.cursorPosition = pickupSearch.text.length
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // ── Destination dropdown ──────────────────────
-                    Rectangle {
-
-                        anchors.top: searchCard.top
-                        anchors.topMargin: 130
-                                         + (pickupModel.length > 0
-                                            ? Math.min(pickupModel.length * 45, 140)
-                                            : 0)
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-
-                        height: destinationModel.length > 0
-                                ? Math.min(destinationModel.length * 45, 140)
-                                : 0
-
-                        visible: destinationModel.length > 0
-
-                        z: 9999
-
-                        color: "white"
-                        border.color: "#D3D3D3"
-                        radius: 8
-
-                        ListView {
-                            anchors.fill: parent
-                            clip: true
-                            model: destinationModel
-                            delegate: Rectangle {
-                                width: parent.width
-                                height: 45
-                                border.color: "#EEEEEE"
-                                Text {
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: 12
-                                    width: parent.width - 24
-                                    text: modelData.name
-                                    font.pixelSize: 13
-                                    elide: Text.ElideRight
-                                }
-                                MouseArea {
-                                    anchors.fill: parent
-                                    onClicked: {
-                                        destinationTimer.stop()
-                                        appState.destinationLocation = modelData.name
-                                        appState.destinationLat      = modelData.lat
-                                        appState.destinationLon      = modelData.lon
-                                        destinationModel = []
-                                        destinationSearch.focus = false
-                                        destinationSearch.text  = modelData.name
-                                        destinationSearch.cursorPosition = destinationSearch.text.length
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // ── Get My Location button ────────────────────────
-                Button {
-
-                    Layout.fillWidth: true
-                    height: 38
-
-                    onClicked: {
-                        appState.pickupLocation = "Bengaluru, Karnataka"
-                    }
-
-                    background: Rectangle {
-                        color: "#E3F2FD"
-                        radius: 8
-                        border.color: "#90CAF9"
-                    }
-
-                    contentItem: Row {
-                        anchors.centerIn: parent
-                        spacing: 8
-                        Image {
-                            source: "../../assets/icons/my_location.png"
-                            width: 16; height: 16
-                            fillMode: Image.PreserveAspectFit
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Text {
-                            text: "Use My Current Location"
-                            font.pixelSize: 13
-                            color: "#1976D2"
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                    }
-                }
-
-                // ── Find Ride button ──────────────────────────────
-                Button {
-
-                    Layout.fillWidth: true
-                    height: 52
-
-                    onClicked: {
-                        if (appState.pickupLocation === ""
-                                || appState.destinationLocation === "") {
-                            console.log("Select both locations")
-                            return
-                        }
-                        appStack.push(Qt.resolvedUrl("ResultsPage.qml"),
-                            { "appStack": appStack, "appState": appState })
-                    }
-
-                    background: Rectangle {
-                        color: "#1976D2"
-                        radius: 12
-                    }
-
-                    contentItem: Row {
-                        anchors.centerIn: parent
-                        spacing: 10
-                        Image {
-                            source: "../../assets/icons/rider.png"
-                            width: 26; height: 26
-                            fillMode: Image.PreserveAspectFit
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                        Text {
-                            text: "Find Ride"
-                            font.pixelSize: 16
+                        Label {
+                            text: "YatraSarthi"
+                            font.pixelSize: 24
                             font.bold: true
                             color: "white"
                             anchors.verticalCenter: parent.verticalCenter
@@ -583,240 +220,695 @@ Page {
                     }
                 }
 
-                // ── Quick Actions ─────────────────────────────────
-                Label {
-                    text: "Quick Actions"
-                    font.bold: true
-                    font.pixelSize: 16
-                    color: "#222"
-                    Layout.topMargin: 4
-                }
+                // ── Body padding column ───────────────────────────
+                Column {
 
-                GridLayout {
+                    width: parent.width
+                    spacing: 14
 
-                    Layout.fillWidth: true
-                    columns: 4
-                    rowSpacing: 10
-                    columnSpacing: 10
+                    // top gap
+                    Item { width: 1; height: 6 }
 
-                    // SOS
-                    Button {
-                        Layout.fillWidth: true
-                        height: 70
-                        onClicked: { /* SOS action */ }
-                        background: Rectangle {
-                            color: "#FFEBEE"
-                            radius: 12
-                            border.color: "#FFCDD2"
-                        }
-                        contentItem: Column {
-                            anchors.centerIn: parent
-                            spacing: 4
-                            Image {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                source: "../../assets/icons/sos.png"
-                                width: 26; height: 26
-                                fillMode: Image.PreserveAspectFit
-                            }
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "SOS"
-                                font.pixelSize: 11
-                                font.bold: true
-                                color: "#E53935"
-                            }
-                        }
-                    }
+                    // ── Search Card ───────────────────────────────
+                    // This is just the visible white card — fixed
+                    // height, no clip. The dropdowns are rendered
+                    // in pageRoot above the ScrollView entirely.
+                    Rectangle {
 
-                    // History
-                    Button {
-                        Layout.fillWidth: true
-                        height: 70
-                        onClicked: { /* History action */ }
-                        background: Rectangle {
-                            color: "#E8F5E9"
-                            radius: 12
-                            border.color: "#C8E6C9"
-                        }
-                        contentItem: Column {
-                            anchors.centerIn: parent
-                            spacing: 4
-                            Image {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                source: "../../assets/icons/history.png"
-                                width: 26; height: 26
-                                fillMode: Image.PreserveAspectFit
-                            }
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "History"
-                                font.pixelSize: 11
-                                font.bold: true
-                                color: "#388E3C"
-                            }
-                        }
-                    }
+                        id: searchCard
 
-                    // Queue
-                    Button {
-                        Layout.fillWidth: true
-                        height: 70
-                        onClicked: { /* Queue action */ }
-                        background: Rectangle {
-                            color: "#FFF8E1"
-                            radius: 12
-                            border.color: "#FFE082"
-                        }
-                        contentItem: Column {
-                            anchors.centerIn: parent
-                            spacing: 4
-                            Image {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                source: "../../assets/icons/star.png"
-                                width: 26; height: 26
-                                fillMode: Image.PreserveAspectFit
-                            }
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "Queue"
-                                font.pixelSize: 11
-                                font.bold: true
-                                color: "#F9A825"
-                            }
-                        }
-                    }
+                        x: 20
+                        width: parent.width - 40
+                        height: 110
+                        radius: 12
+                        color: "white"
+                        border.color: "#E0E0E0"
 
-                    // Route
-                    Button {
-                        Layout.fillWidth: true
-                        height: 70
-                        onClicked: { /* Route action */ }
-                        background: Rectangle {
-                            color: "#E3F2FD"
-                            radius: 12
-                            border.color: "#90CAF9"
-                        }
-                        contentItem: Column {
-                            anchors.centerIn: parent
-                            spacing: 4
-                            Image {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                source: "../../assets/icons/map.png"
-                                width: 26; height: 26
-                                fillMode: Image.PreserveAspectFit
-                            }
-                            Text {
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                text: "Route"
-                                font.pixelSize: 11
-                                font.bold: true
-                                color: "#1976D2"
-                            }
-                        }
-                    }
-                }
+                        // subtle shadow
+                        layer.enabled: true
 
-                // ── Recent Places ─────────────────────────────────
-                Label {
-                    text: "Recent Places"
-                    font.bold: true
-                    font.pixelSize: 16
-                    color: "#222"
-                    Layout.topMargin: 4
-                }
+                        Column {
 
-                Rectangle {
+                            anchors.fill: parent
+                            spacing: 0
 
-                    Layout.fillWidth: true
-                    height: recentColumn.implicitHeight + 20
-                    radius: 12
-                    color: "white"
-                    border.color: "#E0E0E0"
-
-                    Column {
-
-                        id: recentColumn
-
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.margins: 12
-                        spacing: 0
-
-                        Repeater {
-
-                            model: [
-                                "REVA University",
-                                "Majestic Bus Stand",
-                                "Kempegowda Airport"
-                            ]
-
-                            delegate: Rectangle {
-
+                            // Pickup row
+                            Row {
+                                id: pickupRowInCard
                                 width: parent.width
-                                height: 48
+                                height: 54
+                                spacing: 8
+                                leftPadding: 14
+                                rightPadding: 8
 
-                                color: recentMouse.containsMouse
-                                       ? "#F5F5F5"
-                                       : "transparent"
+                                Rectangle {
+                                    width: 10; height: 10; radius: 5
+                                    color: "#1976D2"
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
 
-                                radius: 8
+                                TextField {
+                                    id: pickupSearch
+                                    width: parent.width
+                                           - 10 - 8 - 36 - 8
+                                           - parent.leftPadding
+                                           - parent.rightPadding
+                                    height: parent.height
+                                    text: appState.pickupLocation
+                                    placeholderText: "Pickup location"
+                                    background: Item {}
+                                    font.pixelSize: 14
+                                    verticalAlignment: Text.AlignVCenter
 
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 4
-                                    anchors.rightMargin: 4
-                                    spacing: 12
+                                    onTextChanged: {
+                                        if (suppressPickupFetch) {
+                                            suppressPickupFetch = false
+                                            return
+                                        }
+                                        if (!activeFocus) return
+                                        if (text.length > 2)
+                                            pickupTimer.restart()
+                                        else
+                                            pickupModel = []
+                                    }
+                                }
 
-                                    Image {
-                                        source: "../../assets/icons/destination.png"
+                                ToolButton {
+                                    width: 36; height: 36
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    onClicked: {
+                                        appState.activeSelection = "pickup"
+                                        appStack.push(
+                                            Qt.resolvedUrl("MapPage.qml"),
+                                            { "appStack": appStack,
+                                              "appState": appState })
+                                    }
+                                    contentItem: Image {
+                                        source: "../../assets/icons/map.png"
                                         width: 18; height: 18
                                         fillMode: Image.PreserveAspectFit
-                                    }
-
-                                    Label {
-                                        text: modelData
-                                        font.pixelSize: 14
-                                        color: "#333"
-                                        Layout.fillWidth: true
-                                    }
-
-                                    Image {
-                                        source: "../../assets/icons/map.png"
-                                        width: 14; height: 14
-                                        fillMode: Image.PreserveAspectFit
-                                        opacity: 0.4
+                                        anchors.centerIn: parent
                                     }
                                 }
+                            }
 
-                                // Divider (skip last)
+                            // Divider
+                            Rectangle {
+                                x: 14
+                                width: parent.width - 28
+                                height: 1
+                                color: "#EEEEEE"
+                            }
+
+                            // Destination row
+                            Row {
+                                id: destinationRowInCard
+                                width: parent.width
+                                height: 54
+                                spacing: 8
+                                leftPadding: 14
+                                rightPadding: 8
+
                                 Rectangle {
-                                    visible: index < 2
-                                    anchors.bottom: parent.bottom
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.leftMargin: 34
-                                    height: 1
-                                    color: "#EEEEEE"
+                                    width: 10; height: 10; radius: 2
+                                    color: "#E53935"
+                                    anchors.verticalCenter: parent.verticalCenter
                                 }
 
-                                MouseArea {
-                                    id: recentMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
+                                TextField {
+                                    id: destinationSearch
+                                    width: parent.width
+                                           - 10 - 8 - 36 - 8
+                                           - parent.leftPadding
+                                           - parent.rightPadding
+                                    height: parent.height
+                                    text: appState.destinationLocation
+                                    placeholderText: "Where to?"
+                                    background: Item {}
+                                    font.pixelSize: 14
+                                    verticalAlignment: Text.AlignVCenter
+
+                                    onTextChanged: {
+                                        if (suppressDestinationFetch) {
+                                            suppressDestinationFetch = false
+                                            return
+                                        }
+                                        if (!activeFocus) return
+                                        if (text.length > 2)
+                                            destinationTimer.restart()
+                                        else
+                                            destinationModel = []
+                                    }
+                                }
+
+                                ToolButton {
+                                    width: 36; height: 36
+                                    anchors.verticalCenter: parent.verticalCenter
                                     onClicked: {
-                                        appState.destinationLocation = modelData
-                                        destinationSearch.text = modelData
+                                        appState.activeSelection = "destination"
+                                        appStack.push(
+                                            Qt.resolvedUrl("MapPage.qml"),
+                                            { "appStack": appStack,
+                                              "appState": appState })
+                                    }
+                                    contentItem: Image {
+                                        source: "../../assets/icons/map.png"
+                                        width: 18; height: 18
+                                        fillMode: Image.PreserveAspectFit
+                                        anchors.centerIn: parent
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                // bottom breathing room
-                Item { Layout.preferredHeight: 12 }
+                    // ── Use My Location ───────────────────────────
+                    Button {
+                        x: 20
+                        width: parent.width - 40
+                        height: 38
+                        onClicked: {
+                            appState.pickupLocation = "Bengaluru, Karnataka"
+                            pickupSearch.text = "Bengaluru, Karnataka"
+                        }
+                        background: Rectangle {
+                            color: "#E3F2FD"; radius: 8
+                            border.color: "#90CAF9"
+                        }
+                        contentItem: Row {
+                            anchors.centerIn: parent
+                            spacing: 8
+                            Image {
+                                source: "../../assets/icons/pickup.png"
+                                width: 16; height: 16
+                                fillMode: Image.PreserveAspectFit
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "Use My Current Location"
+                                font.pixelSize: 13
+                                color: "#1976D2"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                    }
+
+                    // ── Find Ride ─────────────────────────────────
+                    Button {
+                        x: 20
+                        width: parent.width - 40
+                        height: 52
+                        onClicked: {
+                            if (appState.pickupLocation === ""
+                                    || appState.destinationLocation === "") {
+                                console.log("Select both locations")
+                                return
+                            }
+                            console.log("Pickup:",
+                                appState.pickupLat, appState.pickupLon)
+                            console.log("Destination:",
+                                appState.destinationLat, appState.destinationLon)
+
+                            appStack.push(
+                                Qt.resolvedUrl("ResultsPage.qml"),
+                                { "appStack": appStack, "appState": appState })
+                        }
+                        background: Rectangle {
+                            color: "#1976D2"; radius: 12
+                        }
+                        contentItem: Row {
+                            anchors.centerIn: parent
+                            spacing: 10
+                            Image {
+                                source: "../../assets/icons/rider.png"
+                                width: 26; height: 26
+                                fillMode: Image.PreserveAspectFit
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text {
+                                text: "Find Ride"
+                                font.pixelSize: 16
+                                font.bold: true
+                                color: "white"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                        }
+                    }
+
+                    // ── Quick Actions ─────────────────────────────
+                    Label {
+                        x: 20
+                        text: "Quick Actions"
+                        font.bold: true
+                        font.pixelSize: 16
+                        color: "#222"
+                    }
+
+                    Row {
+                        x: 20
+                        width: parent.width - 40
+                        spacing: 10
+
+                        Repeater {
+                            model: [
+                                { label: "SOS",     icon: "sos.png",
+                                  bg: "#FFEBEE", border: "#FFCDD2",
+                                  fg: "#E53935" },
+                                { label: "History", icon: "rider.png",
+                                  bg: "#E8F5E9", border: "#C8E6C9",
+                                  fg: "#388E3C" },
+                                { label: "Queue",   icon: "star.png",
+                                  bg: "#FFF8E1", border: "#FFE082",
+                                  fg: "#F9A825" },
+                                { label: "Route",   icon: "map.png",
+                                  bg: "#E3F2FD", border: "#90CAF9",
+                                  fg: "#1976D2" }
+                            ]
+
+                            delegate: Button {
+                                width: (parent.width - 30) / 4
+                                height: 72
+                                background: Rectangle {
+                                    color: modelData.bg
+                                    radius: 12
+                                    border.color: modelData.border
+                                }
+                                contentItem: Column {
+                                    anchors.centerIn: parent
+                                    spacing: 4
+                                    Image {
+                                        anchors.horizontalCenter:
+                                            parent.horizontalCenter
+                                        source: "../../assets/icons/"
+                                                + modelData.icon
+                                        width: 26; height: 26
+                                        fillMode: Image.PreserveAspectFit
+                                    }
+                                    Text {
+                                        anchors.horizontalCenter:
+                                            parent.horizontalCenter
+                                        text: modelData.label
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        color: modelData.fg
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ── Recent Places (dynamic) ───────────────────
+                    // Only shown when the backend has returned places
+                    Column {
+                        x: 20
+                        width: parent.width - 40
+                        spacing: 8
+                        visible: recentPlaces.length > 0
+
+                        Label {
+                            text: "Recent Places"
+                            font.bold: true
+                            font.pixelSize: 16
+                            color: "#222"
+                        }
+
+                        Rectangle {
+                            width: parent.width
+                            height: recentPlaces.length * 52
+                            radius: 12
+                            color: "white"
+                            border.color: "#E0E0E0"
+                            clip: true
+
+                            Column {
+                                anchors.fill: parent
+                                spacing: 0
+
+                                Repeater {
+                                    model: recentPlaces
+
+                                    delegate: Rectangle {
+                                        width: parent.width
+                                        height: 52
+                                        color: recentMouse.containsMouse
+                                               ? "#F5F5F5" : "transparent"
+
+                                        Row {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 14
+                                            anchors.rightMargin: 14
+                                            spacing: 12
+
+                                            Image {
+                                                source: "../../assets/icons/destination.png"
+                                                width: 20; height: 20
+                                                fillMode: Image.PreserveAspectFit
+                                                anchors.verticalCenter: parent.verticalCenter
+                                            }
+
+                                            Column {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                spacing: 2
+                                                width: parent.width - 20 - 12 - 28
+
+                                                Label {
+                                                    text: modelData.name
+                                                    font.pixelSize: 14
+                                                    color: "#222"
+                                                    width: parent.width
+                                                    elide: Text.ElideRight
+                                                }
+                                            }
+                                        }
+
+                                        // Row divider
+                                        Rectangle {
+                                            visible: index < recentPlaces.length - 1
+                                            anchors.bottom: parent.bottom
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.leftMargin: 46
+                                            height: 1
+                                            color: "#EEEEEE"
+                                        }
+
+                                        MouseArea {
+                                            id: recentMouse
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onClicked: {
+                                                // Fill destination directly
+                                                // with saved coords — no
+                                                // second search needed
+                                                appState.destinationLocation =
+                                                    modelData.name
+                                                appState.destinationLat =
+                                                    modelData.lat
+                                                appState.destinationLon =
+                                                    modelData.lon
+
+                                                suppressDestinationFetch = true
+                                                destinationSearch.text =
+                                                    modelData.name
+                                                destinationSearch.cursorPosition =
+                                                    destinationSearch.text.length
+
+                                                console.log(
+                                                    "Recent place selected:",
+                                                    modelData.name,
+                                                    modelData.lat,
+                                                    modelData.lon)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // bottom breathing room
+                    Item { width: 1; height: 20 }
+                }
             }
+        }
+
+        // ── PICKUP DROPDOWN ───────────────────────────────────────
+        // Child of pageRoot (NOT ScrollView) so it truly floats
+        // above every other element with no clipping at all.
+        Rectangle {
+
+            id: pickupDropdown
+
+            // Position relative to searchCard, mapped to pageRoot
+            x: searchCard.x + pageRoot.x
+            // 70 (header) + searchCard.y relative to scroll content
+            // We use a helper Item inside the card to get global pos.
+            y: pickupAnchor.mapToItem(pageRoot, 0, 0).y
+            width: searchCard.width
+
+            height: pickupModel.length > 0
+                    ? Math.min(pickupModel.length * 52, 208)
+                    : 0
+
+            visible: pickupModel.length > 0
+            z: 99999
+
+            color: "white"
+            border.color: "#C8C8C8"
+            radius: 10
+
+            // Drop shadow
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -1
+                radius: parent.radius + 1
+                color: "transparent"
+                border.color: "#22000000"
+                z: -1
+            }
+
+            ListView {
+                anchors.fill: parent
+                anchors.margins: 4
+                clip: true
+                model: pickupModel
+                spacing: 0
+
+                delegate: Rectangle {
+                    width: parent.width
+                    height: 52
+                    color: pickupItemMouse.containsMouse
+                           ? "#F0F4FF" : "transparent"
+                    radius: 8
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 10
+
+                        Rectangle {
+                            width: 32; height: 32; radius: 16
+                            color: "#E3F2FD"
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Image {
+                                source: "../../assets/icons/pickup.png"
+                                width: 16; height: 16
+                                fillMode: Image.PreserveAspectFit
+                                anchors.centerIn: parent
+                            }
+                        }
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 32 - 10 - 12 - 12
+                            spacing: 1
+
+                            Text {
+                                text: modelData.name
+                                font.pixelSize: 13
+                                font.bold: true
+                                color: "#111"
+                                width: parent.width
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                text: modelData.display_name
+                                      ? modelData.display_name
+                                      : ""
+                                font.pixelSize: 11
+                                color: "#888"
+                                width: parent.width
+                                elide: Text.ElideRight
+                                visible: text !== ""
+                            }
+                        }
+                    }
+
+                    // thin row separator
+                    Rectangle {
+                        visible: index < pickupModel.length - 1
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: 54
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
+                    MouseArea {
+                        id: pickupItemMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            pickupTimer.stop()
+                            appState.pickupLocation = modelData.name
+                            appState.pickupLat      = modelData.lat
+                            appState.pickupLon      = modelData.lon
+                            pickupModel = []
+                            pickupSearch.focus = false
+                            pickupSearch.text  = modelData.name
+                            pickupSearch.cursorPosition =
+                                pickupSearch.text.length
+                            console.log("Pickup set:",
+                                appState.pickupLat, appState.pickupLon)
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── DESTINATION DROPDOWN ──────────────────────────────────
+        Rectangle {
+
+            id: destinationDropdown
+
+            x: searchCard.x + pageRoot.x
+            y: destAnchor.mapToItem(pageRoot, 0, 0).y
+            width: searchCard.width
+
+            height: destinationModel.length > 0
+                    ? Math.min(destinationModel.length * 52, 208)
+                    : 0
+
+            visible: destinationModel.length > 0
+            z: 99999
+
+            color: "white"
+            border.color: "#C8C8C8"
+            radius: 10
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -1
+                radius: parent.radius + 1
+                color: "transparent"
+                border.color: "#22000000"
+                z: -1
+            }
+
+            ListView {
+                anchors.fill: parent
+                anchors.margins: 4
+                clip: true
+                model: destinationModel
+                spacing: 0
+
+                delegate: Rectangle {
+                    width: parent.width
+                    height: 52
+                    color: destItemMouse.containsMouse
+                           ? "#F0F4FF" : "transparent"
+                    radius: 8
+
+                    Row {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 10
+
+                        Rectangle {
+                            width: 32; height: 32; radius: 16
+                            color: "#FFEBEE"
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Image {
+                                source: "../../assets/icons/destination.png"
+                                width: 16; height: 16
+                                fillMode: Image.PreserveAspectFit
+                                anchors.centerIn: parent
+                            }
+                        }
+
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 32 - 10 - 12 - 12
+                            spacing: 1
+
+                            Text {
+                                text: modelData.name
+                                font.pixelSize: 13
+                                font.bold: true
+                                color: "#111"
+                                width: parent.width
+                                elide: Text.ElideRight
+                            }
+
+                            Text {
+                                text: modelData.display_name
+                                      ? modelData.display_name
+                                      : ""
+                                font.pixelSize: 11
+                                color: "#888"
+                                width: parent.width
+                                elide: Text.ElideRight
+                                visible: text !== ""
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        visible: index < destinationModel.length - 1
+                        anchors.bottom: parent.bottom
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.leftMargin: 54
+                        height: 1
+                        color: "#F0F0F0"
+                    }
+
+                    MouseArea {
+                        id: destItemMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            destinationTimer.stop()
+                            appState.destinationLocation = modelData.name
+                            appState.destinationLat      = modelData.lat
+                            appState.destinationLon      = modelData.lon
+                            destinationModel = []
+                            destinationSearch.focus = false
+                            destinationSearch.text  = modelData.name
+                            destinationSearch.cursorPosition =
+                                destinationSearch.text.length
+
+                            // Save to recent places
+                            saveRecentPlace(
+                                modelData.name,
+                                modelData.lat,
+                                modelData.lon)
+
+                            // Refresh the list
+                            loadRecentPlaces()
+
+                            console.log("Destination set:",
+                                appState.destinationLat,
+                                appState.destinationLon)
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Anchor helpers ────────────────────────────────────────
+        // Zero-size Items inside the card give us a stable
+        // mapToItem coordinate for the floating dropdowns.
+        Item {
+            id: pickupAnchor
+            parent: pickupRowInCard
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            width: 0; height: 0
+        }
+
+        Item {
+            id: destAnchor
+            parent: destinationRowInCard
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
+            width: 0; height: 0
         }
     }
 }
