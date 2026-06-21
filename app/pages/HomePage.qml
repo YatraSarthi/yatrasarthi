@@ -139,76 +139,145 @@ Timer {
             }
         }
 
-        TextField {
+        // Fix: TextField + dropdown Rectangle merged into a single
+        // Item container. Previously these were two separate
+        // ColumnLayout children, so the dropdown's height was added
+        // to the layout's flow and physically pushed every item below
+        // it (including the Buttons row) further down the page.
+        // As one Item, the dropdown Rectangle anchors to the
+        // TextField's bottom and overlays on top of the layout
+        // instead of expanding it.
+        Item {
 
-    id: pickupSearch
+            Layout.fillWidth: true
 
-    Layout.fillWidth: true
+            clip: true
 
-    text: appState.pickupLocation
+            height:
+                pickupModel.length > 0
+                ? 200
+                : 50
 
-    placeholderText:
-        "Search Pickup Location"
+            TextField {
 
-    onTextChanged: {
+                id: pickupSearch
 
-        if (text.length > 2)
-            pickupTimer.restart()
-    }
-}
+                anchors.left: parent.left
+                anchors.right: parent.right
 
-ListView {
+                text: appState.pickupLocation
 
-    Layout.fillWidth: true
+                placeholderText:
+                    "Search Pickup Location"
 
-    height: pickupModel.length > 0
-            ? 120
-            : 0
+                onTextChanged: {
 
-    model: pickupModel
+                    if (!activeFocus)
+                        return
 
-    delegate: Rectangle {
+                    if (text.length > 2)
+                        pickupTimer.restart()
+                }
+            }
 
-        width: parent.width
+            Rectangle {
 
-        height: 40
+                anchors.top:
+                    pickupSearch.bottom
 
-        border.color: "#E0E0E0"
+                anchors.left:
+                    parent.left
 
-        Text {
+                width: parent.width
 
-            anchors.centerIn: parent
+                height:
+                    pickupModel.length > 0
+                    ? 140
+                    : 0
 
-            text: modelData.name
+                visible:
+                    pickupModel.length > 0
 
-            width: parent.width - 20
+                z: 9999
 
-            elide: Text.ElideRight
-        }
+                color: "white"
 
-        MouseArea {
+                border.color: "#D3D3D3"
 
-            anchors.fill: parent
+                ListView {
 
-            onClicked: {
+                    anchors.fill: parent
 
-                pickupSearch.text =
-                    modelData.name
+                    clip: true
 
-                appState.pickupLocation =
-                    modelData.name
+                    model: pickupModel
 
-                appState.pickupLat =
-                    modelData.lat
+                    delegate: Rectangle {
 
-                appState.pickupLon =
-                    modelData.lon
+                        width: parent.width
+                        height: 45
 
-                pickupModel = []
+                        border.color: "#EEEEEE"
+
+                        Text {
+
+                            anchors.verticalCenter:
+                                parent.verticalCenter
+
+                            anchors.left:
+                                parent.left
+
+                            anchors.leftMargin: 10
+
+                            width:
+                                parent.width - 20
+
+                            text:
+                                modelData.name
+
+                            elide:
+                                Text.ElideRight
+                        }
+
+                        MouseArea {
+
+                            anchors.fill: parent
+
+                            onClicked: {
+
+                                pickupTimer.stop()
+
+                                appState.pickupLocation =
+                                    modelData.name
+
+                                appState.pickupLat =
+                                    modelData.lat
+
+                                appState.pickupLon =
+                                    modelData.lon
+
+                                pickupModel = []
+
+                                // Set text FIRST, then cursor position,
+                                // then drop focus last. Setting focus=false
+                                // before the text re-triggers onTextChanged
+                                // while the field still has focus, which
+                                // re-opens the dropdown — that was the
+                                // double-click bug.
+                                pickupSearch.text =
+                                    modelData.name
+
+                                pickupSearch.cursorPosition =
+                                    pickupSearch.text.length
+
+                                pickupSearch.focus = false
+                            }
+                        }
+                    }
+                }
             }
         }
-    }
-}
+
         RowLayout {
             Layout.alignment: Qt.AlignRight
             spacing: 6
@@ -307,77 +376,144 @@ ListView {
             }
         }
 
-        TextField {
+        // Same fix as Pickup above: TextField + dropdown Rectangle
+        // merged into a single Item so the suggestion list overlays
+        // instead of pushing the layout below it.
+        Item {
 
-    id: destinationSearch
+            Layout.fillWidth: true
 
-    Layout.fillWidth: true
+            clip: true
 
-    text:
-        appState.destinationLocation
+            // Height = TextField (50) + dropdown Rectangle (140) + a
+            // small buffer (10) so the next sibling (Show Map row)
+            // never visually collides with the last list entry.
+            height:
+                destinationModel.length > 0
+                ? 200
+                : 50
 
-    placeholderText:
-        "Search Destination"
+            TextField {
 
-    onTextChanged: {
+                id: destinationSearch
 
-        if (text.length > 2)
-            destinationTimer.restart()
-    }
-}
+                anchors.left: parent.left
+                anchors.right: parent.right
 
-ListView {
+                text:
+                    appState.destinationLocation
 
-    Layout.fillWidth: true
+                placeholderText:
+                    "Search Destination"
 
-    height: destinationModel.length > 0
-            ? 120
-            : 0
+                onTextChanged: {
 
-    model: destinationModel
+                    if (!activeFocus)
+                        return
 
-    delegate: Rectangle {
+                    if (text.length > 2)
+                        destinationTimer.restart()
+                }
+            }
 
-        width: parent.width
+            Rectangle {
 
-        height: 40
+                anchors.top:
+                    destinationSearch.bottom
 
-        border.color: "#E0E0E0"
+                anchors.left:
+                    parent.left
 
-        Text {
+                width: parent.width
 
-            anchors.centerIn: parent
+                height:
+                    destinationModel.length > 0
+                    ? 140
+                    : 0
 
-            text: modelData.name
+                visible:
+                    destinationModel.length > 0
 
-            width: parent.width - 20
+                z: 9999
 
-            elide: Text.ElideRight
-        }
+                color: "white"
 
-        MouseArea {
+                border.color: "#D3D3D3"
 
-            anchors.fill: parent
+                ListView {
 
-            onClicked: {
+                    anchors.fill: parent
 
-                destinationSearch.text =
-                    modelData.name
+                    clip: true
 
-                appState.destinationLocation =
-                    modelData.name
+                    model: destinationModel
 
-                appState.destinationLat =
-                    modelData.lat
+                    delegate: Rectangle {
 
-                appState.destinationLon =
-                    modelData.lon
+                        width: parent.width
+                        height: 45
 
-                destinationModel = []
+                        border.color: "#EEEEEE"
+
+                        Text {
+
+                            anchors.verticalCenter:
+                                parent.verticalCenter
+
+                            anchors.left:
+                                parent.left
+
+                            anchors.leftMargin: 10
+
+                            width:
+                                parent.width - 20
+
+                            text:
+                                modelData.name
+
+                            elide:
+                                Text.ElideRight
+                        }
+
+                        MouseArea {
+
+                            anchors.fill: parent
+
+                            onClicked: {
+
+                                destinationTimer.stop()
+
+                                appState.destinationLocation =
+                                    modelData.name
+
+                                appState.destinationLat =
+                                    modelData.lat
+
+                                appState.destinationLon =
+                                    modelData.lon
+
+                                destinationModel = []
+
+                                // Set text FIRST, then cursor position,
+                                // then drop focus last. Setting focus=false
+                                // before the text re-triggers onTextChanged
+                                // while the field still has focus, which
+                                // re-opens the dropdown — that was the
+                                // double-click bug.
+                                destinationSearch.text =
+                                    modelData.name
+
+                                destinationSearch.cursorPosition =
+                                    destinationSearch.text.length
+
+                                destinationSearch.focus = false
+                            }
+                        }
+                    }
+                }
             }
         }
-    }
-}
+
         RowLayout {
             Layout.alignment: Qt.AlignRight
 
@@ -476,5 +612,4 @@ ListView {
         Item {
             Layout.preferredHeight: 20
         }
-    }
-}
+    }}

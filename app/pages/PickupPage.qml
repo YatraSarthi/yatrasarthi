@@ -23,7 +23,10 @@ Page {
             ? Qt.resolvedUrl("../../assets/icons/bike.png")
         : appState.selectedVehicle === "Auto"
             ? Qt.resolvedUrl("../../assets/icons/auto.png")
-        : Qt.resolvedUrl("../../assets/icons/cab.png")
+        : appState.selectedVehicle === "Cab"
+            ? Qt.resolvedUrl("../../assets/icons/cab.png")
+        : appState.selectedVehicle === "Carpool"
+            ? Qt.resolvedUrl("../../assets/icons/carpool.png")
 
     title: "Sarthi Arriving"
 

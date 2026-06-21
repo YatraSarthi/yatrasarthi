@@ -115,7 +115,12 @@ Page {
         )
 
         console.log("Sending reverse geocode request...")
-
+        console.log(
+    "Reverse Geocode URL:",
+    "http://127.0.0.1:8000/reverse-geocode"
+    + "?lat=" + lat
+    + "&lon=" + lon
+)
         xhr.send()
     }
 

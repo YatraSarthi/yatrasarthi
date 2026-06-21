@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        html, body, #map {
+            margin:  0;
+            padding: 0;
+            width:   100%;
+            height:  100%;
+        }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+
+/* ── Base map ──────────────────────────────────────────────────── */
+
+var map = L.map("map", { zoomControl: false })
+           .setView([12.9716, 77.5946], 13);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19
+}).addTo(map);
+
+
+/* ── State ─────────────────────────────────────────────────────── */
+
+var pickupMarker      = null;
+var destinationMarker = null;
+var vehicleMarker     = null;
+var routeLine         = null;
+
+
+/* ── SVG circle icons (no external image fetch needed) ─────────── */
+
+function makeCircleIcon(color, label) {
+    var svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">',
+        '  <circle cx="18" cy="18" r="14" fill="', color,
+        '" stroke="white" stroke-width="3"/>',
+        '  <text x="18" y="23" text-anchor="middle"',
+        '        font-size="13" font-weight="bold" fill="white"',
+        '        font-family="sans-serif">', label, '</text>',
+        '</svg>'
+    ].join('');
+
+    return L.divIcon({
+        html:        svg,
+        iconSize:    [36, 36],
+        iconAnchor:  [18, 18],
+        className:   ''          // remove leaflet's default white box
+    });
+}
+
+var pickupIcon = L.icon({
+
+    iconUrl:
+        "../../assets/icons/pickup.png",
+
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+});
+var destinationIcon = L.icon({
+
+    iconUrl:
+        "../../assets/icons/destination.png",
+
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+});
+
+var vehicleIcon = L.icon({
+    iconUrl:
+        "../../assets/icons/driver.png",
+
+    iconSize: [40, 40],
+    iconAnchor: [20, 20]
+});
+/* ── initializeRide — called from QML after route is drawn ─────── */
+   
+function initializeRide(
+
+    pickupLat, pickupLon,
+    destinationLat, destinationLon,
+    vehicleLat, vehicleLon
+) 
+    console.log(
+        "Pickup:",
+        pickupLat,
+        pickupLon
+    );
+
+    console.log(
+        "Destination:",
+        destinationLat,
+        destinationLon
+    );
+
+    console.log(
+        "Vehicle:",
+        vehicleLat,
+        vehicleLon
+    ); {
+    // Remove old markers if any
+    if (pickupMarker)      { map.removeLayer(pickupMarker);      pickupMarker      = null; }
+    if (destinationMarker) { map.removeLayer(destinationMarker); destinationMarker = null; }
+    if (vehicleMarker)     { map.removeLayer(vehicleMarker);     vehicleMarker     = null; }
+
+    pickupMarker = L.marker([pickupLat, pickupLon], { icon: pickupIcon })
+        .addTo(map)
+        .bindPopup('<b>Pickup</b>');
+
+    destinationMarker = L.marker([destinationLat, destinationLon], { icon: destinationIcon })
+        .addTo(map)
+        .bindPopup('<b>Drop</b>');
+
+    vehicleMarker = L.marker([vehicleLat, vehicleLon], { icon: vehicleIcon })
+        .addTo(map)
+        .bindPopup('<b>Your ride</b>');
+
+    // Fit all three into view
+    var bounds = L.latLngBounds([
+        [pickupLat,      pickupLon],
+        [destinationLat, destinationLon],
+        [vehicleLat,     vehicleLon]
+    ]);
+    map.fitBounds(bounds, { padding: [40, 40] });
+}
+
+
+/* ── drawRoute — blue polyline, normal road width ──────────────── */
+
+function drawRoute(routePoints) {
+    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+
+    routeLine = L.polyline(routePoints, {
+        color:   '#1976D2',
+        weight:  4,          // ← thin road-width line
+        opacity: 0.9
+    }).addTo(map);
+}
+
+
+/* ── moveVehicle — called every 5 s from QML timer ─────────────── */
+
+function moveVehicle(lat, lon) {
+    if (vehicleMarker) {
+        vehicleMarker.setLatLng([lat, lon]);
+    }
+}
+
+initializeRide(
+    12.9716,
+    77.5946,
+    12.9352,
+    77.6245,
+    12.9600,
+    77.6000
+);
+
+</script>
+</body>
+</html>
