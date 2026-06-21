@@ -46,7 +46,7 @@ ApplicationWindow {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: "assets/icons/pickup.png"
+                    source: Qt.resolvedUrl("../assets/icons/pickup.png")
                     width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
@@ -65,7 +65,7 @@ ApplicationWindow {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: "assets/icons/auto.png"
+                    source: Qt.resolvedUrl("../assets/icons/auto.png")
                     width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
@@ -84,7 +84,7 @@ ApplicationWindow {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: "assets/icons/rider.png"
+                    source: Qt.resolvedUrl("../assets/icons/rider.png")
                     width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
@@ -103,7 +103,7 @@ ApplicationWindow {
                 spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source: "assets/icons/driver.png"
+                    source: Qt.resolvedUrl("../assets/icons/driver.png")
                     width: 22; height: 22
                     fillMode: Image.PreserveAspectFit
                 }
