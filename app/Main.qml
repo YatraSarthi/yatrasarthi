@@ -127,7 +127,9 @@ ApplicationWindow {
         initialItem: HomePage {
             appStack:      homeStack
             appState:      appState
-            onSwitchTab:   switchTab(tabIndex)
+            onRequestTabChange: {
+                switchTab(tabIndex)
+            }
         }
     }
 
