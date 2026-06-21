@@ -26,6 +26,9 @@ QtObject {
     property int routeMatch: 0
     property real co2Saved: 0.0
 
+    /* Navigation */
+    property bool showBottomBar: true
+
     /* Services page preferred vehicle (set from ServicesPage grid) */
     property string preferredVehicle: ""
 
