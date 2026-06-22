@@ -6,10 +6,8 @@ Page {
     property var appStack
     property var appState
 
-    Component.onCompleted:  {
+    Component.onCompleted: {
         if (appState) appState.showBottomBar = false
-        // ── Auto-compute distance & duration when page loads ─────────────────
-        // Distance: if not already set or 0, compute via Haversine from lat/lng
         if (appState) {
             var d = parseFloat(appState.selectedDistance)
             if (isNaN(d) || d <= 0) {
@@ -18,10 +16,9 @@ Page {
                     var computed = haversineKm(
                         appState.pickupLat,  appState.pickupLon,
                         appState.destinationLat, appState.destinationLon)
-                    appState.selectedDistance = computed   // write back so CO₂ calc also picks it up
+                    appState.selectedDistance = computed
                 }
             }
-            // Duration: estimate from distance if not provided (avg speed 25 km/h in city)
             if (!appState.selectedEta || parseInt(appState.selectedEta) <= 0) {
                 var km = parseFloat(appState.selectedDistance)
                 if (!isNaN(km) && km > 0)
@@ -31,7 +28,6 @@ Page {
     }
     Component.onDestruction: { if (appState) appState.showBottomBar = true }
 
-    // ── Haversine distance (km) ───────────────────────────────────────────────
     function haversineKm(lat1, lon1, lat2, lon2) {
         var R    = 6371
         var dLat = (lat2 - lat1) * Math.PI / 180
@@ -42,7 +38,6 @@ Page {
         return parseFloat((R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1))
     }
 
-    // ── Display helpers ───────────────────────────────────────────────────────
     function distanceText() {
         var d = appState ? parseFloat(appState.selectedDistance) : NaN
         return (!isNaN(d) && d > 0) ? d.toFixed(1) + " km" : "N/A"
@@ -106,13 +101,14 @@ Page {
 
         Column {
             width: parent.width
-            topPadding: 64
-            bottomPadding: 32
             spacing: 0
 
-            // Centre-constrained content column (max 720 px, centred on wide screens)
+            // top spacer clears header
+            Item { width: parent.width; height: 64 }
+
+            // Centre-constrained content
             Item {
-                width:  parent.width
+                width: parent.width
                 height: innerCol.implicitHeight
 
                 Column {
@@ -153,17 +149,16 @@ Page {
                                 top: parent.top; left: parent.left; right: parent.right
                                 topMargin: 16; leftMargin: 18; rightMargin: 18
                             }
-                            spacing: 0
+                            spacing: 10
 
                             Label {
                                 text: "Ride Summary"
                                 font.pixelSize: 17; font.bold: true; color: "#1A1A1A"
-                                bottomPadding: 12
                             }
 
-                            // Pickup
+                            // Pickup row
                             Row {
-                                spacing: 10; width: parent.width; bottomPadding: 8
+                                spacing: 10; width: parent.width
                                 Rectangle {
                                     width: 10; height: 10; radius: 5; color: "#1976D2"
                                     anchors.verticalCenter: parent.verticalCenter
@@ -176,17 +171,20 @@ Page {
                                 }
                             }
 
-                            // Dotted connector line
-                            Rectangle {
-                                width: 2; height: 14
-                                color: "#CCCCCC"
-                                anchors.left: parent.left
-                                anchors.leftMargin: 4
+                            // Connector line
+                            Item {
+                                width: parent.width; height: 10
+                                Rectangle {
+                                    width: 2; height: parent.height
+                                    color: "#CCCCCC"
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 4
+                                }
                             }
 
-                            // Destination
+                            // Destination row
                             Row {
-                                spacing: 10; width: parent.width; topPadding: 0; bottomPadding: 12
+                                spacing: 10; width: parent.width
                                 Rectangle {
                                     width: 10; height: 10; radius: 2; color: "#E53935"
                                     anchors.verticalCenter: parent.verticalCenter
@@ -200,43 +198,47 @@ Page {
                             }
 
                             // Divider
-                            Rectangle { width: parent.width; height: 1; color: "#F0F0F0"; bottomPadding: 0 }
+                            Rectangle { width: parent.width; height: 1; color: "#F0F0F0" }
 
-                            // ── Detail grid: 2 columns on wide screens ────────
+                            // Detail grid — 2 columns
                             Grid {
                                 width: parent.width
                                 columns: 2
                                 columnSpacing: 0
-                                rowSpacing: 0
-                                topPadding: 10
+                                rowSpacing: 8
 
                                 // Vehicle
                                 Column {
                                     width: parent.width / 2
-                                    padding: 6
+                                    spacing: 3
                                     Label { text: "Vehicle";  font.pixelSize: 12; color: "#888" }
                                     Label { text: appState ? appState.selectedVehicle : "–"; font.pixelSize: 14; color: "#1A1A1A"; font.bold: true }
                                 }
-                                // Distance  ← key fix: calls distanceText() which re-reads appState after onCompleted wrote it back
+                                // Distance
                                 Column {
                                     width: parent.width / 2
-                                    padding: 6
+                                    spacing: 3
                                     Label { text: "Distance"; font.pixelSize: 12; color: "#888" }
                                     Label { text: distanceText(); font.pixelSize: 14; color: "#1A1A1A"; font.bold: true }
                                 }
-                                // Duration  ← key fix: calls durationText() which uses estimated value
+                                // Duration
                                 Column {
                                     width: parent.width / 2
-                                    padding: 6
+                                    spacing: 3
                                     Label { text: "Duration"; font.pixelSize: 12; color: "#888" }
                                     Label { text: durationText(); font.pixelSize: 14; color: "#1A1A1A"; font.bold: true }
                                 }
                                 // Date & Time
                                 Column {
                                     width: parent.width / 2
-                                    padding: 6
+                                    spacing: 3
                                     Label { text: "Completed"; font.pixelSize: 12; color: "#888" }
-                                    Label { text: dateTimeText(); font.pixelSize: 13; color: "#1A1A1A"; font.bold: true; wrapMode: Text.WordWrap; width: parent.width - 12 }
+                                    Label {
+                                        text: dateTimeText()
+                                        font.pixelSize: 12; color: "#1A1A1A"; font.bold: true
+                                        wrapMode: Text.WordWrap
+                                        width: parent.width - 8
+                                    }
                                 }
                             }
 
@@ -245,18 +247,21 @@ Page {
 
                             // Driver row
                             Row {
-                                width: parent.width; topPadding: 10; bottomPadding: 4; spacing: 0
+                                width: parent.width
+                                spacing: 0
 
                                 Column {
-                                    width: parent.width / 2; spacing: 3; leftPadding: 6
-                                    Label { text: "Driver";  font.pixelSize: 12; color: "#888" }
+                                    width: parent.width / 2
+                                    spacing: 3
+                                    Label { text: "Driver"; font.pixelSize: 12; color: "#888" }
                                     Label {
                                         text: appState && appState.driverName ? appState.driverName : "Your Sarthi"
                                         font.pixelSize: 14; color: "#1A1A1A"; font.bold: true
                                     }
                                 }
                                 Column {
-                                    width: parent.width / 2; spacing: 3; leftPadding: 6
+                                    width: parent.width / 2
+                                    spacing: 3
                                     Label { text: "Driver Rating"; font.pixelSize: 12; color: "#888" }
                                     Row {
                                         spacing: 4
@@ -271,15 +276,15 @@ Page {
                         }
                     }
 
-                    // ── Bottom two cards side-by-side on wide screens ─────────
+                    // ── Carbon + Fare row ─────────────────────────────────────
                     Row {
                         width: parent.width
                         spacing: 12
 
-                        // 🌍 Carbon Footprint card
+                        // Carbon card
                         Rectangle {
                             width: (parent.width - 12) / 2
-                            height: ecoCol.implicitHeight + 24
+                            height: ecoCol.implicitHeight + 28
                             radius: 14; color: "#E8F5E9"; border.color: "#A5D6A7"
 
                             Column {
@@ -300,9 +305,8 @@ Page {
                                     }
                                 }
                                 Label {
-                                    text: "vs driving solo in a car"
+                                    text: "vs driving solo"
                                     font.pixelSize: 11; color: "#388E3C"
-                                    wrapMode: Text.WordWrap; width: parent.width
                                 }
                                 Label {
                                     text: co2Text()
@@ -314,7 +318,7 @@ Page {
                         // Fare card
                         Rectangle {
                             width: (parent.width - 12) / 2
-                            height: ecoCol.implicitHeight + 24
+                            height: ecoCol.implicitHeight + 28
                             radius: 14; color: "white"; border.color: "#E8E8E8"
 
                             Column {
@@ -397,11 +401,10 @@ Page {
                                     }
                                 }
 
-                                // Driver avatar placeholder (right side)
+                                // Driver avatar
                                 Column {
                                     width: parent.width * 0.45
                                     spacing: 6
-                                    anchors.bottom: parent.bottom
 
                                     Rectangle {
                                         anchors.horizontalCenter: parent.horizontalCenter
@@ -410,8 +413,7 @@ Page {
 
                                         Label {
                                             anchors.centerIn: parent
-                                            text: "🧑"
-                                            font.pixelSize: 30
+                                            text: "🧑"; font.pixelSize: 30
                                         }
                                     }
                                     Label {
@@ -424,7 +426,7 @@ Page {
                         }
                     }
 
-                    // ── Back to Home button ───────────────────────────────────
+                    // ── Back to Home ──────────────────────────────────────────
                     Rectangle {
                         width: parent.width; height: 52
                         radius: 14; color: "#1976D2"
@@ -440,7 +442,8 @@ Page {
                         }
                     }
 
-                    Item { height: 8 }
+                    // bottom spacer
+                    Item { width: parent.width; height: 32 }
                 }
             }
         }
