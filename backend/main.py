@@ -636,3 +636,121 @@ def add_ride_history(
 Base.metadata.create_all(bind=engine)
 
 print("Loaded main.py with SOS and Route endpoints")
+
+ 
+# ----------------------------
+# Ride In Progress Simulation
+# ----------------------------
+ 
+ride_route_coords  = []   # full list of [lat, lon] steps along the route
+ride_step          = 0
+ride_total_steps   = 0
+ride_dest_lat      = 0.0
+ride_dest_lon      = 0.0
+ride_pickup_lat_g  = 0.0
+ride_pickup_lon_g  = 0.0
+ 
+ 
+@app.get("/start-ride")
+def start_ride(
+    pickup_lat: float,
+    pickup_lon: float,
+    destination_lat: float,
+    destination_lon: float
+):
+    global ride_route_coords, ride_step, ride_total_steps
+    global ride_dest_lat, ride_dest_lon
+    global ride_pickup_lat_g, ride_pickup_lon_g
+ 
+    ride_pickup_lat_g = pickup_lat
+    ride_pickup_lon_g = pickup_lon
+    ride_dest_lat     = destination_lat
+    ride_dest_lon     = destination_lon
+    ride_step         = 0
+ 
+    # Fetch real route from OSRM
+    try:
+        url = (
+            "https://router.project-osrm.org/route/v1/driving/"
+            f"{pickup_lon},{pickup_lat};"
+            f"{destination_lon},{destination_lat}"
+            "?overview=full&geometries=geojson"
+        )
+        resp = requests.get(url, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            coords = data["routes"][0]["geometry"]["coordinates"]
+            # coords are [lon, lat] — flip to [lat, lon]
+            ride_route_coords = [[c[1], c[0]] for c in coords]
+        else:
+            ride_route_coords = []
+    except Exception as e:
+        print("start-ride route error:", e)
+        ride_route_coords = []
+ 
+    ride_total_steps = max(len(ride_route_coords) - 1, 1)
+ 
+    # Haversine distance
+    R = 6371
+    lat1, lon1 = math.radians(pickup_lat), math.radians(pickup_lon)
+    lat2, lon2 = math.radians(destination_lat), math.radians(destination_lon)
+    dlat, dlon = lat2 - lat1, lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+    distance = round(R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a)), 2)
+ 
+    eta = max(2, round(distance * 2))
+ 
+    # Vehicle starts at pickup
+    veh_lat = ride_route_coords[0][0] if ride_route_coords else pickup_lat
+    veh_lon = ride_route_coords[0][1] if ride_route_coords else pickup_lon
+ 
+    return {
+        "vehicleLat": veh_lat,
+        "vehicleLon": veh_lon,
+        "distance":   distance,
+        "eta":        eta,
+        "speed":      random.randint(25, 35)
+    }
+ 
+ 
+@app.get("/ride-location")
+def ride_location():
+    global ride_step, ride_route_coords
+ 
+    if not ride_route_coords:
+        return {
+            "vehicleLat": ride_pickup_lat_g,
+            "vehicleLon": ride_pickup_lon_g,
+            "distance":   0,
+            "eta":        0,
+            "speed":      0,
+            "completed":  True
+        }
+ 
+    # Advance 2 steps per poll (every 5 s → smooth movement)
+    ride_step = min(ride_step + 2, len(ride_route_coords) - 1)
+ 
+    veh_lat = ride_route_coords[ride_step][0]
+    veh_lon = ride_route_coords[ride_step][1]
+ 
+    completed = (ride_step >= len(ride_route_coords) - 1)
+ 
+    # Remaining distance: straight line from vehicle to destination
+    R = 6371
+    lat1, lon1 = math.radians(veh_lat), math.radians(veh_lon)
+    lat2, lon2 = math.radians(ride_dest_lat), math.radians(ride_dest_lon)
+    dlat, dlon = lat2 - lat1, lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+    remaining_km = round(R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a)), 2)
+ 
+    eta = max(1, round(remaining_km * 2)) if not completed else 0
+    speed = random.randint(28, 48) if not completed else 0
+ 
+    return {
+        "vehicleLat": veh_lat,
+        "vehicleLon": veh_lon,
+        "distance":   remaining_km,
+        "eta":        eta,
+        "speed":      speed,
+        "completed":  completed
+    }
