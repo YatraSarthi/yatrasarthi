@@ -3,151 +3,130 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <link rel="stylesheet"
-          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <style>
         html, body, #map {
-            margin:  0;
-            padding: 0;
-            width:   100%;
-            height:  100%;
+            margin: 0; padding: 0;
+            width: 100%; height: 100%;
+        }
+        /* Smooth vehicle rotation */
+        .vehicle-icon-img {
+            transition: transform 0.4s ease;
         }
     </style>
 </head>
 <body>
-
 <div id="map"></div>
-
 <script>
 
-/* ── Base map ──────────────────────────────────────────────────── */
-
+/* ── Base map ─────────────────────────────────────────────────────────── */
 var map = L.map("map", { zoomControl: false })
            .setView([12.9716, 77.5946], 13);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-/* ── State ─────────────────────────────────────────────────────── */
-
+/* ── State ───────────────────────────────────────────────────────────── */
 var pickupMarker      = null;
 var destinationMarker = null;
 var vehicleMarker     = null;
-var routeLine         = null;
+var routeBorder       = null;   /* white underline layer  */
+var routeLine         = null;   /* blue top layer         */
+var lastLat           = null;
+var lastLon           = null;
+var currentVehicleType = "Cab";
 
-/* ── Icons ─────────────────────────────────────────────────────── */
+/* ── PNG-based icons ─────────────────────────────────────────────────── */
 
-function makeCircleIcon(color, label) {
-    var svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36">',
-        '  <circle cx="18" cy="18" r="14" fill="', color,
-        '" stroke="white" stroke-width="3"/>',
-        '  <text x="18" y="23" text-anchor="middle"',
-        '        font-size="13" font-weight="bold" fill="white"',
-        '        font-family="sans-serif">', label, '</text>',
-        '</svg>'
-    ].join('');
-    return L.divIcon({
-        html:       svg,
-        iconSize:   [36, 36],
-        iconAnchor: [18, 18],
-        className:  ''
-    });
-}
+/* Pickup / destination use your existing PNG assets */
+var pickupIcon = L.icon({
+    iconUrl:    "../../assets/icons/pickup.png",
+    iconSize:   [40, 40],
+    iconAnchor: [20, 40]
+});
 
-/* Vehicle icon — emoji in a colored rounded square */
+var destinationIcon = L.icon({
+    iconUrl:    "../../assets/icons/destination.png",
+    iconSize:   [40, 40],
+    iconAnchor: [20, 40]
+});
+
+/* Vehicle — PNG image, centred on position */
 function makeVehicleIcon(vehicleType) {
-    var emoji = "🚗";
-    if (vehicleType === "Bike")    emoji = "🏍️";
-    if (vehicleType === "Auto")    emoji = "🛺";
-    if (vehicleType === "Carpool") emoji = "🚐";
+    var img = "../../assets/icons/cab.png";
+    if (vehicleType === "Bike")    img = "../../assets/icons/bike.png";
+    if (vehicleType === "Auto")    img = "../../assets/icons/auto.png";
+    if (vehicleType === "Carpool") img = "../../assets/icons/carpool.png";
 
-    var svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44">',
-        '  <rect x="2" y="2" width="40" height="40" rx="10"',
-        '        fill="#1976D2" stroke="white" stroke-width="2.5"/>',
-        '  <text x="22" y="31" text-anchor="middle"',
-        '        font-size="22" font-family="sans-serif">', emoji, '</text>',
-        '</svg>'
-    ].join('');
-    return L.divIcon({
-        html:       svg,
-        iconSize:   [44, 44],
-        iconAnchor: [22, 22],
-        className:  ''
+    return L.icon({
+        iconUrl:    img,
+        iconSize:   [48, 48],
+        iconAnchor: [24, 24]
     });
 }
 
-var pickupIcon      = makeCircleIcon("#4CAF50", "P");
-var destinationIcon = makeCircleIcon("#F44336", "D");
-var vehicleIcon     = makeVehicleIcon("Cab");   /* default; overridden by setVehicleType() */
+var vehicleIcon = makeVehicleIcon("Cab");
 
-/* ── setVehicleType — called from QML before initializeRide ────── */
-
+/* ── setVehicleType — called from QML BEFORE initializeRide ─────────── */
 function setVehicleType(type) {
+    currentVehicleType = type;
     vehicleIcon = makeVehicleIcon(type);
     if (vehicleMarker) {
         vehicleMarker.setIcon(vehicleIcon);
     }
 }
 
-/* ── initializeRide — called from QML ──────────────────────────── */
-
+/* ── initializeRide — called from QML once /start-ride responds ─────── */
 function initializeRide(
     pickupLat, pickupLon,
     destinationLat, destinationLon,
     vehicleLat, vehicleLon
 ) {
-    /* clear old layers */
+    /* clear previous session */
     if (pickupMarker)      { map.removeLayer(pickupMarker);      pickupMarker      = null; }
     if (destinationMarker) { map.removeLayer(destinationMarker); destinationMarker = null; }
     if (vehicleMarker)     { map.removeLayer(vehicleMarker);     vehicleMarker     = null; }
+    if (routeBorder)       { map.removeLayer(routeBorder);       routeBorder       = null; }
     if (routeLine)         { map.removeLayer(routeLine);         routeLine         = null; }
 
-    pickupMarker = L.marker(
-        [pickupLat, pickupLon],
-        { icon: pickupIcon }
-    ).addTo(map);
+    lastLat = null;
+    lastLon = null;
 
-    destinationMarker = L.marker(
-        [destinationLat, destinationLon],
-        { icon: destinationIcon }
-    ).addTo(map);
+    pickupMarker = L.marker([pickupLat, pickupLon],
+        { icon: pickupIcon }).addTo(map);
 
-    vehicleMarker = L.marker(
-        [vehicleLat, vehicleLon],
-        { icon: vehicleIcon }
-    ).addTo(map);
+    destinationMarker = L.marker([destinationLat, destinationLon],
+        { icon: destinationIcon }).addTo(map);
+
+    vehicleMarker = L.marker([vehicleLat, vehicleLon],
+        { icon: vehicleIcon }).addTo(map);
 
     map.fitBounds(L.latLngBounds([
         [pickupLat,      pickupLon],
         [destinationLat, destinationLon],
         [vehicleLat,     vehicleLon]
-    ]), { padding: [40, 40] });
+    ]), { padding: [50, 50] });
 
-    /* fetch full OSRM route and draw blue polyline */
+    /* draw the full route line pickup → destination */
     fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon);
 }
 
-/* ── fetchRoute — calls backend /route and draws blue polyline ─── */
-
+/* ── fetchRoute — XHR (no fetch, avoids file:// CORS block) ─────────── */
 function fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon) {
-    var url =
-        "http://127.0.0.1:8000/route"
+    var url = "http://127.0.0.1:8000/route"
         + "?pickup_lat="      + pickupLat
         + "&pickup_lon="      + pickupLon
         + "&destination_lat=" + destinationLat
         + "&destination_lon=" + destinationLon;
 
     var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function() {
+    xhr.onreadystatechange = function () {
         if (xhr.readyState !== 4) return;
         if (xhr.status !== 200) {
-            console.log("fetchRoute error status:", xhr.status);
+            console.log("fetchRoute HTTP error:", xhr.status);
             return;
         }
         try {
@@ -156,11 +135,11 @@ function fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon) {
             var coords = data.routes[0].geometry.coordinates;
             var points = [];
             for (var i = 0; i < coords.length; i++) {
-                /* OSRM returns [lon, lat] — flip to [lat, lon] for Leaflet */
+                /* OSRM: [lon, lat] → Leaflet: [lat, lon] */
                 points.push([coords[i][1], coords[i][0]]);
             }
             drawRoute(points);
-        } catch(e) {
+        } catch (e) {
             console.log("fetchRoute parse error:", e);
         }
     };
@@ -168,27 +147,52 @@ function fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon) {
     xhr.send();
 }
 
-/* ── drawRoute — blue polyline ──────────────────────────────────── */
-
+/* ── drawRoute — Uber-style dual-layer polyline ─────────────────────── */
 function drawRoute(routePoints) {
-    if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-    routeLine = L.polyline(routePoints, {
-        color:   '#1976D2',
-        weight:  5,
-        opacity: 0.85
+    if (routeBorder) { map.removeLayer(routeBorder); routeBorder = null; }
+    if (routeLine)   { map.removeLayer(routeLine);   routeLine   = null; }
+
+    /* bottom layer: white border gives the "floating" look */
+    routeBorder = L.polyline(routePoints, {
+        color:   "white",
+        weight:  14,
+        opacity: 1,
+        lineJoin: "round",
+        lineCap:  "round"
     }).addTo(map);
+
+    /* top layer: solid blue route */
+    routeLine = L.polyline(routePoints, {
+        color:   "#1976D2",
+        weight:  8,
+        opacity: 1,
+        lineJoin: "round",
+        lineCap:  "round"
+    }).addTo(map);
+
+    /* bring vehicle marker above the route line */
+    if (vehicleMarker) vehicleMarker.bringToFront();
 }
 
-/* ── moveVehicle — called every 5 s from QML ───────────────────── */
-
+/* ── moveVehicle — called every 5 s from QML, rotates icon ──────────── */
 function moveVehicle(lat, lon) {
-    if (vehicleMarker) {
-        vehicleMarker.setLatLng([lat, lon]);
-    }
-}
+    if (!vehicleMarker) return;
 
-/* ── default view on load ───────────────────────────────────────── */
-map.setView([12.9716, 77.5946], 13);
+    /* rotate icon to face direction of travel */
+    if (lastLat !== null) {
+        var angle = Math.atan2(lon - lastLon, lat - lastLat) * 180 / Math.PI;
+        var el = vehicleMarker.getElement();
+        if (el) {
+            el.style.transition  = "transform 0.4s ease";
+            el.style.transformOrigin = "center center";
+            el.style.transform   = "rotate(" + angle + "deg)";
+        }
+    }
+
+    vehicleMarker.setLatLng([lat, lon]);
+    lastLat = lat;
+    lastLon = lon;
+}
 
 </script>
 </body>
