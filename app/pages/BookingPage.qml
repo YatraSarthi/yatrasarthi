@@ -7,24 +7,26 @@ Page {
     property var appStack
     property var appState
 
-    property bool driverFound: false
+    property bool driverFound:  false
+    property bool cancelled:    false   // guard: don't push if user cancelled
 
     // ── Auto-navigate to PickupPage when driver is found ──────────
     Timer {
+        id:       driverTimer
         interval: 3000
         running:  true
         repeat:   false
 
         onTriggered: {
+            if (cancelled) return   // user already cancelled — do nothing
+
             driverFound = true
 
-            // Reset driver simulation first
             var xhr = new XMLHttpRequest()
             xhr.open("GET", "http://127.0.0.1:8000/reset-driver", false)
             xhr.send()
             console.log("Driver simulation reset")
 
-            // Go straight to PickupPage
             appStack.push(
                 Qt.resolvedUrl("PickupPage.qml"),
                 { "appStack": appStack, "appState": appState }
@@ -33,10 +35,7 @@ Page {
     }
 
     // ── Background ────────────────────────────────────────────────
-    Rectangle {
-        anchors.fill: parent
-        color: "#F4F6F9"
-    }
+    Rectangle { anchors.fill: parent; color: "#F4F6F9" }
 
     Column {
         anchors.fill: parent
@@ -44,12 +43,10 @@ Page {
 
         // ── Header ────────────────────────────────────────────────
         Rectangle {
-            width:  parent.width
-            height: 58
-            color:  "#1976D2"
+            width: parent.width; height: 58; color: "#1976D2"
 
             Row {
-                anchors.fill:       parent
+                anchors.fill: parent
                 anchors.leftMargin: 10
                 spacing: 10
 
@@ -57,23 +54,23 @@ Page {
                     width: 36; height: 36; radius: 18
                     color: "#33FFFFFF"
                     anchors.verticalCenter: parent.verticalCenter
-
                     Label {
                         anchors.centerIn: parent
                         text: "←"; color: "white"; font.pixelSize: 18
                     }
                     MouseArea {
                         anchors.fill: parent
-                        onClicked:    appStack.pop()
+                        onClicked: {
+                            cancelled = true
+                            driverTimer.stop()
+                            appStack.pop()
+                        }
                     }
                 }
 
                 Label {
-                    text:           driverFound
-                                    ? "Driver Found!" : "Finding Driver…"
-                    font.pixelSize: 20
-                    font.bold:      true
-                    color:          "white"
+                    text: driverFound ? "Driver Found!" : "Finding Driver…"
+                    font.pixelSize: 20; font.bold: true; color: "white"
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
@@ -81,14 +78,13 @@ Page {
 
         // ── Route Map ─────────────────────────────────────────────
         Rectangle {
-            width:        parent.width
-            height:       260
+            width: parent.width; height: 260
             border.color: "#D3D3D3"
 
             WebEngineView {
-                id:           bookingMap
+                id: bookingMap
                 anchors.fill: parent
-                url:          Qt.resolvedUrl("../web/route.html")
+                url: Qt.resolvedUrl("../web/route.html")
 
                 onLoadingChanged: {
                     if (loadRequest.status ===
@@ -98,48 +94,42 @@ Page {
                             + appState.pickupLat      + ","
                             + appState.pickupLon      + ","
                             + appState.destinationLat + ","
-                            + appState.destinationLon
-                            + ")"
+                            + appState.destinationLon + ")"
                         )
                     }
                 }
             }
         }
 
-        // ── Searching state ───────────────────────────────────────
+        // ── Searching animation ───────────────────────────────────
         Item {
-            width:  parent.width
-            height: parent.height - 58 - 260
+            width:   parent.width
+            height:  parent.height - 58 - 260
             visible: !driverFound
 
             Column {
                 anchors.centerIn: parent
-                spacing:          20
+                spacing: 20
 
-                // Pulsing outer ring
+                // Pulsing ring
                 Rectangle {
-                    width:  120; height: 120; radius: 60
-                    color:  "transparent"
-                    border.color: "#1976D2"
-                    border.width: 3
+                    width: 120; height: 120; radius: 60
+                    color: "transparent"
+                    border.color: "#1976D2"; border.width: 3
                     anchors.horizontalCenter: parent.horizontalCenter
 
                     SequentialAnimation on opacity {
-                        loops:    Animation.Infinite
-                        running:  true
+                        loops: Animation.Infinite; running: true
                         NumberAnimation { to: 0.2; duration: 800 }
                         NumberAnimation { to: 1.0; duration: 800 }
                     }
 
-                    // Inner filled circle
                     Rectangle {
-                        width:  90; height: 90; radius: 45
-                        color:  "#1976D2"
-                        anchors.centerIn: parent
-
+                        width: 90; height: 90; radius: 45
+                        color: "#1976D2"; anchors.centerIn: parent
                         Image {
-                            source:   "../../assets/icons/rider.png"
-                            width:    44; height: 44
+                            source: "../../assets/icons/rider.png"
+                            width: 44; height: 44
                             fillMode: Image.PreserveAspectFit
                             anchors.centerIn: parent
                         }
@@ -147,70 +137,57 @@ Page {
                 }
 
                 Label {
-                    text:           "Looking for nearby drivers…"
-                    font.pixelSize: 16
-                    color:          "#444444"
+                    text: "Looking for nearby drivers…"
+                    font.pixelSize: 16; color: "#444444"
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
 
-                // Animated dots
+                // Bouncing dots
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: 8
-
                     Repeater {
                         model: 3
                         Rectangle {
-                            width: 10; height: 10; radius: 5
-                            color: "#1976D2"
-
+                            width: 10; height: 10; radius: 5; color: "#1976D2"
                             SequentialAnimation on opacity {
-                                loops:   Animation.Infinite
-                                running: true
-                                PauseAnimation    { duration: index * 300 }
-                                NumberAnimation   { to: 1.0; duration: 300 }
-                                NumberAnimation   { to: 0.2; duration: 300 }
-                                PauseAnimation    { duration: (2 - index) * 300 }
+                                loops: Animation.Infinite; running: true
+                                PauseAnimation  { duration: index * 300 }
+                                NumberAnimation { to: 1.0; duration: 300 }
+                                NumberAnimation { to: 0.2; duration: 300 }
+                                PauseAnimation  { duration: (2 - index) * 300 }
                             }
                         }
                     }
                 }
 
                 Label {
-                    text:           "This usually takes a few seconds"
-                    font.pixelSize: 13
-                    color:          "#AAAAAA"
+                    text: "This usually takes a few seconds"
+                    font.pixelSize: 13; color: "#AAAAAA"
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
-            }
-        }
 
-        // ── Cancel button ─────────────────────────────────────────
-        Rectangle {
-            width:        parent.width
-            height:       80
-            color:        "#F4F6F9"
-            visible:      !driverFound
+                // Cancel button — stops timer and goes back to ResultsPage
+                Button {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: 200; height: 46
 
-            Button {
-                anchors.centerIn: parent
-                width:  200; height: 46
-
-                background: Rectangle {
-                    radius:       12
-                    color:        "transparent"
-                    border.color: "#E53935"
-                    border.width: 2
+                    background: Rectangle {
+                        radius: 12; color: "transparent"
+                        border.color: "#E53935"; border.width: 2
+                    }
+                    contentItem: Text {
+                        text: "Cancel Search"; color: "#E53935"
+                        font.pixelSize: 15; font.bold: true
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment:   Text.AlignVCenter
+                    }
+                    onClicked: {
+                        cancelled = true
+                        driverTimer.stop()   // prevent auto-push to PickupPage
+                        appStack.pop()       // go back to ResultsPage
+                    }
                 }
-                contentItem: Text {
-                    text:                "Cancel Search"
-                    color:               "#E53935"
-                    font.pixelSize:      15
-                    font.bold:           true
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment:   Text.AlignVCenter
-                }
-                onClicked: appStack.pop()
             }
         }
     }
