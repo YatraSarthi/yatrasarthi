@@ -388,7 +388,7 @@ Page {
 
                             Image {
                                 anchors.fill: parent
-                                source:       Qt.resolvedUrl("../../assets/images/agnik.jpeg")
+                                source:       Qt.resolvedUrl("../../assets/image/agnik.jpeg")
                                 fillMode:     Image.PreserveAspectCrop
 
                                 // fallback icon if image missing
