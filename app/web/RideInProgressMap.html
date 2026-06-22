@@ -32,7 +32,6 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19
 }).addTo(map);
 
-
 /* ── State ─────────────────────────────────────────────────────── */
 
 var pickupMarker      = null;
@@ -40,8 +39,7 @@ var destinationMarker = null;
 var vehicleMarker     = null;
 var routeLine         = null;
 
-
-/* ── SVG circle icons (no external image fetch needed) ─────────── */
+/* ── Icons ─────────────────────────────────────────────────────── */
 
 function makeCircleIcon(color, label) {
     var svg = [
@@ -53,72 +51,62 @@ function makeCircleIcon(color, label) {
         '        font-family="sans-serif">', label, '</text>',
         '</svg>'
     ].join('');
-
     return L.divIcon({
-        html:        svg,
-        iconSize:    [36, 36],
-        iconAnchor:  [18, 18],
-        className:   ''          // remove leaflet's default white box
+        html:       svg,
+        iconSize:   [36, 36],
+        iconAnchor: [18, 18],
+        className:  ''
     });
 }
 
-var pickupIcon =
-    makeCircleIcon(
-        "#4CAF50",
-        "P"
-    );
+/* Vehicle icon — car emoji in a white rounded square */
+function makeVehicleIcon(vehicleType) {
+    var emoji = "🚗";
+    if (vehicleType === "Bike")    emoji = "🏍️";
+    if (vehicleType === "Auto")    emoji = "🛺";
+    if (vehicleType === "Carpool") emoji = "🚐";
 
-var destinationIcon =
-    makeCircleIcon(
-        "#F44336",
-        "D"
-    );
+    var svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40">',
+        '  <rect x="2" y="2" width="36" height="36" rx="8"',
+        '        fill="#1976D2" stroke="white" stroke-width="2"/>',
+        '  <text x="20" y="28" text-anchor="middle"',
+        '        font-size="20" font-family="sans-serif">', emoji, '</text>',
+        '</svg>'
+    ].join('');
+    return L.divIcon({
+        html:       svg,
+        iconSize:   [40, 40],
+        iconAnchor: [20, 20],
+        className:  ''
+    });
+}
 
-var vehicleIcon =
-    makeCircleIcon(
-        "#1976D2",
-        "C"
-    );
-/* ── initializeRide — called from QML after route is drawn ─────── */
-   
+var pickupIcon      = makeCircleIcon("#4CAF50", "P");
+var destinationIcon = makeCircleIcon("#F44336", "D");
+var vehicleIcon     = makeVehicleIcon("Cab");   // default; overridden by setVehicleType()
+
+/* ── setVehicleType — called from QML before initializeRide ────── */
+
+function setVehicleType(type) {
+    vehicleIcon = makeVehicleIcon(type);
+    if (vehicleMarker) {
+        vehicleMarker.setIcon(vehicleIcon);
+    }
+}
+
+/* ── initializeRide — called from QML ──────────────────────────── */
+
 function initializeRide(
     pickupLat, pickupLon,
     destinationLat, destinationLon,
     vehicleLat, vehicleLon
 ) {
-
-    console.log(
-        "Pickup:",
-        pickupLat,
-        pickupLon
-    );
-
-    console.log(
-        "Destination:",
-        destinationLat,
-        destinationLon
-    );
-
-    console.log(
-        "Vehicle:",
-        vehicleLat,
-        vehicleLon
-    );
-
-    if (pickupMarker) {
-        map.removeLayer(pickupMarker);
-        pickupMarker = null;
-    }
-
-    if (destinationMarker) {
-        map.removeLayer(destinationMarker);
-        destinationMarker = null;
-    }
-
-    if (vehicleMarker) {
-        map.removeLayer(vehicleMarker);
-        vehicleMarker = null;
-    }
+    /* clear old layers */
+    if (pickupMarker)      { map.removeLayer(pickupMarker);      pickupMarker      = null; }
+    if (destinationMarker) { map.removeLayer(destinationMarker); destinationMarker = null; }
+    if (vehicleMarker)     { map.removeLayer(vehicleMarker);     vehicleMarker     = null; }
+    if (routeLine)         { map.removeLayer(routeLine);         routeLine         = null; }
 
     pickupMarker = L.marker(
         [pickupLat, pickupLon],
@@ -135,32 +123,53 @@ function initializeRide(
         { icon: vehicleIcon }
     ).addTo(map);
 
-    var bounds = L.latLngBounds([
-        [pickupLat, pickupLon],
+    map.fitBounds(L.latLngBounds([
+        [pickupLat,      pickupLon],
         [destinationLat, destinationLon],
-        [vehicleLat, vehicleLon]
-    ]);
+        [vehicleLat,     vehicleLon]
+    ]), { padding: [40, 40] });
 
-    map.fitBounds(bounds, {
-        padding: [40, 40]
-    });
+    /* fetch full route from pickup → destination via OSRM */
+    fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon);
 }
 
+/* ── fetchRoute — draws blue polyline pickup→destination ────────── */
 
-/* ── drawRoute — blue polyline, normal road width ──────────────── */
+function fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon) {
+    var url =
+        "http://127.0.0.1:8000/route"
+        + "?pickup_lat="      + pickupLat
+        + "&pickup_lon="      + pickupLon
+        + "&destination_lat=" + destinationLat
+        + "&destination_lon=" + destinationLon;
+
+    fetch(url)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (!data.routes || data.routes.length === 0) return;
+
+            var coords = data.routes[0].geometry.coordinates;
+            var points = [];
+            for (var i = 0; i < coords.length; i++) {
+                points.push([coords[i][1], coords[i][0]]);
+            }
+            drawRoute(points);
+        })
+        .catch(function(e) { console.log("fetchRoute error:", e); });
+}
+
+/* ── drawRoute — blue polyline ──────────────────────────────────── */
 
 function drawRoute(routePoints) {
     if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
-
     routeLine = L.polyline(routePoints, {
         color:   '#1976D2',
-        weight:  4,          // ← thin road-width line
-        opacity: 0.9
+        weight:  5,
+        opacity: 0.85
     }).addTo(map);
 }
 
-
-/* ── moveVehicle — called every 5 s from QML timer ─────────────── */
+/* ── moveVehicle — called every 5 s from QML ───────────────────── */
 
 function moveVehicle(lat, lon) {
     if (vehicleMarker) {
@@ -168,14 +177,8 @@ function moveVehicle(lat, lon) {
     }
 }
 
-initializeRide(
-    12.9716,
-    77.5946,
-    12.9352,
-    77.6245,
-    12.9600,
-    77.6000
-);
+/* ── default view on load (replaced by QML call) ───────────────── */
+map.setView([12.9716, 77.5946], 13);
 
 </script>
 </body>
