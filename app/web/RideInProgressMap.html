@@ -143,11 +143,16 @@ function fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon) {
         + "&destination_lat=" + destinationLat
         + "&destination_lon=" + destinationLon;
 
-    fetch(url)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState !== 4) return;
+        if (xhr.status !== 200) {
+            console.log("fetchRoute error status:", xhr.status);
+            return;
+        }
+        try {
+            var data = JSON.parse(xhr.responseText);
             if (!data.routes || data.routes.length === 0) return;
-
             var coords = data.routes[0].geometry.coordinates;
             var points = [];
             for (var i = 0; i < coords.length; i++) {
@@ -155,8 +160,12 @@ function fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon) {
                 points.push([coords[i][1], coords[i][0]]);
             }
             drawRoute(points);
-        })
-        .catch(function(e) { console.log("fetchRoute error:", e); });
+        } catch(e) {
+            console.log("fetchRoute parse error:", e);
+        }
+    };
+    xhr.open("GET", url, true);
+    xhr.send();
 }
 
 /* ── drawRoute — blue polyline ──────────────────────────────────── */

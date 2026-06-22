@@ -181,19 +181,18 @@ Page {
                             font.pixelSize: 17
                             font.bold:      true
                             anchors.verticalCenter: parent.verticalCenter
-                            Layout.fillWidth: true
                         }
 
-                        // Spacer
+                        // Spacer pushes pill to the right
                         Item {
                             height: 1
                             width:  parent.width
                                     - 36   // back btn
-                                    - 10   // spacing
-                                    - rideTitle.implicitWidth
-                                    - 10
+                                    - 10   // spacing after back btn
+                                    - implicitTitleLabel.implicitWidth
+                                    - 10   // spacing after title
                                     - vehiclePillRect.width
-                                    - 24   // margins
+                                    - 24   // left + right margins
                         }
 
                         // Vehicle pill
@@ -216,9 +215,9 @@ Page {
                         }
                     }
 
-                    // Re-declare title with an id so the spacer can measure it
+                    // Hidden label used only to measure title width for spacer
                     Label {
-                        id: rideTitle
+                        id: implicitTitleLabel
                         visible: false
                         text: "Ride In Progress"
                         font.pixelSize: 17
@@ -436,7 +435,7 @@ Page {
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
-                        Item { Layout.fillWidth: true; height: 1; width: parent.width - fareLabel.implicitWidth - 60 }
+                        Item { height: 1; width: parent.width - fareLabel.implicitWidth - 60 }
 
                         Label {
                             id:             fareLabel
