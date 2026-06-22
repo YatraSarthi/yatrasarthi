@@ -206,22 +206,7 @@ Page {
                             }
                         }
 
-                        // Distance
-                        Row {
-                            width: parent.width
-                            Label {
-                                text:           "Distance"
-                                font.pixelSize: 13
-                                color:          "#888"
-                                width:          parent.width / 2
-                            }
-                            Label {
-                                text:           appState.selectedDistance + " km"
-                                font.pixelSize: 13
-                                color:          "#1A1A1A"
-                                font.bold:      true
-                            }
-                        }
+                        // Distance row REMOVED as requested
                     }
                 }
 
@@ -268,6 +253,9 @@ Page {
                     color:        "#FFF8E1"
                     border.color: "#FFD54F"
 
+                    // Tracks how many stars the customer has selected (0 = none yet)
+                    property int userRating: 0
+
                     Column {
                         id: rateCol
                         anchors {
@@ -287,18 +275,56 @@ Page {
                             color:          "#1A1A1A"
                         }
 
+                        // Hint label shown until a rating is given
+                        Label {
+                            visible:        parent.parent.parent.userRating === 0
+                            text:           "Tap a star to rate"
+                            font.pixelSize: 12
+                            color:          "#999"
+                        }
+
+                        // Label shown after rating is selected
+                        Label {
+                            visible:        parent.parent.parent.userRating > 0
+                            text:           parent.parent.parent.userRating === 5
+                                            ? "Excellent! 🎉"
+                                            : parent.parent.parent.userRating >= 4
+                                              ? "Great ride!"
+                                              : parent.parent.parent.userRating >= 3
+                                                ? "Good ride"
+                                                : parent.parent.parent.userRating >= 2
+                                                  ? "Could be better"
+                                                  : "Poor experience"
+                            font.pixelSize: 12
+                            color:          "#F57F17"
+                            font.bold:      true
+                        }
+
+                        // Interactive star row
                         Row {
                             spacing: 8
+
                             Repeater {
                                 model: 5
+
                                 Label {
+                                    // 'index' is 0-based; compare against 1-based userRating
                                     text:           "★"
-                                    font.pixelSize: 32
-                                    color:          "#FFC107"
+                                    font.pixelSize: 36
+                                    // Filled (gold) when index < userRating, else outline grey
+                                    color: index < rateCard.userRating ? "#FFC107" : "#D0D0D0"
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: rateCard.userRating = index + 1
+                                    }
                                 }
                             }
                         }
                     }
+
+                    // Give the card an id so Repeater labels can reference userRating
+                    id: rateCard
                 }
 
                 // ── Back to Home button ───────────────────────────────────────
