@@ -9,82 +9,94 @@ Page {
 
     property bool driverFound: false
 
+    // ── Auto-navigate to PickupPage when driver is found ──────────
     Timer {
         interval: 3000
-        running: true
-        repeat: false
+        running:  true
+        repeat:   false
 
         onTriggered: {
             driverFound = true
+
+            // Reset driver simulation first
+            var xhr = new XMLHttpRequest()
+            xhr.open("GET", "http://127.0.0.1:8000/reset-driver", false)
+            xhr.send()
+            console.log("Driver simulation reset")
+
+            // Go straight to PickupPage
+            appStack.push(
+                Qt.resolvedUrl("PickupPage.qml"),
+                { "appStack": appStack, "appState": appState }
+            )
         }
     }
 
-    Column {
-
+    // ── Background ────────────────────────────────────────────────
+    Rectangle {
         anchors.fill: parent
-        spacing: 15
+        color: "#F4F6F9"
+    }
 
-        /*
-         * HEADER
-         */
+    Column {
+        anchors.fill: parent
+        spacing:      0
 
-        Row {
+        // ── Header ────────────────────────────────────────────────
+        Rectangle {
+            width:  parent.width
+            height: 58
+            color:  "#1976D2"
 
-            spacing: 10
+            Row {
+                anchors.fill:       parent
+                anchors.leftMargin: 10
+                spacing: 10
 
-            anchors.left: parent.left
-            anchors.leftMargin: 10
+                Rectangle {
+                    width: 36; height: 36; radius: 18
+                    color: "#33FFFFFF"
+                    anchors.verticalCenter: parent.verticalCenter
 
-            Button {
-
-                text: "← Back"
-
-                onClicked: {
-                    appStack.pop()
+                    Label {
+                        anchors.centerIn: parent
+                        text: "←"; color: "white"; font.pixelSize: 18
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked:    appStack.pop()
+                    }
                 }
-            }
 
-            Label {
-
-                text: driverFound
-                      ? "Driver Found"
-                      : "Searching Driver"
-
-                font.pixelSize: 22
-                font.bold: true
-
-                anchors.verticalCenter: parent.verticalCenter
+                Label {
+                    text:           driverFound
+                                    ? "Driver Found!" : "Finding Driver…"
+                    font.pixelSize: 20
+                    font.bold:      true
+                    color:          "white"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
         }
 
-        /*
-         * ROUTE MAP
-         */
-
+        // ── Route Map ─────────────────────────────────────────────
         Rectangle {
-
-            width: parent.width
-            height: 240
-
+            width:        parent.width
+            height:       260
             border.color: "#D3D3D3"
 
             WebEngineView {
-
-                id: bookingMap
-
+                id:           bookingMap
                 anchors.fill: parent
-
-                url: Qt.resolvedUrl("../web/route.html")
+                url:          Qt.resolvedUrl("../web/route.html")
 
                 onLoadingChanged: {
-
                     if (loadRequest.status ===
                             WebEngineLoadRequest.LoadSucceededStatus) {
-
                         runJavaScript(
                             "setRoute("
-                            + appState.pickupLat + ","
-                            + appState.pickupLon + ","
+                            + appState.pickupLat      + ","
+                            + appState.pickupLon      + ","
                             + appState.destinationLat + ","
                             + appState.destinationLon
                             + ")"
@@ -94,203 +106,111 @@ Page {
             }
         }
 
-        /*
-         * SEARCHING
-         */
-
-        BusyIndicator {
-
+        // ── Searching state ───────────────────────────────────────
+        Item {
+            width:  parent.width
+            height: parent.height - 58 - 260
             visible: !driverFound
-            running: !driverFound
-
-            width: 60
-            height: 60
-
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
-
-        Label {
-
-            visible: !driverFound
-
-            text: "Looking for nearby drivers..."
-
-            anchors.horizontalCenter: parent.horizontalCenter
-
-            font.pixelSize: 18
-        }
-
-        /*
-         * DRIVER CARD
-         */
-
-        Rectangle {
-
-            visible: driverFound
-
-            width: parent.width - 20
-            height: 180
-
-            anchors.horizontalCenter: parent.horizontalCenter
-
-            radius: 15
-
-            color: "white"
-
-            border.color: "#D3D3D3"
-            border.width: 1
 
             Column {
+                anchors.centerIn: parent
+                spacing:          20
 
-                anchors.fill: parent
-                anchors.margins: 15
+                // Pulsing outer ring
+                Rectangle {
+                    width:  120; height: 120; radius: 60
+                    color:  "transparent"
+                    border.color: "#1976D2"
+                    border.width: 3
+                    anchors.horizontalCenter: parent.horizontalCenter
 
-                spacing: 10
+                    SequentialAnimation on opacity {
+                        loops:    Animation.Infinite
+                        running:  true
+                        NumberAnimation { to: 0.2; duration: 800 }
+                        NumberAnimation { to: 1.0; duration: 800 }
+                    }
+
+                    // Inner filled circle
+                    Rectangle {
+                        width:  90; height: 90; radius: 45
+                        color:  "#1976D2"
+                        anchors.centerIn: parent
+
+                        Image {
+                            source:   "../../assets/icons/rider.png"
+                            width:    44; height: 44
+                            fillMode: Image.PreserveAspectFit
+                            anchors.centerIn: parent
+                        }
+                    }
+                }
 
                 Label {
-
-                    text: "Driver Found!"
-
-                    font.pixelSize: 22
-                    font.bold: true
+                    text:           "Looking for nearby drivers…"
+                    font.pixelSize: 16
+                    color:          "#444444"
+                    anchors.horizontalCenter: parent.horizontalCenter
                 }
 
+                // Animated dots
                 Row {
-    spacing: 8
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    spacing: 8
 
-    Image {
-        source: "../../assets/icons/driver.png"
-        width: 20
-        height: 20
-    }
+                    Repeater {
+                        model: 3
+                        Rectangle {
+                            width: 10; height: 10; radius: 5
+                            color: "#1976D2"
 
-    Label {
-        text: "Agnik Haldar"
-        font.pixelSize: 18
-    }
-}
+                            SequentialAnimation on opacity {
+                                loops:   Animation.Infinite
+                                running: true
+                                PauseAnimation    { duration: index * 300 }
+                                NumberAnimation   { to: 1.0; duration: 300 }
+                                NumberAnimation   { to: 0.2; duration: 300 }
+                                PauseAnimation    { duration: (2 - index) * 300 }
+                            }
+                        }
+                    }
+                }
 
-                Row {
-    spacing: 8
-
-    Image {
-        source: "../../assets/icons/star.png"
-        width: 20
-        height: 20
-    }
-
-    Label {
-        text: "4.8 Rating"
-        font.pixelSize: 18
-    }
-}
-
-                Row {
-    spacing: 8
-
-    Image {
-        source: "../../assets/icons/car_number.png"
-        width: 20
-        height: 20
-    }
-
-    Label {
-        text: "KA 01 AB 1234"
-        font.pixelSize: 18
-    }
-}
-
-                Row {
-    spacing: 8
-
-    Image {
-        source: "../../assets/icons/clock.png"
-        width: 20
-        height: 20
-    }
-
-    Label {
-        text: "ETA: 3 min"
-        font.pixelSize: 18
-    }
-}
-
-                Rectangle {
-
-                    width: parent.width
-                    height: 1
-
-                    color: "#E0E0E0"
+                Label {
+                    text:           "This usually takes a few seconds"
+                    font.pixelSize: 13
+                    color:          "#AAAAAA"
+                    anchors.horizontalCenter: parent.horizontalCenter
                 }
             }
         }
 
-        Item {
-            height: 10
-        }
+        // ── Cancel button ─────────────────────────────────────────
+        Rectangle {
+            width:        parent.width
+            height:       80
+            color:        "#F4F6F9"
+            visible:      !driverFound
 
-        /*
-         * CONFIRM
-         */
+            Button {
+                anchors.centerIn: parent
+                width:  200; height: 46
 
-        /*
- * CONFIRM
- */
-
-Button {
-
-    visible: driverFound
-
-    anchors.horizontalCenter: parent.horizontalCenter
-
-    width: 160
-    height: 42
-
-    text: "Confirm Ride"
-
-    onClicked: {
-
-        /*
-         * Reset driver simulation
-         */
-
-        var xhr = new XMLHttpRequest()
-
-        xhr.open(
-            "GET",
-            "http://127.0.0.1:8000/reset-driver",
-            false
-        )
-
-        xhr.send()
-
-        console.log("Driver simulation reset")
-
-        appStack.push(
-            Qt.resolvedUrl("PickupPage.qml"),
-            {
-                "appStack": appStack,
-                "appState": appState
-            }
-        )
-    }
-}    
-
-        /*
-         * CANCEL
-         */
-
-        Button {
-
-            anchors.horizontalCenter: parent.horizontalCenter
-
-            width: parent.width * 0.5
-            height: 45
-
-            text: "Cancel"
-
-            onClicked: {
-                appStack.pop()
+                background: Rectangle {
+                    radius:       12
+                    color:        "transparent"
+                    border.color: "#E53935"
+                    border.width: 2
+                }
+                contentItem: Text {
+                    text:                "Cancel Search"
+                    color:               "#E53935"
+                    font.pixelSize:      15
+                    font.bold:           true
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment:   Text.AlignVCenter
+                }
+                onClicked: appStack.pop()
             }
         }
     }
