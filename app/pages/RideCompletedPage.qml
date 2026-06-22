@@ -6,245 +6,326 @@ Page {
     property var appStack
     property var appState
 
-    title: "Ride Completed"
+    // Hide bottom bar while on this page
+    Component.onCompleted:  { if (appState) appState.showBottomBar = false }
+    Component.onDestruction:{ if (appState) appState.showBottomBar = true  }
 
-    ScrollView {
-
+    // ── Root background ──────────────────────────────────────────────────────
+    Rectangle {
         anchors.fill: parent
+        color: "#F4F6F9"
+    }
 
-        clip: true
+    // ── Floating header overlay ──────────────────────────────────────────────
+    Rectangle {
+        anchors {
+            top:   parent.top
+            left:  parent.left
+            right: parent.right
+        }
+        height: 52
+        color:  "#CC000000"
+        z:      10
 
-        Column {
+        Row {
+            anchors.fill:        parent
+            anchors.leftMargin:  8
+            anchors.rightMargin: 8
+            spacing: 8
 
-            width: parent.width
-
-            spacing: 10
-
-            /*
-             * HEADER
-             */
-
-            Row {
-
-                spacing: 10
-
-                anchors.left: parent.left
-
-                anchors.leftMargin: 10
+            Rectangle {
+                width:  36
+                height: 36
+                radius: 18
+                color:  "#33FFFFFF"
+                anchors.verticalCenter: parent.verticalCenter
 
                 Label {
-
-                    text: "Ride Completed"
-
-                    font.pixelSize: 22
-
-                    font.bold: true
-                }
-            }
-
-            /*
-             * SUCCESS CARD
-             */
-
-            Rectangle {
-
-                width: parent.width - 20
-                height: 100
-
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
-
-                radius: 15
-
-                color: "#4CAF50"
-
-                Column {
-
                     anchors.centerIn: parent
-
-                    spacing: 5
-
-                    Label {
-
-                        text: "Destination Reached"
-
-                        color: "white"
-
-                        font.pixelSize: 24
-
-                        font.bold: true
-                    }
-
-                    Label {
-
-                        text:
-                            "Thank you for riding with YatraSarthi"
-
-                        color: "white"
-
-                        font.pixelSize: 16
-                    }
+                    text:           "←"
+                    color:          "white"
+                    font.pixelSize: 18
                 }
-            }
 
-            /*
-             * RIDE DETAILS
-             */
-
-            Rectangle {
-
-                width: parent.width - 20
-                height: 240
-
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
-
-                radius: 15
-
-                color: "white"
-
-                border.color: "#D3D3D3"
-
-                Column {
-
+                MouseArea {
                     anchors.fill: parent
-
-                    anchors.margins: 15
-
-                    spacing: 12
-
-                    Label {
-
-                        text: "Ride Summary"
-
-                        font.pixelSize: 20
-
-                        font.bold: true
-                    }
-
-                    Label {
-
-                        text:
-                            "Pickup: "
-                            + appState.pickupLocation
-
-                        wrapMode: Text.WordWrap
-                    }
-
-                    Label {
-
-                        text:
-                            "Destination: "
-                            + appState.destinationLocation
-
-                        wrapMode: Text.WordWrap
-                    }
-
-                    Label {
-
-                        text:
-                            "Vehicle: "
-                            + appState.selectedVehicle
-                    }
-
-                    Label {
-
-                        text:
-                            "Distance: "
-                            + appState.selectedDistance
-                            + " km"
-                    }
-
-                    Label {
-
-                        text:
-                            "Fare Paid: ₹"
-                            + appState.selectedFare
-
-                        font.bold: true
+                    onClicked: {
+                        while (appStack.depth > 1)
+                            appStack.pop()
                     }
                 }
             }
 
-            /*
-             * RATE SARTHI
-             */
+            Label {
+                text:           "Ride Completed"
+                color:          "white"
+                font.pixelSize: 18
+                font.bold:      true
+                anchors.verticalCenter: parent.verticalCenter
+            }
+        }
+    }
 
-            Rectangle {
+    // ── Content ──────────────────────────────────────────────────────────────
+    ScrollView {
+        anchors.fill: parent
+        clip:         true
+        contentWidth: availableWidth
 
-                width: parent.width - 20
-                height: 140
+        Column {
+            width:         parent.width
+            spacing:       0
+            topPadding:    52   // clears the floating header
+            bottomPadding: 24
 
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
+            // ── CARDS AREA ───────────────────────────────────────────────────
+            Column {
+                width:        parent.width
+                spacing:      10
+                topPadding:   12
+                leftPadding:  12
+                rightPadding: 12
 
-                radius: 15
+                // ── Success card ─────────────────────────────────────────────
+                Rectangle {
+                    width:  parent.width
+                    height: 100
+                    radius: 14
+                    color:  "#4CAF50"
 
-                color: "#FFF8E1"
+                    Column {
+                        anchors.centerIn: parent
+                        spacing: 5
 
-                border.color: "#FFD54F"
+                        Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text:           "Destination Reached"
+                            color:          "white"
+                            font.pixelSize: 22
+                            font.bold:      true
+                        }
 
-                Column {
-
-                    anchors.centerIn: parent
-
-                    spacing: 10
-
-                    Label {
-
-                        text: "Rate Your Sarthi"
-
-                        font.pixelSize: 18
-
-                        font.bold: true
+                        Label {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text:           "Thank you for riding with YatraSarthi"
+                            color:          "white"
+                            font.pixelSize: 14
+                        }
                     }
+                }
 
-                    Row {
+                // ── Ride summary card ─────────────────────────────────────────
+                Rectangle {
+                    width:        parent.width
+                    height:       summaryCol.implicitHeight + 24
+                    radius:       14
+                    color:        "white"
+                    border.color: "#E8E8E8"
 
+                    Column {
+                        id: summaryCol
+                        anchors {
+                            top:         parent.top
+                            left:        parent.left
+                            right:       parent.right
+                            topMargin:   12
+                            leftMargin:  14
+                            rightMargin: 14
+                        }
                         spacing: 10
 
-                        Repeater {
+                        Label {
+                            text:           "Ride Summary"
+                            font.pixelSize: 17
+                            font.bold:      true
+                            color:          "#1A1A1A"
+                        }
 
-                            model: 5
+                        // Pickup row
+                        Row {
+                            spacing: 6
+                            width: parent.width
+
+                            Rectangle {
+                                width: 8; height: 8; radius: 4
+                                color: "#1976D2"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
 
                             Label {
+                                text:      appState.pickupLocation
+                                font.pixelSize: 13
+                                color:     "#333"
+                                wrapMode:  Text.WordWrap
+                                width:     parent.width - 14
+                                elide:     Text.ElideRight
+                            }
+                        }
 
-                                text: "★"
+                        // Destination row
+                        Row {
+                            spacing: 6
+                            width: parent.width
 
-                                font.pixelSize: 30
+                            Rectangle {
+                                width: 8; height: 8; radius: 2
+                                color: "#E53935"
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
 
-                                color: "#FFC107"
+                            Label {
+                                text:      appState.destinationLocation
+                                font.pixelSize: 13
+                                color:     "#333"
+                                wrapMode:  Text.WordWrap
+                                width:     parent.width - 14
+                                elide:     Text.ElideRight
+                            }
+                        }
+
+                        Rectangle {
+                            width:  parent.width
+                            height: 1
+                            color:  "#F0F0F0"
+                        }
+
+                        // Vehicle
+                        Row {
+                            width: parent.width
+                            Label {
+                                text:           "Vehicle"
+                                font.pixelSize: 13
+                                color:          "#888"
+                                width:          parent.width / 2
+                            }
+                            Label {
+                                text:           appState.selectedVehicle
+                                font.pixelSize: 13
+                                color:          "#1A1A1A"
+                                font.bold:      true
+                            }
+                        }
+
+                        // Distance
+                        Row {
+                            width: parent.width
+                            Label {
+                                text:           "Distance"
+                                font.pixelSize: 13
+                                color:          "#888"
+                                width:          parent.width / 2
+                            }
+                            Label {
+                                text:           appState.selectedDistance + " km"
+                                font.pixelSize: 13
+                                color:          "#1A1A1A"
+                                font.bold:      true
                             }
                         }
                     }
                 }
-            }
 
-            /*
-             * HOME BUTTON
-             */
+                // ── Fare card ─────────────────────────────────────────────────
+                Rectangle {
+                    width:        parent.width
+                    height:       56
+                    radius:       14
+                    color:        "white"
+                    border.color: "#E8E8E8"
 
-            Button {
+                    Row {
+                        anchors {
+                            left:          parent.left
+                            right:         parent.right
+                            verticalCenter: parent.verticalCenter
+                            leftMargin:    16
+                            rightMargin:   16
+                        }
 
-                width: parent.width * 0.7
+                        Label {
+                            text:           "Fare Paid"
+                            font.pixelSize: 15
+                            color:          "#555555"
+                        }
 
-                height: 50
+                        Item { width: parent.width - farePaidLabel.implicitWidth - 80; height: 1 }
 
-                anchors.horizontalCenter:
-                    parent.horizontalCenter
-
-                text: "Back To Home"
-
-                onClicked: {
-
-                    while(appStack.depth > 1)
-                        appStack.pop()
+                        Label {
+                            id:             farePaidLabel
+                            text:           "₹" + appState.selectedFare
+                            font.pixelSize: 26
+                            font.bold:      true
+                            color:          "#1976D2"
+                        }
+                    }
                 }
-            }
 
-            Item {
+                // ── Rate your Sarthi card ─────────────────────────────────────
+                Rectangle {
+                    width:        parent.width
+                    height:       rateCol.implicitHeight + 24
+                    radius:       14
+                    color:        "#FFF8E1"
+                    border.color: "#FFD54F"
 
-                height: 20
+                    Column {
+                        id: rateCol
+                        anchors {
+                            top:         parent.top
+                            left:        parent.left
+                            right:       parent.right
+                            topMargin:   12
+                            leftMargin:  14
+                            rightMargin: 14
+                        }
+                        spacing: 10
+
+                        Label {
+                            text:           "Rate Your Sarthi"
+                            font.pixelSize: 16
+                            font.bold:      true
+                            color:          "#1A1A1A"
+                        }
+
+                        Row {
+                            spacing: 8
+                            Repeater {
+                                model: 5
+                                Label {
+                                    text:           "★"
+                                    font.pixelSize: 32
+                                    color:          "#FFC107"
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Back to Home button ───────────────────────────────────────
+                Rectangle {
+                    width:  parent.width
+                    height: 52
+                    radius: 14
+                    color:  "#1976D2"
+
+                    Label {
+                        anchors.centerIn: parent
+                        text:           "Back To Home"
+                        color:          "white"
+                        font.pixelSize: 16
+                        font.bold:      true
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: {
+                            while (appStack.depth > 1)
+                                appStack.pop()
+                        }
+                    }
+                }
+
+                Item { height: 8 }
             }
         }
     }
