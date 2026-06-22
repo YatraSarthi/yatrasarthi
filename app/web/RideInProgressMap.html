@@ -59,7 +59,7 @@ function makeCircleIcon(color, label) {
     });
 }
 
-/* Vehicle icon — car emoji in a white rounded square */
+/* Vehicle icon — emoji in a colored rounded square */
 function makeVehicleIcon(vehicleType) {
     var emoji = "🚗";
     if (vehicleType === "Bike")    emoji = "🏍️";
@@ -67,24 +67,24 @@ function makeVehicleIcon(vehicleType) {
     if (vehicleType === "Carpool") emoji = "🚐";
 
     var svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40">',
-        '  <rect x="2" y="2" width="36" height="36" rx="8"',
-        '        fill="#1976D2" stroke="white" stroke-width="2"/>',
-        '  <text x="20" y="28" text-anchor="middle"',
-        '        font-size="20" font-family="sans-serif">', emoji, '</text>',
+        '<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44">',
+        '  <rect x="2" y="2" width="40" height="40" rx="10"',
+        '        fill="#1976D2" stroke="white" stroke-width="2.5"/>',
+        '  <text x="22" y="31" text-anchor="middle"',
+        '        font-size="22" font-family="sans-serif">', emoji, '</text>',
         '</svg>'
     ].join('');
     return L.divIcon({
         html:       svg,
-        iconSize:   [40, 40],
-        iconAnchor: [20, 20],
+        iconSize:   [44, 44],
+        iconAnchor: [22, 22],
         className:  ''
     });
 }
 
 var pickupIcon      = makeCircleIcon("#4CAF50", "P");
 var destinationIcon = makeCircleIcon("#F44336", "D");
-var vehicleIcon     = makeVehicleIcon("Cab");   // default; overridden by setVehicleType()
+var vehicleIcon     = makeVehicleIcon("Cab");   /* default; overridden by setVehicleType() */
 
 /* ── setVehicleType — called from QML before initializeRide ────── */
 
@@ -129,11 +129,11 @@ function initializeRide(
         [vehicleLat,     vehicleLon]
     ]), { padding: [40, 40] });
 
-    /* fetch full route from pickup → destination via OSRM */
+    /* fetch full OSRM route and draw blue polyline */
     fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon);
 }
 
-/* ── fetchRoute — draws blue polyline pickup→destination ────────── */
+/* ── fetchRoute — calls backend /route and draws blue polyline ─── */
 
 function fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon) {
     var url =
@@ -151,6 +151,7 @@ function fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon) {
             var coords = data.routes[0].geometry.coordinates;
             var points = [];
             for (var i = 0; i < coords.length; i++) {
+                /* OSRM returns [lon, lat] — flip to [lat, lon] for Leaflet */
                 points.push([coords[i][1], coords[i][0]]);
             }
             drawRoute(points);
@@ -177,7 +178,7 @@ function moveVehicle(lat, lon) {
     }
 }
 
-/* ── default view on load (replaced by QML call) ───────────────── */
+/* ── default view on load ───────────────────────────────────────── */
 map.setView([12.9716, 77.5946], 13);
 
 </script>
