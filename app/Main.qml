@@ -9,9 +9,7 @@ ApplicationWindow {
     height:  700
     title:   "YatraSarthi"
 
-    AppState {
-        id: appState
-    }
+    AppState { id: appState }
 
     property int currentTab: 0
 
@@ -20,22 +18,18 @@ ApplicationWindow {
         bottomNav.currentIndex = index
     }
 
-    // ── Bottom nav — hidden whenever a full-screen page is active ────────────
+    // ── Bottom nav ───────────────────────────────────────────────────────────
     footer: TabBar {
-
         id:      bottomNav
         visible: appState.showBottomBar
         height:  visible ? implicitHeight : 0
-
         currentIndex: currentTab
 
         background: Rectangle {
             color: "white"
             Rectangle {
                 anchors.top: parent.top
-                width:  parent.width
-                height: 1
-                color:  "#E0E0E0"
+                width: parent.width; height: 1; color: "#E0E0E0"
             }
         }
 
@@ -43,76 +37,64 @@ ApplicationWindow {
 
         TabButton {
             contentItem: Column {
-                anchors.centerIn: parent
-                spacing: 2
+                anchors.centerIn: parent; spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source:   Qt.resolvedUrl("../assets/icons/pickup.png")
-                    width: 22; height: 22
-                    fillMode: Image.PreserveAspectFit
+                    source: Qt.resolvedUrl("../assets/icons/pickup.png")
+                    width: 22; height: 22; fillMode: Image.PreserveAspectFit
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text:           "Home"
-                    font.pixelSize: 10
-                    color:          currentTab === 0 ? "#1976D2" : "#888"
+                    text: "Home"; font.pixelSize: 10
+                    color: currentTab === 0 ? "#1976D2" : "#888"
                 }
             }
         }
 
         TabButton {
             contentItem: Column {
-                anchors.centerIn: parent
-                spacing: 2
+                anchors.centerIn: parent; spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source:   Qt.resolvedUrl("../assets/icons/auto.png")
-                    width: 22; height: 22
-                    fillMode: Image.PreserveAspectFit
+                    source: Qt.resolvedUrl("../assets/icons/auto.png")
+                    width: 22; height: 22; fillMode: Image.PreserveAspectFit
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text:           "Services"
-                    font.pixelSize: 10
-                    color:          currentTab === 1 ? "#1976D2" : "#888"
+                    text: "Services"; font.pixelSize: 10
+                    color: currentTab === 1 ? "#1976D2" : "#888"
                 }
             }
         }
 
         TabButton {
             contentItem: Column {
-                anchors.centerIn: parent
-                spacing: 2
+                anchors.centerIn: parent; spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source:   Qt.resolvedUrl("../assets/icons/rider.png")
-                    width: 22; height: 22
-                    fillMode: Image.PreserveAspectFit
+                    source: Qt.resolvedUrl("../assets/icons/rider.png")
+                    width: 22; height: 22; fillMode: Image.PreserveAspectFit
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text:           "Activity"
-                    font.pixelSize: 10
-                    color:          currentTab === 2 ? "#1976D2" : "#888"
+                    text: "Activity"; font.pixelSize: 10
+                    color: currentTab === 2 ? "#1976D2" : "#888"
                 }
             }
         }
 
         TabButton {
             contentItem: Column {
-                anchors.centerIn: parent
-                spacing: 2
+                anchors.centerIn: parent; spacing: 2
                 Image {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    source:   Qt.resolvedUrl("../assets/icons/driver.png")
-                    width: 22; height: 22
-                    fillMode: Image.PreserveAspectFit
+                    source: Qt.resolvedUrl("../assets/icons/driver.png")
+                    width: 22; height: 22; fillMode: Image.PreserveAspectFit
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text:           "Account"
-                    font.pixelSize: 10
-                    color:          currentTab === 3 ? "#1976D2" : "#888"
+                    text: "Account"; font.pixelSize: 10
+                    color: currentTab === 3 ? "#1976D2" : "#888"
                 }
             }
         }
@@ -125,15 +107,13 @@ ApplicationWindow {
         anchors.fill: parent
         visible:      currentTab === 0
 
-        Component.onCompleted: {
-            var page = push(Qt.resolvedUrl("pages/HomePage.qml"))
-            page.appStack = homeStack
-            page.appState = appState
-        }
+        // Pass properties via initialItem — no async race condition
+        initialItem: HomePage {
+            appStack: homeStack
+            appState: appState
 
-        Connections {
-            target: homeStack.currentItem
-            onRequestTabChange: switchTab(tabIndex)
+            // Fix: signal is switchTab(int tabIndex), not requestTabChange
+            onSwitchTab: function(tabIndex) { switchTab(tabIndex) }
         }
     }
 

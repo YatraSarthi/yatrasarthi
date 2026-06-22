@@ -2,73 +2,86 @@
 <html>
 <head>
 <meta charset="utf-8">
-
 <title>YatraSarthi Map</title>
-
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <style>
-html, body, #map {
-    height: 100%;
-    width: 100%;
-    margin: 0;
+html, body, #map { height: 100%; width: 100%; margin: 0; }
+#status {
+    position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.65); color: white;
+    padding: 6px 14px; border-radius: 20px;
+    font-family: sans-serif; font-size: 13px;
+    z-index: 1000; white-space: nowrap;
+    display: none;
 }
 </style>
-
 </head>
-
 <body>
-
 <div id="map"></div>
+<div id="status">Resolving address…</div>
 
 <script>
+var selectedLat    = null;
+var selectedLon    = null;
+var selectedShort  = null;   // short address string
+var selectedFull   = null;   // full address string
+var geocodePending = false;
 
-var lat = 12.9716;
-var lon = 77.5946;
+var map = L.map('map').setView([12.9716, 77.5946], 13);
 
-var map = L.map('map').setView([lat, lon], 13);
-
-L.tileLayer(
-    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {
-        attribution: '&copy; OpenStreetMap contributors'
-    }
-).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
 
 var marker = null;
-var selectedLat = null;
-var selectedLon = null;
+var statusEl = document.getElementById('status');
 
 map.on('click', function(e) {
+    selectedLat   = e.latlng.lat;
+    selectedLon   = e.latlng.lng;
+    selectedShort = null;
+    selectedFull  = null;
 
-    selectedLat = e.latlng.lat;
-    selectedLon = e.latlng.lng;
-
-    if (marker) {
-        map.removeLayer(marker);
-    }
-
-    marker = L.marker([selectedLat, selectedLon])
-              .addTo(map);
-
+    if (marker) map.removeLayer(marker);
+    marker = L.marker([selectedLat, selectedLon]).addTo(map);
     marker.bindPopup(
-        "Selected Location<br>" +
-        selectedLat.toFixed(5) +
-        ", " +
-        selectedLon.toFixed(5)
+        selectedLat.toFixed(5) + ", " + selectedLon.toFixed(5)
     ).openPopup();
 
-    console.log(
-        "Selected:",
-        selectedLat,
-        selectedLon
-    );
+    // Kick off reverse-geocode immediately on click
+    geocodePending = true;
+    statusEl.style.display = 'block';
+    statusEl.textContent   = 'Resolving address…';
+
+    fetch('http://127.0.0.1:8000/reverse-geocode'
+          + '?lat=' + selectedLat + '&lon=' + selectedLon)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            selectedShort  = data.address      || (selectedLat.toFixed(5) + ', ' + selectedLon.toFixed(5));
+            selectedFull   = data.full_address || selectedShort;
+            geocodePending = false;
+            statusEl.textContent = selectedShort;
+            marker.getPopup().setContent(selectedShort).update();
+        })
+        .catch(function() {
+            selectedShort  = selectedLat.toFixed(5) + ', ' + selectedLon.toFixed(5);
+            selectedFull   = selectedShort;
+            geocodePending = false;
+            statusEl.textContent = selectedShort;
+        });
 });
 
+// Called by MapPage.qml via runJavaScript
+function getSelection() {
+    return {
+        lat:     selectedLat,
+        lon:     selectedLon,
+        short:   selectedShort,
+        full:    selectedFull,
+        pending: geocodePending
+    };
+}
 </script>
-
 </body>
 </html>

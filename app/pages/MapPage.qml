@@ -7,161 +7,62 @@ Page {
     property var appStack
     property var appState
 
-    function fetchAddress(lat, lon) {
+    // Poll until geocoding finishes, then commit and pop
+    function commitSelection() {
+        mapView.runJavaScript("JSON.stringify(getSelection())", function(raw) {
+            if (!raw) { console.log("getSelection() returned nothing"); return }
 
-        console.log("fetchAddress:", lat, lon)
+            var sel
+            try { sel = JSON.parse(raw) } catch(e) { console.log("Parse error:", e); return }
 
-        var xhr = new XMLHttpRequest()
-
-        xhr.onreadystatechange = function() {
-
-            console.log(
-                "readyState:",
-                xhr.readyState,
-                "status:",
-                xhr.status
-            )
-
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-
-                var shortAddress =
-                        lat.toFixed(5) + ", " + lon.toFixed(5)
-
-                var fullAddress = shortAddress
-
-                console.log("Response:", xhr.responseText)
-
-                if (xhr.status === 200) {
-
-    try {
-
-        var data =
-            JSON.parse(
-                xhr.responseText
-            )
-
-        console.log(
-            "Address Received:",
-            data.address
-        )
-
-        console.log(
-            "Full Address:",
-            data.full_address
-        )
-
-        if (data.address)
-            shortAddress = data.address
-
-        if (data.full_address)
-            fullAddress = data.full_address
-
-    } catch(e) {
-
-        console.log(
-            "JSON Error:",
-            e
-        )
-    }
-}
-                console.log("Short Address:", shortAddress)
-                console.log("Full Address:", fullAddress)
-
-                if (appState.activeSelection === "pickup") {
-
-                    appState.pickupLocation = shortAddress
-                    appState.pickupFullAddress = fullAddress
-
-                    appState.pickupLat = lat
-                    appState.pickupLon = lon
-
-                } else {
-
-                    appState.destinationLocation = shortAddress
-                    appState.destinationFullAddress = fullAddress
-
-                    appState.destinationLat = lat
-                    appState.destinationLon = lon
-                }
-
-                console.log("Popping back to HomePage")
-
-                if (appStack.depth > 1)
-                    appStack.pop()
+            if (sel.lat === null || sel.lat === undefined) {
+                console.log("No pin placed yet"); return
             }
-        }
 
-        xhr.onerror = function() {
+            if (sel.pending) {
+                // Geocode still in flight — retry in 400 ms
+                retryTimer.start()
+                return
+            }
 
-            console.log("XHR ERROR")
-
-            var fallback =
-                    lat.toFixed(5) + ", " + lon.toFixed(5)
+            var shortAddr = sel.short || (sel.lat.toFixed(5) + ", " + sel.lon.toFixed(5))
+            var fullAddr  = sel.full  || shortAddr
 
             if (appState.activeSelection === "pickup") {
-
-                appState.pickupLocation = fallback
-                appState.pickupFullAddress = fallback
-
-                appState.pickupLat = lat
-                appState.pickupLon = lon
-
+                appState.pickupLocation    = shortAddr
+                appState.pickupFullAddress = fullAddr
+                appState.pickupLat         = sel.lat
+                appState.pickupLon         = sel.lon
             } else {
-
-                appState.destinationLocation = fallback
-                appState.destinationFullAddress = fallback
-
-                appState.destinationLat = lat
-                appState.destinationLon = lon
+                appState.destinationLocation    = shortAddr
+                appState.destinationFullAddress = fullAddr
+                appState.destinationLat         = sel.lat
+                appState.destinationLon         = sel.lon
             }
 
-            console.log("Popping back using fallback")
+            if (appStack.depth > 1) appStack.pop()
+        })
+    }
 
-            if (appStack.depth > 1)
-                appStack.pop()
-        }
-
-        xhr.open(
-            "GET",
-            "http://127.0.0.1:8000/reverse-geocode"
-            + "?lat=" + lat
-            + "&lon=" + lon,
-            true
-        )
-
-        console.log("Sending reverse geocode request...")
-        console.log(
-    "Reverse Geocode URL:",
-    "http://127.0.0.1:8000/reverse-geocode"
-    + "?lat=" + lat
-    + "&lon=" + lon
-)
-        xhr.send()
+    Timer {
+        id: retryTimer
+        interval: 400
+        repeat: false
+        onTriggered: commitSelection()
     }
 
     header: ToolBar {
-
         Row {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 10
-
             Button {
                 text: "← Back"
-
-                onClicked: {
-                    if (appStack.depth > 1)
-                        appStack.pop()
-                }
+                onClicked: { if (appStack.depth > 1) appStack.pop() }
             }
-
             Label {
-
                 text: appState.activeSelection === "pickup"
-                      ? "Select Pickup"
-                      : "Select Destination"
-
+                      ? "Select Pickup" : "Select Destination"
                 anchors.verticalCenter: parent.verticalCenter
-
                 font.bold: true
             }
         }
@@ -169,47 +70,15 @@ Page {
 
     WebEngineView {
         id: mapView
-
         anchors.fill: parent
-
         url: Qt.resolvedUrl("../web/map.html")
     }
 
     Button {
         text: "Use Selected Location"
-
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottomMargin: 20
-
-        onClicked: {
-
-            mapView.runJavaScript(
-                "[selectedLat, selectedLon]",
-
-                function(result) {
-
-                    console.log("JS returned:", result)
-
-                    if (!result ||
-                        result[0] === null ||
-                        result[0] === undefined ||
-                        result[1] === undefined) {
-
-                        console.log("No location selected")
-                        return
-                    }
-
-                    var lat = result[0]
-                    var lon = result[1]
-
-                    console.log("Selected coordinates:")
-                    console.log(lat)
-                    console.log(lon)
-
-                    fetchAddress(lat, lon)
-                }
-            )
-        }
+        onClicked: commitSelection()
     }
 }
