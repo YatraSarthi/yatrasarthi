@@ -11,6 +11,82 @@ Page {
         if (visible && appState) appState.showBottomBar = true
     }
 
+    // ── EMERGENCY CONTACTS STATE ────────────────────────────────────────────
+    property bool emergencyExpanded: false
+    property bool emergencyEditMode: false
+    property string emergencySaveMessage: ""
+
+    property string contact1Name: ""
+    property string contact1Phone: ""
+    property string contact2Name: ""
+    property string contact2Phone: ""
+    property string bloodGroup: ""
+    property string medicalNotes: ""
+
+    // Incrementing this forces fields (bound via Binding) to re-pull
+    // the latest property values. Needed because fields live inside a
+    // Repeater delegate and can't be reached by id from the Page root.
+    property int emergencySyncTick: 0
+
+    Component.onCompleted: { loadEmergencyInfo() }
+
+    onEmergencyExpandedChanged: {
+        if (emergencyExpanded) emergencySyncTick++
+    }
+    onEmergencyEditModeChanged: {
+        if (!emergencyEditMode) emergencySyncTick++
+    }
+
+    function loadEmergencyInfo() {
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText)
+                    contact1Name  = data.contact1Name  || ""
+                    contact1Phone = data.contact1Phone || ""
+                    contact2Name  = data.contact2Name  || ""
+                    contact2Phone = data.contact2Phone || ""
+                    bloodGroup    = data.bloodGroup    || ""
+                    medicalNotes  = data.medicalNotes  || ""
+                    emergencySyncTick++
+                } catch (e) {
+                    console.log("Emergency Info Parse Error:", e)
+                }
+            }
+        }
+        xhr.open("GET", "http://127.0.0.1:8000/sos/info", true)
+        xhr.send()
+    }
+
+    function saveEmergencyInfo() {
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status === 200) {
+                    emergencySaveMessage = "Saved successfully"
+                    emergencyEditMode = false
+                } else {
+                    emergencySaveMessage = "Failed to save"
+                }
+            }
+        }
+        xhr.onerror = function() {
+            emergencySaveMessage = "Unable to contact server"
+        }
+
+        var url = "http://127.0.0.1:8000/sos/info"
+                  + "?contact1Name="  + encodeURIComponent(contact1Name)
+                  + "&contact1Phone=" + encodeURIComponent(contact1Phone)
+                  + "&contact2Name="  + encodeURIComponent(contact2Name)
+                  + "&contact2Phone=" + encodeURIComponent(contact2Phone)
+                  + "&bloodGroup="    + encodeURIComponent(bloodGroup)
+                  + "&medicalNotes="  + encodeURIComponent(medicalNotes)
+
+        xhr.open("POST", url, true)
+        xhr.send()
+    }
+
     // ── PROFILE ────────────────────────────────────────────────────────────
     property var profileItems: [
         {
@@ -29,7 +105,8 @@ Page {
             icon: Qt.resolvedUrl("../../assets/icons/sos.png"),
             label: "Emergency Contacts",
             sub: "SOS contacts",
-            page: "EmergencyContactsPage"
+            page: "",
+            isEmergencyContacts: true
         },
         {
             icon: Qt.resolvedUrl("../../assets/icons/rider.png"),
@@ -123,19 +200,18 @@ Page {
     function navigateTo(pageName) {
         if (pageName === "" || !appStack) return
         switch (pageName) {
-            case "EditProfilePage":      appStack.push("qrc:/pages/account/EditProfilePage.qml");      break
-            case "PaymentMethodsPage":   appStack.push("qrc:/pages/account/PaymentMethodsPage.qml");   break
-            case "EmergencyContactsPage":appStack.push("qrc:/pages/account/EmergencyContactsPage.qml");break
-            case "RideHistoryPage":      appStack.push("qrc:/pages/account/RideHistoryPage.qml");      break
-            case "RewardsPage":          appStack.push("qrc:/pages/account/RewardsPage.qml");          break
-            case "NotificationsPage":    appStack.push("qrc:/pages/account/NotificationsPage.qml");    break
-            case "LanguagePage":         appStack.push("qrc:/pages/account/LanguagePage.qml");         break
-            case "AccessibilityPage":    appStack.push("qrc:/pages/account/AccessibilityPage.qml");    break
-            case "HelpSupportPage":      appStack.push("qrc:/pages/account/HelpSupportPage.qml");      break
-            case "SafetyPage":           appStack.push("qrc:/pages/account/SafetyPage.qml");           break
-            case "RateAppPage":          appStack.push("qrc:/pages/account/RateAppPage.qml");          break
-            case "PrivacyPolicyPage":    appStack.push("qrc:/pages/account/PrivacyPolicyPage.qml");    break
-            case "AboutPage":            appStack.push("qrc:/pages/account/AboutPage.qml");            break
+            case "EditProfilePage":      appStack.push(Qt.resolvedUrl("EditProfilePage.qml"));      break
+            case "PaymentMethodsPage":   appStack.push(Qt.resolvedUrl("PaymentMethodsPage.qml"));   break
+            case "RideHistoryPage":      appStack.push(Qt.resolvedUrl("RideHistoryPage.qml"));      break
+            case "RewardsPage":          appStack.push(Qt.resolvedUrl("RewardsPage.qml"));          break
+            case "NotificationsPage":    appStack.push(Qt.resolvedUrl("NotificationsPage.qml"));    break
+            case "LanguagePage":         appStack.push(Qt.resolvedUrl("LanguagePage.qml"));         break
+            case "AccessibilityPage":    appStack.push(Qt.resolvedUrl("AccessibilityPage.qml"));    break
+            case "HelpSupportPage":      appStack.push(Qt.resolvedUrl("HelpSupportPage.qml"));      break
+            case "SafetyPage":           appStack.push(Qt.resolvedUrl("SafetyPage.qml"));           break
+            case "RateAppPage":          appStack.push(Qt.resolvedUrl("RateAppPage.qml"));          break
+            case "PrivacyPolicyPage":    appStack.push(Qt.resolvedUrl("PrivacyPolicyPage.qml"));    break
+            case "AboutPage":            appStack.push(Qt.resolvedUrl("AboutPage.qml"));            break
             default: console.log("No route for:", pageName)
         }
     }
@@ -270,11 +346,12 @@ Page {
 
                         Rectangle {
                             width: parent.width
-                            height: section ? (section.items.length * 60) : 0
                             radius: 14; color: "white"
                             border.color: "#EEEEEE"; clip: true
+                            height: sectionColumn.height
 
                             Column {
+                                id: sectionColumn
                                 width: parent.width
                                 spacing: 0
 
@@ -282,125 +359,281 @@ Page {
                                     id: innerRepeater
                                     model: section ? section.items : []
 
-                                    delegate: Rectangle {
+                                    delegate: Column {
                                         width: parent.width
-                                        height: 60
                                         property var item: modelData
-                                        color: rMouse.containsMouse ? "#F8F8F8" : "transparent"
+                                        property bool isEmergencyRow: item ? (item.isEmergencyContacts === true) : false
 
-                                        Row {
-                                            anchors.fill: parent
-                                            anchors.leftMargin: 16
-                                            anchors.rightMargin: 16
-                                            spacing: 14
-
-                                            // Icon circle
-                                            Rectangle {
-                                                width: 36; height: 36; radius: 18
-                                                color: "#F5F5F5"
-                                                anchors.verticalCenter: parent.verticalCenter
-
-                                                Image {
-                                                    source: item ? item.icon : ""
-                                                    width: 20; height: 20
-                                                    fillMode: Image.PreserveAspectFit
-                                                    anchors.centerIn: parent
-                                                }
-                                            }
-
-                                            // Labels
-                                            Column {
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                spacing: 2
-                                                width: parent.width - 36 - 14 - 60 - 32
-
-                                                Label {
-                                                    text: item ? item.label : ""
-                                                    font.pixelSize: 14; color: "#111"
-                                                }
-                                                Label {
-                                                    text: item ? item.sub : ""
-                                                    font.pixelSize: 11; color: "#AAA"
-                                                    visible: item ? (item.sub !== "") : false
-                                                }
-                                            }
-
-                                            // Right side: tag OR toggle OR chevron
-                                            Item {
-                                                width: 60
-                                                height: parent.height
-                                                anchors.verticalCenter: parent.verticalCenter
-
-                                                // Optional tag badge (e.g. "3 Offers", "Live")
-                                                Rectangle {
-                                                    id: tagBadge
-                                                    visible: item ? (item.tag !== undefined && item.tag !== "") : false
-                                                    height: 18; radius: 9
-                                                    color: (item && item.tag === "Live") ? "#E8F5E9" : "#FFF3E0"
-                                                    width: tagLabel.implicitWidth + 12
-                                                    anchors.right: chevronText.left
-                                                    anchors.rightMargin: 6
-                                                    anchors.verticalCenter: parent.verticalCenter
-
-                                                    Text {
-                                                        id: tagLabel
-                                                        anchors.centerIn: parent
-                                                        text: item ? (item.tag || "") : ""
-                                                        font.pixelSize: 10; font.bold: true
-                                                        color: (item && item.tag === "Live") ? "#388E3C" : "#E65100"
-                                                    }
-                                                }
-
-                                                // Dark mode toggle
-                                                Rectangle {
-                                                    id: toggleTrack
-                                                    visible: item ? (item.isToggle === true) : false
-                                                    width: 38; height: 22; radius: 11
-                                                    color: darkModeEnabled ? "#1565C0" : "#CCCCCC"
-                                                    anchors.right: parent.right
-                                                    anchors.verticalCenter: parent.verticalCenter
-
-                                                    Rectangle {
-                                                        width: 18; height: 18; radius: 9
-                                                        color: "white"
-                                                        anchors.verticalCenter: parent.verticalCenter
-                                                        x: darkModeEnabled ? 18 : 2
-                                                        Behavior on x { NumberAnimation { duration: 150 } }
-                                                    }
-                                                }
-
-                                                // Chevron (shown when not a toggle)
-                                                Text {
-                                                    id: chevronText
-                                                    visible: item ? (item.isToggle !== true) : true
-                                                    text: "›"
-                                                    font.pixelSize: 22; color: "#CCCCCC"
-                                                    anchors.right: parent.right
-                                                    anchors.verticalCenter: parent.verticalCenter
-                                                }
-                                            }
-                                        }
-
-                                        // Divider
+                                        // ── Row itself ───────────────────────────
                                         Rectangle {
-                                            visible: item ? (index < innerRepeater.count - 1) : false
-                                            anchors.bottom: parent.bottom
-                                            anchors.left: parent.left; anchors.right: parent.right
-                                            anchors.leftMargin: 66
-                                            height: 1; color: "#F0F0F0"
+                                            width: parent.width
+                                            height: 60
+                                            color: rMouse.containsMouse ? "#F8F8F8" : "transparent"
+
+                                            Row {
+                                                anchors.fill: parent
+                                                anchors.leftMargin: 16
+                                                anchors.rightMargin: 16
+                                                spacing: 14
+
+                                                // Icon circle
+                                                Rectangle {
+                                                    width: 36; height: 36; radius: 18
+                                                    color: "#F5F5F5"
+                                                    anchors.verticalCenter: parent.verticalCenter
+
+                                                    Image {
+                                                        source: item ? item.icon : ""
+                                                        width: 20; height: 20
+                                                        fillMode: Image.PreserveAspectFit
+                                                        anchors.centerIn: parent
+                                                    }
+                                                }
+
+                                                // Labels
+                                                Column {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    spacing: 2
+                                                    width: parent.width - 36 - 14 - 60 - 32
+
+                                                    Label {
+                                                        text: item ? item.label : ""
+                                                        font.pixelSize: 14; color: "#111"
+                                                    }
+                                                    Label {
+                                                        text: item ? item.sub : ""
+                                                        font.pixelSize: 11; color: "#AAA"
+                                                        visible: item ? (item.sub !== "") : false
+                                                    }
+                                                }
+
+                                                // Right side: tag OR toggle OR chevron
+                                                Item {
+                                                    width: 60
+                                                    height: parent.height
+                                                    anchors.verticalCenter: parent.verticalCenter
+
+                                                    // Optional tag badge (e.g. "3 Offers", "Live")
+                                                    Rectangle {
+                                                        id: tagBadge
+                                                        visible: item ? (item.tag !== undefined && item.tag !== "") : false
+                                                        height: 18; radius: 9
+                                                        color: (item && item.tag === "Live") ? "#E8F5E9" : "#FFF3E0"
+                                                        width: tagLabel.implicitWidth + 12
+                                                        anchors.right: chevronText.left
+                                                        anchors.rightMargin: 6
+                                                        anchors.verticalCenter: parent.verticalCenter
+
+                                                        Text {
+                                                            id: tagLabel
+                                                            anchors.centerIn: parent
+                                                            text: item ? (item.tag || "") : ""
+                                                            font.pixelSize: 10; font.bold: true
+                                                            color: (item && item.tag === "Live") ? "#388E3C" : "#E65100"
+                                                        }
+                                                    }
+
+                                                    // Dark mode toggle
+                                                    Rectangle {
+                                                        id: toggleTrack
+                                                        visible: item ? (item.isToggle === true) : false
+                                                        width: 38; height: 22; radius: 11
+                                                        color: darkModeEnabled ? "#1565C0" : "#CCCCCC"
+                                                        anchors.right: parent.right
+                                                        anchors.verticalCenter: parent.verticalCenter
+
+                                                        Rectangle {
+                                                            width: 18; height: 18; radius: 9
+                                                            color: "white"
+                                                            anchors.verticalCenter: parent.verticalCenter
+                                                            x: darkModeEnabled ? 18 : 2
+                                                            Behavior on x { NumberAnimation { duration: 150 } }
+                                                        }
+                                                    }
+
+                                                    // Chevron / expand arrow
+                                                    Text {
+                                                        id: chevronText
+                                                        visible: item ? (item.isToggle !== true) : true
+                                                        text: isEmergencyRow
+                                                              ? (emergencyExpanded ? "︿" : "﹀")
+                                                              : "›"
+                                                        font.pixelSize: isEmergencyRow ? 16 : 22
+                                                        color: "#CCCCCC"
+                                                        anchors.right: parent.right
+                                                        anchors.verticalCenter: parent.verticalCenter
+                                                    }
+                                                }
+                                            }
+
+                                            // Divider
+                                            Rectangle {
+                                                visible: item
+                                                         ? (index < innerRepeater.count - 1 && !(isEmergencyRow && emergencyExpanded))
+                                                         : false
+                                                anchors.bottom: parent.bottom
+                                                anchors.left: parent.left; anchors.right: parent.right
+                                                anchors.leftMargin: 66
+                                                height: 1; color: "#F0F0F0"
+                                            }
+
+                                            MouseArea {
+                                                id: rMouse
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                onClicked: {
+                                                    if (!item) return
+                                                    if (item.isToggle === true) {
+                                                        darkModeEnabled = !darkModeEnabled
+                                                    } else if (isEmergencyRow) {
+                                                        emergencyExpanded = !emergencyExpanded
+                                                        if (emergencyExpanded) {
+                                                            emergencySaveMessage = ""
+                                                            loadEmergencyInfo()
+                                                        } else {
+                                                            emergencyEditMode = false
+                                                        }
+                                                    } else {
+                                                        navigateTo(item.page)
+                                                    }
+                                                }
+                                            }
                                         }
 
-                                        MouseArea {
-                                            id: rMouse
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            onClicked: {
-                                                if (!item) return
-                                                if (item.isToggle === true) {
-                                                    darkModeEnabled = !darkModeEnabled
-                                                } else {
-                                                    navigateTo(item.page)
+                                        // ── Expanded Emergency Contacts panel ──────
+                                        Column {
+                                            width: parent.width
+                                            visible: isEmergencyRow && emergencyExpanded
+                                            spacing: 14
+                                            topPadding: 4
+                                            bottomPadding: 16
+                                            leftPadding: 16
+                                            rightPadding: 16
+
+                                            Rectangle {
+                                                width: parent.width - 32
+                                                height: 1
+                                                color: "#F0F0F0"
+                                            }
+
+                                            Row {
+                                                width: parent.width - 32
+                                                Label {
+                                                    text: "Saved Information"
+                                                    font.pixelSize: 12; font.bold: true; color: "#888"
+                                                    width: parent.width - editToggleBtn.width
                                                 }
+                                                Button {
+                                                    id: editToggleBtn
+                                                    text: emergencyEditMode ? "Cancel" : "Edit"
+                                                    flat: true
+                                                    onClicked: {
+                                                        if (emergencyEditMode) {
+                                                            loadEmergencyInfo()
+                                                            emergencySaveMessage = ""
+                                                        }
+                                                        emergencyEditMode = !emergencyEditMode
+                                                    }
+                                                }
+                                            }
+
+                                            Label { text: "Emergency Contact 1"; font.pixelSize: 12; color: "#888"; leftPadding: 0 }
+                                            TextField {
+                                                id: acc1NameField
+                                                width: parent.width - 32
+                                                placeholderText: "Name"
+                                                readOnly: !emergencyEditMode
+                                                onTextChanged: contact1Name = text
+                                            }
+                                            TextField {
+                                                id: acc1PhoneField
+                                                width: parent.width - 32
+                                                placeholderText: "Phone number"
+                                                readOnly: !emergencyEditMode
+                                                inputMethodHints: Qt.ImhDialableCharactersOnly
+                                                onTextChanged: contact1Phone = text
+                                            }
+
+                                            Label { text: "Emergency Contact 2"; font.pixelSize: 12; color: "#888" }
+                                            TextField {
+                                                id: acc2NameField
+                                                width: parent.width - 32
+                                                placeholderText: "Name"
+                                                readOnly: !emergencyEditMode
+                                                onTextChanged: contact2Name = text
+                                            }
+                                            TextField {
+                                                id: acc2PhoneField
+                                                width: parent.width - 32
+                                                placeholderText: "Phone number"
+                                                readOnly: !emergencyEditMode
+                                                inputMethodHints: Qt.ImhDialableCharactersOnly
+                                                onTextChanged: contact2Phone = text
+                                            }
+
+                                            Label { text: "Blood Group"; font.pixelSize: 12; color: "#888" }
+                                            TextField {
+                                                id: accBloodField
+                                                width: parent.width - 32
+                                                placeholderText: "e.g. O+"
+                                                readOnly: !emergencyEditMode
+                                                onTextChanged: bloodGroup = text
+                                            }
+
+                                            Label { text: "Medical Notes"; font.pixelSize: 12; color: "#888" }
+                                            TextArea {
+                                                id: accNotesField
+                                                width: parent.width - 32
+                                                placeholderText: "Allergies, conditions, medications..."
+                                                readOnly: !emergencyEditMode
+                                                wrapMode: TextArea.Wrap
+                                                onTextChanged: medicalNotes = text
+                                            }
+
+                                            // Pushes the latest saved values into the fields above.
+                                            // Re-runs whenever emergencySyncTick changes (on expand,
+                                            // on cancel, and right after a fresh load from the server).
+                                            // Living in this same delegate scope means the field ids
+                                            // above are resolvable here, unlike from the Page root.
+                                            Item {
+                                                property int tick: emergencySyncTick
+                                                onTickChanged: {
+                                                    acc1NameField.text  = contact1Name
+                                                    acc1PhoneField.text = contact1Phone
+                                                    acc2NameField.text  = contact2Name
+                                                    acc2PhoneField.text = contact2Phone
+                                                    accBloodField.text  = bloodGroup
+                                                    accNotesField.text  = medicalNotes
+                                                }
+                                                Component.onCompleted: {
+                                                    acc1NameField.text  = contact1Name
+                                                    acc1PhoneField.text = contact1Phone
+                                                    acc2NameField.text  = contact2Name
+                                                    acc2PhoneField.text = contact2Phone
+                                                    accBloodField.text  = bloodGroup
+                                                    accNotesField.text  = medicalNotes
+                                                }
+                                            }
+
+                                            Button {
+                                                width: parent.width - 32; height: 44
+                                                visible: emergencyEditMode
+                                                onClicked: saveEmergencyInfo()
+                                                background: Rectangle { color: "#1976D2"; radius: 10 }
+                                                contentItem: Text {
+                                                    text: "Save"; font.pixelSize: 14
+                                                    font.bold: true; color: "white"
+                                                    horizontalAlignment: Text.AlignHCenter
+                                                    verticalAlignment: Text.AlignVCenter
+                                                }
+                                            }
+
+                                            Label {
+                                                width: parent.width - 32
+                                                text: emergencySaveMessage
+                                                color: emergencySaveMessage === "Saved successfully" ? "#388E3C" : "#E53935"
+                                                visible: emergencySaveMessage !== ""
+                                                wrapMode: Text.WordWrap
                                             }
                                         }
                                     }
@@ -428,7 +661,7 @@ Page {
                     }
                     onClicked: {
                         // TODO: clear session tokens, then:
-                        // appStack.replace("qrc:/pages/auth/LoginPage.qml")
+                        // appStack.replace(Qt.resolvedUrl("LoginPage.qml"))
                         console.log("Logout tapped")
                     }
                 }
