@@ -6,7 +6,11 @@ Page {
     property var appStack
     property var appState
 
+    signal switchTab(int tabIndex)
+
     footer: null
+    header: null
+
     onVisibleChanged: {
         if (visible && appState) appState.showBottomBar = true
     }
@@ -23,9 +27,6 @@ Page {
     property string bloodGroup: ""
     property string medicalNotes: ""
 
-    // Incrementing this forces fields (bound via Binding) to re-pull
-    // the latest property values. Needed because fields live inside a
-    // Repeater delegate and can't be reached by id from the Page root.
     property int emergencySyncTick: 0
 
     Component.onCompleted: { loadEmergencyInfo() }
@@ -226,6 +227,46 @@ Page {
             width: parent.width
             spacing: 0
 
+            // ── Back-arrow header bar ───────────────────────────────────────
+            Rectangle {
+                width: parent.width
+                height: 56
+                color: "#1976D2"
+
+                // Back arrow
+                Rectangle {
+                    id: backBtn
+                    width: 36; height: 36; radius: 18
+                    color: "#ffffff20"
+                    anchors.left: parent.left
+                    anchors.leftMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        text: "‹"
+                        font.pixelSize: 26
+                        color: "white"
+                        anchors.centerIn: parent
+                        anchors.horizontalCenterOffset: -1
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: switchTab(0)
+                    }
+                }
+
+                Label {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.left: backBtn.right
+                    anchors.leftMargin: 10
+                    text: "Account"
+                    font.pixelSize: 20
+                    font.bold: true
+                    color: "white"
+                }
+            }
+
             // ── Profile header ──────────────────────────────────────────────
             Rectangle {
                 width: parent.width
@@ -260,7 +301,7 @@ Page {
                             anchors.centerIn: parent
                         }
 
-                        // Camera badge — tapping opens Edit Profile
+                        // Camera badge
                         Rectangle {
                             width: 22; height: 22; radius: 11
                             color: "#FFD600"
@@ -413,7 +454,7 @@ Page {
                                                     height: parent.height
                                                     anchors.verticalCenter: parent.verticalCenter
 
-                                                    // Optional tag badge (e.g. "3 Offers", "Live")
+                                                    // Optional tag badge
                                                     Rectangle {
                                                         id: tagBadge
                                                         visible: item ? (item.tag !== undefined && item.tag !== "") : false
@@ -590,11 +631,6 @@ Page {
                                                 onTextChanged: medicalNotes = text
                                             }
 
-                                            // Pushes the latest saved values into the fields above.
-                                            // Re-runs whenever emergencySyncTick changes (on expand,
-                                            // on cancel, and right after a fresh load from the server).
-                                            // Living in this same delegate scope means the field ids
-                                            // above are resolvable here, unlike from the Page root.
                                             Item {
                                                 property int tick: emergencySyncTick
                                                 onTickChanged: {
@@ -660,8 +696,6 @@ Page {
                         verticalAlignment: Text.AlignVCenter
                     }
                     onClicked: {
-                        // TODO: clear session tokens, then:
-                        // appStack.replace(Qt.resolvedUrl("LoginPage.qml"))
                         console.log("Logout tapped")
                     }
                 }

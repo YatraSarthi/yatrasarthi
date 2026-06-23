@@ -6,7 +6,10 @@ Page {
     property var appStack
     property var appState
 
+    signal switchTab(int tabIndex)
+
     footer: null
+    header: null
 
     onVisibleChanged: {
         if (visible) {
@@ -51,10 +54,33 @@ Page {
                 height: 65
                 color: "#1976D2"
 
+                // Back arrow
+                Rectangle {
+                    id: backBtn
+                    width: 36; height: 36; radius: 18
+                    color: "#ffffff20"
+                    anchors.left: parent.left
+                    anchors.leftMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        text: "‹"
+                        font.pixelSize: 26
+                        color: "white"
+                        anchors.centerIn: parent
+                        anchors.horizontalCenterOffset: -1
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: switchTab(0)
+                    }
+                }
+
                 Label {
                     anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left
-                    anchors.leftMargin: 20
+                    anchors.left: backBtn.right
+                    anchors.leftMargin: 10
                     text: "Services"
                     font.pixelSize: 22
                     font.bold: true

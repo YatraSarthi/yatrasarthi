@@ -95,9 +95,12 @@ ApplicationWindow {
         id:           servicesStack
         anchors.fill: parent
         visible:      currentTab === 1
-        initialItem:  ServicesPage {
-            appStack: servicesStack
-            appState: appState
+
+        Component.onCompleted: {
+            var page = push(Qt.resolvedUrl("pages/ServicesPage.qml"))
+            page.appStack = servicesStack
+            page.appState = appState
+            page.switchTab.connect(switchTab)
         }
     }
 
@@ -105,9 +108,12 @@ ApplicationWindow {
         id:           activityStack
         anchors.fill: parent
         visible:      currentTab === 2
-        initialItem:  ActivityPage {
-            appStack: activityStack
-            appState: appState
+
+        Component.onCompleted: {
+            var page = push(Qt.resolvedUrl("pages/ActivityPage.qml"))
+            page.appStack = activityStack
+            page.appState = appState
+            page.switchTab.connect(switchTab)
         }
     }
 
@@ -115,9 +121,12 @@ ApplicationWindow {
         id:           accountStack
         anchors.fill: parent
         visible:      currentTab === 3
-        initialItem:  AccountPage {
-            appStack: accountStack
-            appState: appState
+
+        Component.onCompleted: {
+            var page = push(Qt.resolvedUrl("pages/AccountPage.qml"))
+            page.appStack = accountStack
+            page.appState = appState
+            page.switchTab.connect(switchTab)
         }
     }
 }

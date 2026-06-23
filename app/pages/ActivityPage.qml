@@ -7,16 +7,19 @@ Page {
     property var appState
     property var rideHistory: []
 
+    signal switchTab(int tabIndex)
+
     footer: null
+    header: null
 
     Component.onCompleted: { loadHistory() }
 
     onVisibleChanged: {
-    if (visible) {
-        if (appState) appState.showBottomBar = true  // ADD THIS LINE
-        loadHistory()
+        if (visible) {
+            if (appState) appState.showBottomBar = true
+            loadHistory()
+        }
     }
-}
 
     function loadHistory() {
         var xhr = new XMLHttpRequest()
@@ -61,14 +64,39 @@ Page {
             width: parent.width
             spacing: 0
 
+            // ── Header ────────────────────────────────────────────
             Rectangle {
                 width: parent.width
                 height: 65
                 color: "#1976D2"
+
+                // Back arrow
+                Rectangle {
+                    id: backBtn
+                    width: 36; height: 36; radius: 18
+                    color: "#ffffff20"
+                    anchors.left: parent.left
+                    anchors.leftMargin: 12
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Text {
+                        text: "‹"
+                        font.pixelSize: 26
+                        color: "white"
+                        anchors.centerIn: parent
+                        anchors.horizontalCenterOffset: -1
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: switchTab(0)
+                    }
+                }
+
                 Label {
                     anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left
-                    anchors.leftMargin: 20
+                    anchors.left: backBtn.right
+                    anchors.leftMargin: 10
                     text: "Activity"
                     font.pixelSize: 22; font.bold: true
                     color: "white"
@@ -81,17 +109,16 @@ Page {
 
                 Item { width: 1; height: 12 }
 
-                // ── Stats card — clip stops circle overflowing ────
+                // ── Stats card ────────────────────────────────────
                 Rectangle {
                     x: 16
                     width: parent.width - 32
                     height: 140
                     radius: 14
                     color: "#1565C0"
-                    // FIX: clip the decorative circle inside card
                     clip: true
 
-                    // Decorative circle — clipped to card
+                    // Decorative circle
                     Rectangle {
                         width: 130; height: 130; radius: 65
                         color: "#ffffff15"
@@ -194,8 +221,7 @@ Page {
                                 height: parent.height - 28
                                 radius: 2; color: "#1976D2"
                                 anchors.left: parent.left
-                                anchors.verticalCenter:
-                                    parent.verticalCenter
+                                anchors.verticalCenter: parent.verticalCenter
                             }
 
                             Column {
@@ -212,13 +238,11 @@ Page {
                                         text: modelData.date || ""
                                         font.pixelSize: 11
                                         color: "#AAA"
-                                        width: parent.width
-                                               - fareLabel.width
+                                        width: parent.width - fareLabel.width
                                     }
                                     Label {
                                         id: fareLabel
-                                        text: "₹" + (modelData.fare
-                                              || 0)
+                                        text: "₹" + (modelData.fare || 0)
                                         font.pixelSize: 15
                                         font.bold: true
                                         color: "#1976D2"
@@ -230,8 +254,7 @@ Page {
                                     Rectangle {
                                         width: 8; height: 8; radius: 4
                                         color: "#1976D2"
-                                        anchors.verticalCenter:
-                                            parent.verticalCenter
+                                        anchors.verticalCenter: parent.verticalCenter
                                     }
                                     Label {
                                         text: modelData.pickup || ""
@@ -247,12 +270,10 @@ Page {
                                     Rectangle {
                                         width: 8; height: 8; radius: 2
                                         color: "#E53935"
-                                        anchors.verticalCenter:
-                                            parent.verticalCenter
+                                        anchors.verticalCenter: parent.verticalCenter
                                     }
                                     Label {
-                                        text: modelData.destination
-                                              || ""
+                                        text: modelData.destination || ""
                                         font.pixelSize: 12
                                         color: "#333"
                                         width: parent.width - 16
@@ -269,8 +290,7 @@ Page {
                                         Label {
                                             id: chipTxt
                                             anchors.centerIn: parent
-                                            text: modelData.vehicle
-                                                  || "Cab"
+                                            text: modelData.vehicle || "Cab"
                                             font.pixelSize: 11
                                             color: "#1976D2"
                                         }
@@ -282,8 +302,7 @@ Page {
                                         Label {
                                             id: distTxt
                                             anchors.centerIn: parent
-                                            text: (modelData.distance
-                                                   || 0) + " km"
+                                            text: (modelData.distance || 0) + " km"
                                             font.pixelSize: 11
                                             color: "#666"
                                         }
