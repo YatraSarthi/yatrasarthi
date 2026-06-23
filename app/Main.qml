@@ -15,91 +15,62 @@ ApplicationWindow {
 
     function switchTab(index) {
         currentTab = index
-        bottomNav.currentIndex = index
     }
 
-    footer: TabBar {
-        id:      bottomNav
+    footer: Rectangle {
         visible: appState.showBottomBar
-        height:  visible ? implicitHeight : 0
-        currentIndex: currentTab
+        height:  visible ? 72 : 0
+        color:   "#E3F2FD"
 
-        background: Rectangle {
-            color: "#E3F2FD"
-            Rectangle {
-                anchors.top: parent.top
-                width: parent.width
-                height: 1
-                color: "#90CAF9"
-            }
+        // Top border line
+        Rectangle {
+            anchors.top: parent.top
+            width: parent.width; height: 1; color: "#90CAF9"
         }
 
-        onCurrentIndexChanged: currentTab = currentIndex
+        Row {
+            anchors.centerIn: parent
+            spacing: 10
+            padding: 8
 
-        TabButton {
-            background: Rectangle { color: "transparent" }
-            contentItem: Column {
-                anchors.centerIn: parent; spacing: 2
-                Image {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    source: Qt.resolvedUrl("../assets/icons/pickup.png")
-                    width: 22; height: 22; fillMode: Image.PreserveAspectFit
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Home"; font.pixelSize: 10
-                    color: currentTab === 0 ? "#1976D2" : "#888"
-                }
-            }
-        }
+            Repeater {
+                model: [
+                    { label: "Home",     icon: "../assets/icons/pickup.png", idx: 0 },
+                    { label: "Services", icon: "../assets/icons/auto.png",   idx: 1 },
+                    { label: "Activity", icon: "../assets/icons/rider.png",  idx: 2 },
+                    { label: "Account",  icon: "../assets/icons/driver.png", idx: 3 }
+                ]
 
-        TabButton {
-            background: Rectangle { color: "transparent" }
-            contentItem: Column {
-                anchors.centerIn: parent; spacing: 2
-                Image {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    source: Qt.resolvedUrl("../assets/icons/auto.png")
-                    width: 22; height: 22; fillMode: Image.PreserveAspectFit
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Services"; font.pixelSize: 10
-                    color: currentTab === 1 ? "#1976D2" : "#888"
-                }
-            }
-        }
+                delegate: Rectangle {
+                    width:  78; height: 54; radius: 12
+                    color:  currentTab === modelData.idx ? "#1976D2" : "white"
+                    border.color: currentTab === modelData.idx ? "#1565C0" : "#BBDEFB"
+                    border.width: 1
 
-        TabButton {
-            background: Rectangle { color: "transparent" }
-            contentItem: Column {
-                anchors.centerIn: parent; spacing: 2
-                Image {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    source: Qt.resolvedUrl("../assets/icons/rider.png")
-                    width: 22; height: 22; fillMode: Image.PreserveAspectFit
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Activity"; font.pixelSize: 10
-                    color: currentTab === 2 ? "#1976D2" : "#888"
-                }
-            }
-        }
+                    Column {
+                        anchors.centerIn: parent; spacing: 3
 
-        TabButton {
-            background: Rectangle { color: "transparent" }
-            contentItem: Column {
-                anchors.centerIn: parent; spacing: 2
-                Image {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    source: Qt.resolvedUrl("../assets/icons/driver.png")
-                    width: 22; height: 22; fillMode: Image.PreserveAspectFit
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Account"; font.pixelSize: 10
-                    color: currentTab === 3 ? "#1976D2" : "#888"
+                        Image {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            source:   Qt.resolvedUrl(modelData.icon)
+                            width:    22; height: 22
+                            fillMode: Image.PreserveAspectFit
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text:           modelData.label
+                            font.pixelSize: 10
+                            font.bold:      currentTab === modelData.idx
+                            color:          currentTab === modelData.idx
+                                            ? "white" : "#555"
+                        }
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked:    switchTab(modelData.idx)
+                    }
                 }
             }
         }
