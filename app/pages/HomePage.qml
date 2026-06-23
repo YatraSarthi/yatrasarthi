@@ -72,7 +72,6 @@ Page {
                         Item {
                             width: parent.width; height: 55
 
-                            // Hover background
                             Rectangle {
                                 anchors.fill: parent
                                 color: pickupRowMouse.containsMouse
@@ -86,14 +85,12 @@ Page {
                                 anchors.rightMargin: 8
                                 spacing: 10
 
-                                // Blue dot
                                 Rectangle {
                                     width: 10; height: 10; radius: 5
                                     color: "#1976D2"
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
 
-                                // Location label (tappable → LocationSearchPage)
                                 Label {
                                     id: pickupLabel
                                     width: parent.width - 10 - 10 - 36 - 8
@@ -110,7 +107,6 @@ Page {
                                     elide: Text.ElideRight
                                 }
 
-                                // Map pin button → MapPage (z:10 so it's above the row MouseArea)
                                 Rectangle {
                                     id: pickupMapBtn
                                     width: 36; height: 36; radius: 8
@@ -138,7 +134,6 @@ Page {
                                 }
                             }
 
-                            // Row tap → LocationSearchPage (behind the map button)
                             MouseArea {
                                 id: pickupRowMouse
                                 anchors.fill: parent
@@ -176,7 +171,6 @@ Page {
                                 anchors.rightMargin: 8
                                 spacing: 10
 
-                                // Red square dot
                                 Rectangle {
                                     width: 10; height: 10; radius: 2
                                     color: "#E53935"
@@ -199,7 +193,6 @@ Page {
                                     elide: Text.ElideRight
                                 }
 
-                                // Map pin button → MapPage
                                 Rectangle {
                                     id: destMapBtn
                                     width: 36; height: 36; radius: 8
@@ -306,15 +299,16 @@ Page {
 
                     Repeater {
                         model: [
-                            { label: "SOS",     icon: "sos.png",    color: "#FFEBEE", border: "#FFCDD2", textColor: "#E53935", tab: 1 },
-                            { label: "History", icon: "rider.png",  color: "#E8F5E9", border: "#C8E6C9", textColor: "#388E3C", tab: 2 },
-                            { label: "Queue",   icon: "star.png",   color: "#FFF8E1", border: "#FFE082", textColor: "#F9A825", tab: 1 }
+                            { label: "SOS",     icon: "sos.png",   color: "#FFEBEE", border: "#FFCDD2", textColor: "#E53935", tab: 1, action: "sos"   },
+                            { label: "History", icon: "rider.png",  color: "#E8F5E9", border: "#C8E6C9", textColor: "#388E3C", tab: 2, action: ""      },
+                            { label: "Queue",   icon: "star.png",   color: "#FFF8E1", border: "#FFE082", textColor: "#F9A825", tab: 1, action: "queue" }
                         ]
                         delegate: Rectangle {
                             width: (parent.width - 20) / 3
                             height: 72; radius: 12
                             color: modelData.color
                             border.color: modelData.border
+
                             Column {
                                 anchors.centerIn: parent; spacing: 4
                                 Image {
@@ -329,9 +323,14 @@ Page {
                                     font.bold: true; color: modelData.textColor
                                 }
                             }
+
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: switchTab(modelData.tab)
+                                onClicked: {
+                                    if (modelData.action !== "")
+                                        appState.quickAction = modelData.action
+                                    switchTab(modelData.tab)
+                                }
                             }
                         }
                     }
