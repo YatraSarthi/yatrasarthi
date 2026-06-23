@@ -159,8 +159,9 @@ Page {
                     spacing: 14
 
                     Column {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        spacing: 10
+                        width: parent.width
+                        spacing: 14
+
                         Image {
                             anchors.horizontalCenter: parent.horizontalCenter
                             source: "../../assets/icons/sos.png"
@@ -169,12 +170,13 @@ Page {
                             smooth: true
                         }
                         Label {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: "Press the button below to notify your\nemergency contacts."
+                            width: parent.width
+                            text: "Press the button below to notify your emergency contacts"
                             horizontalAlignment: Text.AlignHCenter
                             wrapMode: Text.WordWrap
-                            width: parent.width
-                            color: "#555"
+                            font.pixelSize: 14
+                            lineHeight: 1.3
+                            color: "#5A5A5A"
                         }
                     }
 
@@ -246,58 +248,100 @@ Page {
                         // Contact 1
                         Label { text: "Emergency Contact 1"; font.pixelSize: 12; color: "#888" }
                         TextField {
+                            id: contact1NameField
                             width: parent.width
                             placeholderText: "Name"
-                            text: contact1Name
                             readOnly: !editMode
+                            Component.onCompleted: text = contact1Name
                             onTextChanged: contact1Name = text
+                            Connections {
+                                target: sosPage
+                                function onEditModeChanged() {
+                                    contact1NameField.text = contact1Name
+                                }
+                            }
                         }
                         TextField {
+                            id: contact1PhoneField
                             width: parent.width
                             placeholderText: "Phone number"
-                            text: contact1Phone
                             readOnly: !editMode
                             inputMethodHints: Qt.ImhDialableCharactersOnly
+                            Component.onCompleted: text = contact1Phone
                             onTextChanged: contact1Phone = text
+                            Connections {
+                                target: sosPage
+                                function onEditModeChanged() {
+                                    contact1PhoneField.text = contact1Phone
+                                }
+                            }
                         }
 
                         // Contact 2
                         Label { text: "Emergency Contact 2"; font.pixelSize: 12; color: "#888" }
                         TextField {
+                            id: contact2NameField
                             width: parent.width
                             placeholderText: "Name"
-                            text: contact2Name
                             readOnly: !editMode
+                            Component.onCompleted: text = contact2Name
                             onTextChanged: contact2Name = text
+                            Connections {
+                                target: sosPage
+                                function onEditModeChanged() {
+                                    contact2NameField.text = contact2Name
+                                }
+                            }
                         }
                         TextField {
+                            id: contact2PhoneField
                             width: parent.width
                             placeholderText: "Phone number"
-                            text: contact2Phone
                             readOnly: !editMode
                             inputMethodHints: Qt.ImhDialableCharactersOnly
+                            Component.onCompleted: text = contact2Phone
                             onTextChanged: contact2Phone = text
+                            Connections {
+                                target: sosPage
+                                function onEditModeChanged() {
+                                    contact2PhoneField.text = contact2Phone
+                                }
+                            }
                         }
 
                         // Blood group
                         Label { text: "Blood Group"; font.pixelSize: 12; color: "#888" }
                         TextField {
+                            id: bloodGroupField
                             width: parent.width
                             placeholderText: "e.g. O+"
-                            text: bloodGroup
                             readOnly: !editMode
+                            Component.onCompleted: text = bloodGroup
                             onTextChanged: bloodGroup = text
+                            Connections {
+                                target: sosPage
+                                function onEditModeChanged() {
+                                    bloodGroupField.text = bloodGroup
+                                }
+                            }
                         }
 
                         // Medical notes
                         Label { text: "Medical Notes"; font.pixelSize: 12; color: "#888" }
                         TextArea {
+                            id: medicalNotesField
                             width: parent.width
                             placeholderText: "Allergies, conditions, medications..."
-                            text: medicalNotes
                             readOnly: !editMode
                             wrapMode: TextArea.Wrap
+                            Component.onCompleted: text = medicalNotes
                             onTextChanged: medicalNotes = text
+                            Connections {
+                                target: sosPage
+                                function onEditModeChanged() {
+                                    medicalNotesField.text = medicalNotes
+                                }
+                            }
                         }
 
                         Button {
