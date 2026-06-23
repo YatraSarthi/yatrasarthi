@@ -7,10 +7,9 @@ Page {
     property var appStack
     property var appState
 
-    // Poll until geocoding finishes, then commit and pop
     function commitSelection() {
-        mapView.runJavaScript("JSON.stringify(getSelection())", function(raw) {
-            if (!raw) { console.log("getSelection() returned nothing"); return }
+        mapView.runJavaScript("getSelectionJSON()", function(raw) {
+            if (!raw) { console.log("getSelectionJSON() returned nothing"); return }
 
             var sel
             try { sel = JSON.parse(raw) } catch(e) { console.log("Parse error:", e); return }
@@ -20,7 +19,6 @@ Page {
             }
 
             if (sel.pending) {
-                // Geocode still in flight — retry in 400 ms
                 retryTimer.start()
                 return
             }
@@ -45,9 +43,9 @@ Page {
     }
 
     Timer {
-        id: retryTimer
+        id:       retryTimer
         interval: 400
-        repeat: false
+        repeat:   false
         onTriggered: commitSelection()
     }
 
@@ -69,16 +67,16 @@ Page {
     }
 
     WebEngineView {
-        id: mapView
+        id:           mapView
         anchors.fill: parent
-        url: Qt.resolvedUrl("../web/map.html")
+        url:          Qt.resolvedUrl("../web/map.html")
     }
 
     Button {
         text: "Use Selected Location"
-        anchors.bottom: parent.bottom
+        anchors.bottom:           parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.bottomMargin: 20
+        anchors.bottomMargin:     20
         onClicked: commitSelection()
     }
 }

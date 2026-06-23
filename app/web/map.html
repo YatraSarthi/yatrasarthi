@@ -24,8 +24,8 @@ html, body, #map { height: 100%; width: 100%; margin: 0; }
 <script>
 var selectedLat    = null;
 var selectedLon    = null;
-var selectedShort  = null;   // short address string
-var selectedFull   = null;   // full address string
+var selectedShort  = null;
+var selectedFull   = null;
 var geocodePending = false;
 
 var map = L.map('map').setView([12.9716, 77.5946], 13);
@@ -34,8 +34,8 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-var marker = null;
-var statusEl = document.getElementById('status');
+var marker    = null;
+var statusEl  = document.getElementById('status');
 
 map.on('click', function(e) {
     selectedLat   = e.latlng.lat;
@@ -49,7 +49,6 @@ map.on('click', function(e) {
         selectedLat.toFixed(5) + ", " + selectedLon.toFixed(5)
     ).openPopup();
 
-    // Kick off reverse-geocode immediately on click
     geocodePending = true;
     statusEl.style.display = 'block';
     statusEl.textContent   = 'Resolving address…';
@@ -61,7 +60,8 @@ map.on('click', function(e) {
             selectedShort  = data.address      || (selectedLat.toFixed(5) + ', ' + selectedLon.toFixed(5));
             selectedFull   = data.full_address || selectedShort;
             geocodePending = false;
-            statusEl.textContent = selectedShort;
+            statusEl.style.display = 'block';
+            statusEl.textContent   = selectedShort;
             marker.getPopup().setContent(selectedShort).update();
         })
         .catch(function() {
@@ -72,15 +72,16 @@ map.on('click', function(e) {
         });
 });
 
-// Called by MapPage.qml via runJavaScript
-function getSelection() {
-    return {
+// Qt5 WebEngine can only return primitives from runJavaScript —
+// return a JSON string, parse it on the QML side
+function getSelectionJSON() {
+    return JSON.stringify({
         lat:     selectedLat,
         lon:     selectedLon,
         short:   selectedShort,
         full:    selectedFull,
         pending: geocodePending
-    };
+    });
 }
 </script>
 </body>

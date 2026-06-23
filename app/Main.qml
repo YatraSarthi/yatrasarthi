@@ -18,7 +18,6 @@ ApplicationWindow {
         bottomNav.currentIndex = index
     }
 
-    // ── Bottom nav ───────────────────────────────────────────────────────────
     footer: TabBar {
         id:      bottomNav
         visible: appState.showBottomBar
@@ -107,13 +106,12 @@ ApplicationWindow {
         anchors.fill: parent
         visible:      currentTab === 0
 
-        // Pass properties via initialItem — no async race condition
-        initialItem: HomePage {
-            appStack: homeStack
-            appState: appState
-
-            // Fix: signal is switchTab(int tabIndex), not requestTabChange
-            onSwitchTab: function(tabIndex) { switchTab(tabIndex) }
+        Component.onCompleted: {
+            // Push after StackView is fully constructed so homeStack ref is valid
+            var page = push(Qt.resolvedUrl("pages/HomePage.qml"))
+            page.appStack = homeStack
+            page.appState = appState
+            page.switchTab.connect(switchTab)
         }
     }
 
