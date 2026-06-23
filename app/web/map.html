@@ -9,11 +9,12 @@
 html, body, #map { height: 100%; width: 100%; margin: 0; }
 #status {
     position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.65); color: white;
-    padding: 6px 14px; border-radius: 20px;
+    background: rgba(0,0,0,0.72); color: white;
+    padding: 6px 16px; border-radius: 20px;
     font-family: sans-serif; font-size: 13px;
     z-index: 1000; white-space: nowrap;
-    display: none;
+    display: none; max-width: 90%;
+    overflow: hidden; text-overflow: ellipsis;
 }
 </style>
 </head>
@@ -34,46 +35,75 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-var marker    = null;
-var statusEl  = document.getElementById('status');
+var marker   = null;
+var statusEl = document.getElementById('status');
+
+function resolveWithNominatim(lat, lon) {
+    fetch('https://nominatim.openstreetmap.org/reverse'
+          + '?format=json&lat=' + lat + '&lon=' + lon,
+          { headers: { 'Accept-Language': 'en' } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var addr = data.address || {};
+            var parts = [];
+            if (addr.road)                              parts.push(addr.road);
+            if (addr.neighbourhood || addr.suburb)      parts.push(addr.neighbourhood || addr.suburb);
+            if (addr.city || addr.town || addr.village) parts.push(addr.city || addr.town || addr.village);
+            selectedShort  = parts.length > 0
+                             ? parts.join(', ')
+                             : (lat.toFixed(5) + ', ' + lon.toFixed(5));
+            selectedFull   = data.display_name || selectedShort;
+            geocodePending = false;
+            statusEl.textContent = selectedShort;
+            if (marker) marker.getPopup().setContent(selectedShort).update();
+        })
+        .catch(function() {
+            selectedShort  = lat.toFixed(5) + ', ' + lon.toFixed(5);
+            selectedFull   = selectedShort;
+            geocodePending = false;
+            statusEl.textContent = selectedShort;
+        });
+}
 
 map.on('click', function(e) {
     selectedLat   = e.latlng.lat;
     selectedLon   = e.latlng.lng;
     selectedShort = null;
     selectedFull  = null;
+    geocodePending = true;
 
     if (marker) map.removeLayer(marker);
     marker = L.marker([selectedLat, selectedLon]).addTo(map);
-    marker.bindPopup(
-        selectedLat.toFixed(5) + ", " + selectedLon.toFixed(5)
-    ).openPopup();
+    marker.bindPopup('Resolving address…').openPopup();
 
-    geocodePending = true;
     statusEl.style.display = 'block';
     statusEl.textContent   = 'Resolving address…';
 
+    // Try FastAPI backend first (already calls Nominatim server-side)
     fetch('http://127.0.0.1:8000/reverse-geocode'
           + '?lat=' + selectedLat + '&lon=' + selectedLon)
-        .then(function(r) { return r.json(); })
+        .then(function(r) {
+            if (!r.ok) throw new Error('backend error');
+            return r.json();
+        })
         .then(function(data) {
-            selectedShort  = data.address      || (selectedLat.toFixed(5) + ', ' + selectedLon.toFixed(5));
+            if (!data.address || data.address === (selectedLat + ',' + selectedLon)) {
+                // Backend returned fallback coords — try Nominatim directly
+                resolveWithNominatim(selectedLat, selectedLon);
+                return;
+            }
+            selectedShort  = data.address;
             selectedFull   = data.full_address || selectedShort;
             geocodePending = false;
-            statusEl.style.display = 'block';
-            statusEl.textContent   = selectedShort;
+            statusEl.textContent = selectedShort;
             marker.getPopup().setContent(selectedShort).update();
         })
         .catch(function() {
-            selectedShort  = selectedLat.toFixed(5) + ', ' + selectedLon.toFixed(5);
-            selectedFull   = selectedShort;
-            geocodePending = false;
-            statusEl.textContent = selectedShort;
+            // Backend unreachable — call Nominatim directly from browser
+            resolveWithNominatim(selectedLat, selectedLon);
         });
 });
 
-// Qt5 WebEngine can only return primitives from runJavaScript —
-// return a JSON string, parse it on the QML side
 function getSelectionJSON() {
     return JSON.stringify({
         lat:     selectedLat,
