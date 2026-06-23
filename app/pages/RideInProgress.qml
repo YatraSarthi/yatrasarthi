@@ -528,81 +528,115 @@ Page {
                 }
 
                 // ── Call / Message row ────────────────────────────────────────
-                Row {
-                    width:   parent.width - 28
-                    spacing: 10
+                Rectangle {
 
-                    Rectangle {
-                        width:        (parent.width - 10) / 2
-                        height:       46
-                        radius:       12
-                        color:        "#EEF4FF"
-                        border.color: "#C5D9F8"
-                        border.width: 1
+    width: parent.width - 28
+    height: 60
 
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 6
-                            Label { text: "📞"; font.pixelSize: 15 }
-                            Label {
-                                text:           "Call"
-                                font.pixelSize: 15
-                                color:          "#1976D2"
-                                font.bold:      true
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                        }
-                        MouseArea { anchors.fill: parent; onClicked: console.log("Call") }
-                    }
+    color: "transparent"
 
-                    Rectangle {
-                        width:        (parent.width - 10) / 2
-                        height:       46
-                        radius:       12
-                        color:        "#EEF4FF"
-                        border.color: "#C5D9F8"
-                        border.width: 1
+    Row {
 
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 6
-                            Label { text: "💬"; font.pixelSize: 15 }
-                            Label {
-                                text:           "Message"
-                                font.pixelSize: 15
-                                color:          "#1976D2"
-                                font.bold:      true
-                                anchors.verticalCenter: parent.verticalCenter
-                            }
-                        }
-                        MouseArea { anchors.fill: parent; onClicked: console.log("Message") }
-                    }
+        anchors.fill: parent
+        spacing: 10
+
+        Rectangle {
+
+            width: parent.width / 2 - 5
+            height: 46
+
+            radius: 12
+
+            color: "#EEF4FF"
+
+            border.color: "#C5D9F8"
+
+            Row {
+
+                anchors.centerIn: parent
+                spacing: 6
+
+                Image {
+                    source: "../../assets/icons/call.png"
+                    width: 18
+                    height: 18
+                    fillMode: Image.PreserveAspectFit
                 }
+
+                Label {
+                    text: "Call"
+                    color: "#1976D2"
+                    font.pixelSize: 15
+                    font.bold: true
+                }
+            }
+        }
+
+        Rectangle {
+
+            width: parent.width / 2 - 5
+            height: 46
+
+            radius: 12
+
+            color: "#EEF4FF"
+
+            border.color: "#C5D9F8"
+
+            Row {
+
+                anchors.centerIn: parent
+                spacing: 6
+
+                Image {
+                    source: "../../assets/icons/message.png"
+                    width: 18
+                    height: 18
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                Label {
+                    text: "Message"
+                    color: "#1976D2"
+                    font.pixelSize: 15
+                    font.bold: true
+                }
+            }
+        }
+    }
+}
 
                 // ── SOS ───────────────────────────────────────────────────────
                 Rectangle {
-                    width:  parent.width - 28
-                    height: 52
-                    radius: 14
-                    color:  "#E53935"
 
-                    Row {
-                        anchors.centerIn: parent
-                        spacing: 8
-                        Label { text: "🚨"; font.pixelSize: 16 }
-                        Label {
-                            text:           "SOS — Emergency"
-                            color:          "white"
-                            font.pixelSize: 16
-                            font.bold:      true
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                    }
-                    MouseArea { anchors.fill: parent; onClicked: console.log("SOS") }
-                }
+                width: parent.width - 28
+                height: 52
 
-                Item { height: 8 }
-            }
+                radius: 14
+                color: "#E53935"
+
+                Label {
+
+                anchors.centerIn: parent
+
+                text: "🚨 SOS — Emergency"
+
+                color: "white"
+                font.pixelSize: 18
+                font.bold: true
+    }
+
+    MouseArea {
+
+        anchors.fill: parent
+
+        onClicked: {
+            console.log("SOS Pressed")
+            // appStack.push(Qt.resolvedUrl("SOSPage.qml"))
+        }
+    }
+}
+}
         }
     }
 }
