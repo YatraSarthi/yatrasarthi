@@ -6,23 +6,17 @@ Page {
 
     property var  appStack
     property var  appState
-    property bool deepPush: false   // true when pushed from LocationSearchPage
+    property bool deepPush: false
 
     function commitSelection() {
         mapView.runJavaScript("getSelectionJSON()", function(raw) {
             if (!raw) { console.log("getSelectionJSON() returned nothing"); return }
-
             var sel
             try { sel = JSON.parse(raw) } catch(e) { console.log("Parse error:", e); return }
-
             if (sel.lat === null || sel.lat === undefined) {
                 console.log("No pin placed yet"); return
             }
-
-            if (sel.pending) {
-                retryTimer.start()
-                return
-            }
+            if (sel.pending) { retryTimer.start(); return }
 
             var shortAddr = sel.short || (sel.lat.toFixed(5) + ", " + sel.lon.toFixed(5))
             var fullAddr  = sel.full  || shortAddr
@@ -39,10 +33,8 @@ Page {
                 appState.destinationLon         = sel.lon
             }
 
-            // If pushed from LocationSearchPage, pop twice to land on HomePage
             if (deepPush && appStack.depth > 2) {
-                appStack.pop()
-                appStack.pop()
+                appStack.pop(); appStack.pop()
             } else if (appStack.depth > 1) {
                 appStack.pop()
             }
@@ -50,9 +42,7 @@ Page {
     }
 
     Timer {
-        id:       retryTimer
-        interval: 400
-        repeat:   false
+        id: retryTimer; interval: 400; repeat: false
         onTriggered: commitSelection()
     }
 
@@ -76,7 +66,7 @@ Page {
     WebEngineView {
         id:           mapView
         anchors.fill: parent
-        url:          Qt.resolvedUrl("../web/map.html")
+        url:          "http://127.0.0.1:8000/web/map.html"
     }
 
     Button {

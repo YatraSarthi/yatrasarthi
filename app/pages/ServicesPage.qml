@@ -6,17 +6,14 @@ Page {
     property var appStack
     property var appState
 
-    // Page has no footer — footer lives in Main.qml ApplicationWindow
     footer: null
 
-    // React whenever this page becomes visible AND there's a pending
-    // quick action queued from HomePage (sos / queue)
     onVisibleChanged: {
-    if (visible) {
-        if (appState) appState.showBottomBar = true  // ADD THIS LINE
-        handleQuickAction()
+        if (visible) {
+            if (appState) appState.showBottomBar = true
+            handleQuickAction()
+        }
     }
-}
 
     Component.onCompleted: handleQuickAction()
 
@@ -26,10 +23,10 @@ Page {
         if (appState.quickAction === "sos") {
             console.log("Auto-triggering SOS from Quick Actions")
             triggerSos()
-            appState.quickAction = ""  // consume it so it doesn't refire
+            appState.quickAction = ""
         } else if (appState.quickAction === "queue") {
             console.log("Landed on Services via Queue quick action")
-            appState.quickAction = ""  // consume it
+            appState.quickAction = ""
         }
     }
 
@@ -123,13 +120,6 @@ Page {
                               fg: "#9E9E9E",
                               available: false,
                               desc: "Coming Soon" },
-                            { label: "Metro",
-                              icon: "map.png",
-                              bg: "#F5F5F5",
-                              bd: "#E0E0E0",
-                              fg: "#9E9E9E",
-                              available: false,
-                              desc: "Coming Soon" },
                             { label: "Rental",
                               icon: "map.png",
                               bg: "#F5F5F5",
@@ -153,7 +143,6 @@ Page {
                             radius: 14
                             color: modelData.bg
                             border.color: modelData.bd
-                            // Briefly highlight the SOS card when arriving via Quick Action
                             border.width: (modelData.label === "SOS"
                                            && appState
                                            && appState.quickAction === "sos")
@@ -165,8 +154,7 @@ Page {
                                 spacing: 6
 
                                 Image {
-                                    anchors.horizontalCenter:
-                                        parent.horizontalCenter
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     source: Qt.resolvedUrl(
                                             "../../assets/icons/"
                                             + modelData.icon)
@@ -175,8 +163,7 @@ Page {
                                 }
 
                                 Text {
-                                    anchors.horizontalCenter:
-                                        parent.horizontalCenter
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     text: modelData.label
                                     font.pixelSize: 13
                                     font.bold: true
@@ -184,8 +171,7 @@ Page {
                                 }
 
                                 Text {
-                                    anchors.horizontalCenter:
-                                        parent.horizontalCenter
+                                    anchors.horizontalCenter: parent.horizontalCenter
                                     text: modelData.desc
                                     font.pixelSize: 10
                                     color: modelData.available
@@ -213,13 +199,8 @@ Page {
                                     if (modelData.label === "SOS") {
                                         console.log("SOS card tapped directly")
                                         triggerSos()
-                                    }
-                                    // For ride types, set preferred
-                                    // vehicle and switch to Home tab
-                                    // so user can pick locations
-                                    else {
-                                        appState.preferredVehicle =
-                                            modelData.label
+                                    } else {
+                                        appState.preferredVehicle = modelData.label
                                     }
                                 }
                             }
