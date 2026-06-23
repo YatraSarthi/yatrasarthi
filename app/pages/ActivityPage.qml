@@ -74,21 +74,26 @@ Page {
                 Rectangle {
                     id: backBtn
                     width: 36; height: 36; radius: 18
-                    color: "#ffffff20"
+                    color: backBtnMouse.containsMouse ? "#E3F2FD" : "white"
                     anchors.left: parent.left
                     anchors.leftMargin: 12
                     anchors.verticalCenter: parent.verticalCenter
 
+                    Behavior on color { ColorAnimation { duration: 120 } }
+
                     Text {
                         text: "‹"
-                        font.pixelSize: 26
-                        color: "white"
+                        font.pixelSize: 28
+                        font.bold: true
+                        color: "#1565C0"
                         anchors.centerIn: parent
                         anchors.horizontalCenterOffset: -1
                     }
 
                     MouseArea {
+                        id: backBtnMouse
                         anchors.fill: parent
+                        hoverEnabled: true
                         onClicked: switchTab(0)
                     }
                 }
