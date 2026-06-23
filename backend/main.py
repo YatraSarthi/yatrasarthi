@@ -7,8 +7,8 @@ import random
 import json
 import os
 from backend.sos import send_sos
-from backend.database import engine
-from backend.models import Base
+from backend.database import engine, SessionLocal
+from backend.models import Base, Message
 
 print("===== THIS MAIN.PY IS RUNNING =====")
 
@@ -413,6 +413,82 @@ def ride_location():
         "completed": completed
     }
 
+# ----------------------------
+# Chat
+# ----------------------------
+
+@app.get("/send-message")
+def send_message(
+    sender: str,
+    receiver: str,
+    message: str
+):
+
+    db = SessionLocal()
+
+    try:
+
+        msg = Message(
+            sender=sender,
+            receiver=receiver,
+            message=message
+        )
+
+        db.add(msg)
+        db.commit()
+
+        return {
+            "status": "sent"
+        }
+
+    finally:
+        db.close()
+
+
+@app.get("/get-messages")
+def get_messages(user: str):
+
+    db = SessionLocal()
+
+    try:
+
+        messages = (
+            db.query(Message)
+            .filter(
+                (Message.sender == user)
+                |
+                (Message.receiver == user)
+            )
+            .order_by(Message.id)
+            .all()
+        )
+
+        result = []
+
+        for msg in messages:
+
+            result.append({
+
+                "sender":
+                    msg.sender,
+
+                "receiver":
+                    msg.receiver,
+
+                "message":
+                    msg.message,
+
+                "time":
+                    str(msg.created_at)
+            })
+
+        return result
+
+    finally:
+        db.close()
+
+print("CHAT ENDPOINTS LOADED")
 
 Base.metadata.create_all(bind=engine)
 print("Loaded main.py with all endpoints")
+

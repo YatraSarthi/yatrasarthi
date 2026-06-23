@@ -19,6 +19,8 @@ class User(Base):
         DateTime(timezone=True),
         server_default=func.now()
     )
+
+
 class OTPCode(Base):
     __tablename__ = "otp_codes"
 
@@ -27,6 +29,36 @@ class OTPCode(Base):
     email = Column(String, nullable=False)
 
     otp = Column(String(6), nullable=False)
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now()
+    )
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    sender = Column(
+        String,
+        nullable=False
+    )
+
+    receiver = Column(
+        String,
+        nullable=False
+    )
+
+    message = Column(
+        String,
+        nullable=False
+    )
 
     created_at = Column(
         DateTime(timezone=True),
