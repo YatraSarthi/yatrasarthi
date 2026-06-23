@@ -392,21 +392,13 @@ Page {
                         }
 
                         Label {
-                            text:           destinationName
-                            font.pixelSize: 16
-                            font.bold:      true
-                            color:          "#1A1A1A"
-                            wrapMode:       Text.WordWrap
-                            width:          parent.width
-                        }
-
-                        Label {
-                            text:           destinationAddress
-                            font.pixelSize: 12
-                            color:          "#666666"
-                            wrapMode:       Text.WordWrap
-                            width:          parent.width
-                        }
+    text: destinationAddress
+    font.pixelSize: 15
+    font.bold: true
+    color: "#1A1A1A"
+    wrapMode: Text.WordWrap
+    width: parent.width
+}
                     }
                 }
 
@@ -615,17 +607,25 @@ Page {
                 radius: 14
                 color: "#E53935"
 
-                Label {
+                Row {
 
-                anchors.centerIn: parent
+    anchors.centerIn: parent
+    spacing: 8
 
-                text: "🚨 SOS — Emergency"
-
-                color: "white"
-                font.pixelSize: 18
-                font.bold: true
+    Image {
+        source: "../../assets/icons/sos.png"
+        width: 20
+        height: 20
+        fillMode: Image.PreserveAspectFit
     }
 
+    Label {
+        text: "SOS — Emergency"
+        color: "white"
+        font.pixelSize: 18
+        font.bold: true
+    }
+}
     MouseArea {
 
         anchors.fill: parent
