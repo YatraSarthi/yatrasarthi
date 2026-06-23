@@ -352,6 +352,14 @@ Page {
 
                         property int userRating: 0
 
+                        // ── Auto-redirect timer after rating ──────────────────
+                        Timer {
+                            id: redirectTimer
+                            interval: 800
+                            repeat: false
+                            onTriggered: { while (appStack.depth > 1) appStack.pop() }
+                        }
+
                         Column {
                             id: rateCol
                             anchors {
@@ -394,7 +402,10 @@ Page {
                                                 color: index < rateCard.userRating ? "#FFC107" : "#D0D0D0"
                                                 MouseArea {
                                                     anchors.fill: parent
-                                                    onClicked: rateCard.userRating = index + 1
+                                                    onClicked: {
+                                                        rateCard.userRating = index + 1
+                                                        redirectTimer.start()
+                                                    }
                                                 }
                                             }
                                         }
@@ -423,22 +434,6 @@ Page {
                                     }
                                 }
                             }
-                        }
-                    }
-
-                    // ── Back to Home ──────────────────────────────────────────
-                    Rectangle {
-                        width: parent.width; height: 52
-                        radius: 14; color: "#1976D2"
-
-                        Label {
-                            anchors.centerIn: parent
-                            text: "Back To Home"
-                            color: "white"; font.pixelSize: 16; font.bold: true
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: { while (appStack.depth > 1) appStack.pop() }
                         }
                     }
 
