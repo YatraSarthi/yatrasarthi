@@ -301,10 +301,39 @@ Page {
         }
 
         onAccepted: {
-            console.log("Ride Cancelled:", reason)
-            appStack.pop()
-        }
+
+    console.log("Ride Cancelled:", reason)
+
+    if (reason === "Driver taking too long") {
+
+        console.log("Searching for another driver...")
+
+        appStack.replace(
+            Qt.resolvedUrl("ResultsPage.qml"),
+            {
+                "appStack": appStack,
+                "appState": appState
+            }
+        )
+
+    } else {
+
+        console.log("Going to Home Page")
+
+        appStack.clear()
+
+        appStack.push(
+            Qt.resolvedUrl("HomePage.qml"),
+            {
+                "appStack": appStack,
+                "appState": appState
+            }
+        )
     }
+}}
+
+
+
 
     // ─── UI ─────────────────────────────────────────────────────────────────
 
