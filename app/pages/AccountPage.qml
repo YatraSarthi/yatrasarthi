@@ -455,13 +455,13 @@ Page {
                                                     Text {
                                                         id: chevronText
                                                         visible: item ? (item.isToggle !== true) : true
-                                                        text: isEmergencyRow
-                                                              ? (emergencyExpanded ? "︿" : "﹀")
-                                                              : "›"
-                                                        font.pixelSize: isEmergencyRow ? 16 : 22
+                                                        text: "›"
+                                                        font.pixelSize: 22
                                                         color: "#CCCCCC"
                                                         anchors.right: parent.right
                                                         anchors.verticalCenter: parent.verticalCenter
+                                                        rotation: (isEmergencyRow && emergencyExpanded) ? 90 : 0
+                                                        Behavior on rotation { NumberAnimation { duration: 150 } }
                                                     }
                                                 }
                                             }
