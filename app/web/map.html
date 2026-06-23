@@ -38,38 +38,11 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 var marker   = null;
 var statusEl = document.getElementById('status');
 
-function resolveWithNominatim(lat, lon) {
-    fetch('https://nominatim.openstreetmap.org/reverse'
-          + '?format=json&lat=' + lat + '&lon=' + lon,
-          { headers: { 'Accept-Language': 'en' } })
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            var addr = data.address || {};
-            var parts = [];
-            if (addr.road)                              parts.push(addr.road);
-            if (addr.neighbourhood || addr.suburb)      parts.push(addr.neighbourhood || addr.suburb);
-            if (addr.city || addr.town || addr.village) parts.push(addr.city || addr.town || addr.village);
-            selectedShort  = parts.length > 0
-                             ? parts.join(', ')
-                             : (lat.toFixed(5) + ', ' + lon.toFixed(5));
-            selectedFull   = data.display_name || selectedShort;
-            geocodePending = false;
-            statusEl.textContent = selectedShort;
-            if (marker) marker.getPopup().setContent(selectedShort).update();
-        })
-        .catch(function() {
-            selectedShort  = lat.toFixed(5) + ', ' + lon.toFixed(5);
-            selectedFull   = selectedShort;
-            geocodePending = false;
-            statusEl.textContent = selectedShort;
-        });
-}
-
 map.on('click', function(e) {
-    selectedLat   = e.latlng.lat;
-    selectedLon   = e.latlng.lng;
-    selectedShort = null;
-    selectedFull  = null;
+    selectedLat    = e.latlng.lat;
+    selectedLon    = e.latlng.lng;
+    selectedShort  = null;
+    selectedFull   = null;
     geocodePending = true;
 
     if (marker) map.removeLayer(marker);
@@ -79,28 +52,29 @@ map.on('click', function(e) {
     statusEl.style.display = 'block';
     statusEl.textContent   = 'Resolving address…';
 
-    // Try FastAPI backend first (already calls Nominatim server-side)
-    fetch('http://127.0.0.1:8000/reverse-geocode'
-          + '?lat=' + selectedLat + '&lon=' + selectedLon)
-        .then(function(r) {
-            if (!r.ok) throw new Error('backend error');
-            return r.json();
-        })
+    fetch('https://nominatim.openstreetmap.org/reverse'
+          + '?format=json&lat=' + selectedLat + '&lon=' + selectedLon,
+          { headers: { 'Accept-Language': 'en' } })
+        .then(function(r) { return r.json(); })
         .then(function(data) {
-            if (!data.address || data.address === (selectedLat + ',' + selectedLon)) {
-                // Backend returned fallback coords — try Nominatim directly
-                resolveWithNominatim(selectedLat, selectedLon);
-                return;
-            }
-            selectedShort  = data.address;
-            selectedFull   = data.full_address || selectedShort;
+            var addr  = data.address || {};
+            var parts = [];
+            if (addr.road)                               parts.push(addr.road);
+            if (addr.neighbourhood || addr.suburb)       parts.push(addr.neighbourhood || addr.suburb);
+            if (addr.city || addr.town || addr.village)  parts.push(addr.city || addr.town || addr.village);
+            selectedShort  = parts.length > 0
+                             ? parts.join(', ')
+                             : (selectedLat.toFixed(5) + ', ' + selectedLon.toFixed(5));
+            selectedFull   = data.display_name || selectedShort;
             geocodePending = false;
             statusEl.textContent = selectedShort;
             marker.getPopup().setContent(selectedShort).update();
         })
         .catch(function() {
-            // Backend unreachable — call Nominatim directly from browser
-            resolveWithNominatim(selectedLat, selectedLon);
+            selectedShort  = selectedLat.toFixed(5) + ', ' + selectedLon.toFixed(5);
+            selectedFull   = selectedShort;
+            geocodePending = false;
+            statusEl.textContent = selectedShort;
         });
 });
 
