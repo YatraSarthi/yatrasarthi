@@ -4,8 +4,9 @@ import QtWebEngine 1.10
 
 Page {
 
-    property var appStack
-    property var appState
+    property var  appStack
+    property var  appState
+    property bool deepPush: false   // true when pushed from LocationSearchPage
 
     function commitSelection() {
         mapView.runJavaScript("getSelectionJSON()", function(raw) {
@@ -38,7 +39,13 @@ Page {
                 appState.destinationLon         = sel.lon
             }
 
-            if (appStack.depth > 1) appStack.pop()
+            // If pushed from LocationSearchPage, pop twice to land on HomePage
+            if (deepPush && appStack.depth > 2) {
+                appStack.pop()
+                appStack.pop()
+            } else if (appStack.depth > 1) {
+                appStack.pop()
+            }
         })
     }
 
