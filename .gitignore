@@ -1,3 +1,9 @@
-__pychache__
-backend/.env
+# Python
+__pycache__/
 *.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.env

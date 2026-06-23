@@ -25,19 +25,19 @@ ApplicationWindow {
         currentIndex: currentTab
 
         background: Rectangle {
-    color: "#E3F2FD"   // same light blue
-
-    Rectangle {
-        anchors.top: parent.top
-        width: parent.width
-        height: 1
-        color: "#90CAF9"
-    }
-}
+            color: "#E3F2FD"
+            Rectangle {
+                anchors.top: parent.top
+                width: parent.width
+                height: 1
+                color: "#90CAF9"
+            }
+        }
 
         onCurrentIndexChanged: currentTab = currentIndex
 
         TabButton {
+            background: Rectangle { color: "transparent" }
             contentItem: Column {
                 anchors.centerIn: parent; spacing: 2
                 Image {
@@ -54,6 +54,7 @@ ApplicationWindow {
         }
 
         TabButton {
+            background: Rectangle { color: "transparent" }
             contentItem: Column {
                 anchors.centerIn: parent; spacing: 2
                 Image {
@@ -70,6 +71,7 @@ ApplicationWindow {
         }
 
         TabButton {
+            background: Rectangle { color: "transparent" }
             contentItem: Column {
                 anchors.centerIn: parent; spacing: 2
                 Image {
@@ -86,6 +88,7 @@ ApplicationWindow {
         }
 
         TabButton {
+            background: Rectangle { color: "transparent" }
             contentItem: Column {
                 anchors.centerIn: parent; spacing: 2
                 Image {
@@ -110,7 +113,6 @@ ApplicationWindow {
         visible:      currentTab === 0
 
         Component.onCompleted: {
-            // Push after StackView is fully constructed so homeStack ref is valid
             var page = push(Qt.resolvedUrl("pages/HomePage.qml"))
             page.appStack = homeStack
             page.appState = appState
