@@ -27,6 +27,7 @@ app.mount("/web", StaticFiles(directory="app/web"), name="web")
 
 search_cache = {}
 RECENT_FILE = "recent_places.json"
+SOS_INFO_FILE = "sos_info.json"
 
 # ----------------------------
 # Home Endpoint
@@ -286,6 +287,61 @@ def sos():
 
 
 # ----------------------------
+# SOS Info (emergency contacts)
+# ----------------------------
+@app.get("/sos/info")
+def get_sos_info():
+    if not os.path.exists(SOS_INFO_FILE):
+        return {
+            "contact1Name": "",
+            "contact1Phone": "",
+            "contact2Name": "",
+            "contact2Phone": "",
+            "bloodGroup": "",
+            "medicalNotes": ""
+        }
+    try:
+        with open(SOS_INFO_FILE, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        print("SOS Info Read Error:", e)
+        return {
+            "contact1Name": "",
+            "contact1Phone": "",
+            "contact2Name": "",
+            "contact2Phone": "",
+            "bloodGroup": "",
+            "medicalNotes": ""
+        }
+
+
+@app.post("/sos/info")
+def save_sos_info(
+    contact1Name: str = "",
+    contact1Phone: str = "",
+    contact2Name: str = "",
+    contact2Phone: str = "",
+    bloodGroup: str = "",
+    medicalNotes: str = ""
+):
+    try:
+        data = {
+            "contact1Name": contact1Name,
+            "contact1Phone": contact1Phone,
+            "contact2Name": contact2Name,
+            "contact2Phone": contact2Phone,
+            "bloodGroup": bloodGroup,
+            "medicalNotes": medicalNotes
+        }
+        with open(SOS_INFO_FILE, "w") as f:
+            json.dump(data, f, indent=2)
+        return {"status": "ok"}
+    except Exception as e:
+        print("SOS Info Write Error:", e)
+        return {"status": "error", "detail": str(e)}
+
+
+# ----------------------------
 # Favourites
 # ----------------------------
 favourites_store = [
@@ -491,4 +547,3 @@ print("CHAT ENDPOINTS LOADED")
 
 Base.metadata.create_all(bind=engine)
 print("Loaded main.py with all endpoints")
-

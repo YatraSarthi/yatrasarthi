@@ -327,9 +327,16 @@ Page {
                             MouseArea {
                                 anchors.fill: parent
                                 onClicked: {
-                                    if (modelData.action !== "")
-                                        appState.quickAction = modelData.action
-                                    switchTab(modelData.tab)
+                                    if (modelData.action === "sos") {
+                                        appStack.push(
+                                            Qt.resolvedUrl("SosPage.qml"),
+                                            { "appStack": appStack,
+                                              "appState": appState })
+                                    } else {
+                                        if (modelData.action !== "")
+                                            appState.quickAction = modelData.action
+                                        switchTab(modelData.tab)
+                                    }
                                 }
                             }
                         }
