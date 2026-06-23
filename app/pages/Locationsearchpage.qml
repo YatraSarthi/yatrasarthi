@@ -126,12 +126,10 @@ Page {
                 anchors.rightMargin: 16
                 spacing: 14
 
-                // Map icon circle
                 Rectangle {
                     width:  38; height: 38; radius: 19
                     color:  mode === "pickup" ? "#E3F2FD" : "#FFEBEE"
                     anchors.verticalCenter: parent.verticalCenter
-
                     Image {
                         anchors.centerIn: parent
                         source:   "../../assets/icons/map.png"
@@ -143,24 +141,19 @@ Page {
                 Column {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 2
-
                     Text {
                         text:           "Select on Map"
-                        font.pixelSize: 14
-                        font.bold:      true
-                        color:          "#1A1A1A"
+                        font.pixelSize: 14; font.bold: true; color: "#1A1A1A"
                     }
                     Text {
                         text:           mode === "pickup"
                                         ? "Pin your pickup location"
                                         : "Pin your destination"
-                        font.pixelSize: 12
-                        color:          "#888888"
+                        font.pixelSize: 12; color: "#888888"
                     }
                 }
             }
 
-            // Bottom divider
             Rectangle {
                 anchors.bottom: parent.bottom
                 width: parent.width; height: 1; color: "#E0E0E0"
@@ -175,7 +168,9 @@ Page {
                     appState.activeSelection = mode
                     appStack.push(
                         Qt.resolvedUrl("MapPage.qml"),
-                        { "appStack": appStack, "appState": appState })
+                        { "appStack": appStack,
+                          "appState": appState,
+                          "deepPush": true })
                 }
             }
         }
@@ -184,7 +179,7 @@ Page {
         ListView {
             id:     suggestionList
             width:  parent.width
-            height: parent.height - 64 - 56   // subtract topbar + map row
+            height: parent.height - 64 - 56
             clip:   true
             model:  suggestions
 
@@ -192,16 +187,14 @@ Page {
                 anchors.centerIn: parent
                 visible:        suggestions.length === 0 && searchField.text.length === 0
                 text:           "Start typing to search"
-                color:          "#AAAAAA"
-                font.pixelSize: 15
+                color:          "#AAAAAA"; font.pixelSize: 15
             }
 
             Label {
                 anchors.centerIn: parent
                 visible:        suggestions.length === 0 && searchField.text.length > 1
                 text:           "No results found"
-                color:          "#AAAAAA"
-                font.pixelSize: 15
+                color:          "#AAAAAA"; font.pixelSize: 15
             }
 
             delegate: Rectangle {
@@ -230,8 +223,7 @@ Page {
                             source:   mode === "pickup"
                                       ? "../../assets/icons/pickup.png"
                                       : "../../assets/icons/destination.png"
-                            width: 18; height: 18
-                            fillMode: Image.PreserveAspectFit
+                            width: 18; height: 18; fillMode: Image.PreserveAspectFit
                         }
                     }
 
@@ -258,9 +250,9 @@ Page {
                 }
 
                 Rectangle {
-                    anchors.bottom:      parent.bottom
-                    anchors.left:        parent.left; anchors.right: parent.right
-                    anchors.leftMargin:  68
+                    anchors.bottom:     parent.bottom
+                    anchors.left:       parent.left; anchors.right: parent.right
+                    anchors.leftMargin: 68
                     height: 1; color: "#F0F0F0"
                 }
 
