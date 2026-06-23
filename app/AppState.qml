@@ -1,6 +1,7 @@
 import QtQuick 2.12
 
 QtObject {
+
     property string pickupLocation: ""
     property string pickupFullAddress: ""
 
@@ -29,11 +30,12 @@ QtObject {
     /* Navigation */
     property bool showBottomBar: true
 
-    /* Services page preferred vehicle (set from ServicesPage grid) */
+    /* Services page preferred vehicle */
     property string preferredVehicle: ""
 
-    /* Pending quick-action from HomePage Quick Actions
-       ("sos", "queue", or "" for none) — consumed by ServicesPage
-       once it has acted on it */
+    /* Quick Action */
     property string quickAction: ""
+
+    /* Chat Messages */
+    property var chatMessages: []
 }

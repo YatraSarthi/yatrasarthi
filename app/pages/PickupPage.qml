@@ -29,7 +29,7 @@ Page {
         : appState.selectedVehicle === "Cab"
             ? Qt.resolvedUrl("../../assets/icons/cab.png")
         : appState.selectedVehicle === "Carpool"
-            ? Qt.resolvedUrl("../../assets/icons/carpool.png")
+            ? Qt.resolvedUrl("../../assets/icons/cab.png")
             : Qt.resolvedUrl("../../assets/icons/cab.png")
 
     title: "Sarthi Arriving"
@@ -560,6 +560,17 @@ Page {
         Text {
             text: "Message"
         }
+    }
+
+    onClicked: {
+
+        appStack.push(
+            Qt.resolvedUrl("ChatPage.qml"),
+            {
+                "appStack": appStack,
+                "appState": appState
+            }
+        )
     }
 }
                     }
