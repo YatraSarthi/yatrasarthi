@@ -25,12 +25,15 @@ ApplicationWindow {
         currentIndex: currentTab
 
         background: Rectangle {
-            color: "white"
-            Rectangle {
-                anchors.top: parent.top
-                width: parent.width; height: 1; color: "#E0E0E0"
-            }
-        }
+    color: "#E3F2FD"   // same light blue
+
+    Rectangle {
+        anchors.top: parent.top
+        width: parent.width
+        height: 1
+        color: "#90CAF9"
+    }
+}
 
         onCurrentIndexChanged: currentTab = currentIndex
 
