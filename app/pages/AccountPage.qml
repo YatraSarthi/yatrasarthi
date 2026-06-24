@@ -12,7 +12,10 @@ Page {
     header: null
 
     onVisibleChanged: {
-        if (visible && appState) appState.showBottomBar = true
+        if (visible && appState) {
+            appState.showBottomBar = true
+            darkModeEnabled = appState.darkMode
+        }
     }
 
     // ── EMERGENCY CONTACTS STATE ─────────────────────────────────────────
@@ -77,8 +80,8 @@ Page {
     property int selectedLang: 0
     property var languages: ["English", "Hindi", "Kannada", "Tamil", "Telugu"]
 
-    // ── DARK MODE ────────────────────────────────────────────────────────
-    property bool darkModeEnabled: false
+    // ── DARK MODE — mirrors appState.darkMode ────────────────────────────
+    property bool darkModeEnabled: appState ? appState.darkMode : false
 
     // ── GENDER ───────────────────────────────────────────────────────────
     property int selectedGender: 0
@@ -1017,7 +1020,12 @@ Page {
                                         width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
                                         x: darkModeEnabled ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
                                     }
-                                    MouseArea { anchors.fill: parent; onClicked: darkModeEnabled = !darkModeEnabled }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            if (appState) appState.darkMode = !appState.darkMode
+                                        }
+                                    }
                                 }
                             }
                         }
