@@ -11,21 +11,40 @@ ApplicationWindow {
 
     AppState { id: appState }
 
+    // ── Theme helpers — reference these everywhere instead of hardcoded colors
+    readonly property bool   dm:       appState.darkMode
+    readonly property color  bgPage:   dm ? "#121212" : "#FFFFFF"
+    readonly property color  bgCard:   dm ? "#1E1E1E" : "#FFFFFF"
+    readonly property color  bgBar:    dm ? "#1A1A2E" : "#E3F2FD"
+    readonly property color  barBorder:dm ? "#2A2A4A" : "#90CAF9"
+    readonly property color  tabSel:   dm ? "#1976D2" : "#1976D2"
+    readonly property color  tabUnsel: dm ? "#2C2C2C" : "#FFFFFF"
+    readonly property color  tabBorderSel:   dm ? "#1565C0" : "#1565C0"
+    readonly property color  tabBorderUnsel: dm ? "#333355" : "#BBDEFB"
+    readonly property color  tabTextSel:     "#FFFFFF"
+    readonly property color  tabTextUnsel:   dm ? "#AAAAAA" : "#555555"
+
     property int currentTab: 0
 
     function switchTab(index) {
         currentTab = index
     }
 
+    // ── App background — covers everything behind the stacks
+    Rectangle {
+        anchors.fill: parent
+        color: bgPage
+        z: -1
+    }
+
     footer: Rectangle {
         visible: appState.showBottomBar
         height:  visible ? 72 : 0
-        color:   "#E3F2FD"
+        color:   bgBar
 
-        // Top border line
         Rectangle {
             anchors.top: parent.top
-            width: parent.width; height: 1; color: "#90CAF9"
+            width: parent.width; height: 1; color: barBorder
         }
 
         Row {
@@ -43,8 +62,8 @@ ApplicationWindow {
 
                 delegate: Rectangle {
                     width:  78; height: 54; radius: 12
-                    color:  currentTab === modelData.idx ? "#1976D2" : "white"
-                    border.color: currentTab === modelData.idx ? "#1565C0" : "#BBDEFB"
+                    color:  currentTab === modelData.idx ? tabSel : tabUnsel
+                    border.color: currentTab === modelData.idx ? tabBorderSel : tabBorderUnsel
                     border.width: 1
 
                     Column {
@@ -63,7 +82,7 @@ ApplicationWindow {
                             font.pixelSize: 10
                             font.bold:      currentTab === modelData.idx
                             color:          currentTab === modelData.idx
-                                            ? "white" : "#555"
+                                            ? tabTextSel : tabTextUnsel
                         }
                     }
 
