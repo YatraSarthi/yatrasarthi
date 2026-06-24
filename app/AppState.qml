@@ -38,6 +38,7 @@ QtObject {
 
     property string driverName: ""
     property string driverVehicle: ""
+    property string driverVehicleModel: ""
     property real driverRating: 0.0
     property string driverPhoto: ""
 

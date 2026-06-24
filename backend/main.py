@@ -30,44 +30,55 @@ SOS_INFO_FILE = "sos_info.json"
 
 # Pool of driver names/vehicles — rotated on retry so UI name changes too
 DRIVER_POOL = [
+
     {
         "name": "Johney Reji",
         "vehicle": "WB03AD7394",
+        "vehicleModel": "Honda SP125",
         "rating": 4.4,
         "photo": "johney.jpg"
     },
+
     {
         "name": "Lokesh Royal",
         "vehicle": "KA01AB1234",
+        "vehicleModel": "Bajaj RE Auto",
         "rating": 4.7,
         "photo": "lokesh.jpg"
     },
+
     {
         "name": "Satyakam Tripathy",
         "vehicle": "KA02CD5678",
+        "vehicleModel": "Maruti Suzuki Dzire",
         "rating": 4.7,
         "photo": "satyakam.jpg"
     },
+
     {
         "name": "Devaj",
         "vehicle": "KA03EF9012",
+        "vehicleModel": "Hyundai Aura",
         "rating": 4.6,
         "photo": "devaj.jpg"
     },
+
     {
         "name": "Ibrahim",
         "vehicle": "KA04GH3456",
+        "vehicleModel": "Maruti Suzuki Ertiga",
         "rating": 4.5,
         "photo": "ibrahim.jpg"
     },
+
     {
         "name": "Manaswitha",
         "vehicle": "KA05IJ7890",
+        "vehicleModel": "Toyota Innova Crysta",
         "rating": 4.9,
         "photo": "manaswitha.jpg"
     }
 ]
-
 # ----------------------------
 # Home Endpoint
 # ----------------------------

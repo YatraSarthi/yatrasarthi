@@ -418,20 +418,58 @@ Page {
                                     spacing: 6
 
                                     Rectangle {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        width: 64; height: 64; radius: 32
-                                        color: "#E3F2FD"; border.color: "#1976D2"; border.width: 2
+    anchors.horizontalCenter: parent.horizontalCenter
+    width: 64
+    height: 64
+    radius: 32
 
-                                        Label {
-                                            anchors.centerIn: parent
-                                            text: "🧑"; font.pixelSize: 30
-                                        }
-                                    }
-                                    Label {
-                                        anchors.horizontalCenter: parent.horizontalCenter
-                                        text: appState && appState.driverName ? appState.driverName : "Your Sarthi"
-                                        font.pixelSize: 13; font.bold: true; color: "#1A1A1A"
-                                    }
+    color: "#E3F2FD"
+    border.color: "#1976D2"
+    border.width: 2
+
+    clip: true
+
+    Image {
+        anchors.fill: parent
+        source: "../../assets/drivers/" + appState.driverPhoto
+        fillMode: Image.PreserveAspectCrop
+
+        Rectangle {
+            anchors.fill: parent
+            color: "#1976D2"
+            visible: parent.status !== Image.Ready
+
+            Label {
+                anchors.centerIn: parent
+                text: "👤"
+                font.pixelSize: 26
+            }
+        }
+    }
+}
+
+Label {
+    anchors.horizontalCenter: parent.horizontalCenter
+    text: appState.driverName
+    font.pixelSize: 13
+    font.bold: true
+    color: "#1A1A1A"
+}
+
+Label {
+    anchors.horizontalCenter: parent.horizontalCenter
+    text: appState.driverVehicleModel + " • " + appState.driverVehicle
+    font.pixelSize: 12
+    color: "#666666"
+}
+
+Label {
+    anchors.horizontalCenter: parent.horizontalCenter
+    text: "★ " + appState.driverRating.toFixed(1)
+    font.pixelSize: 12
+    font.bold: true
+    color: "#F4A700"
+}
                                 }
                             }
                         }
@@ -444,3 +482,5 @@ Page {
         }
     }
 }
+
+

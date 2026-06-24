@@ -73,6 +73,7 @@ if (appState) {
 
     appState.driverName    = sarthiName
     appState.driverVehicle = vehicleNumber
+    appState.driverVehicleModel = data.vehicleModel || ""
     appState.driverRating  = sarthiRating
     appState.driverPhoto   = data.driverPhoto || ""
 
@@ -482,14 +483,28 @@ if (appState) {
                         }
 
                         Column {
-                            spacing: 5
-                            Label { text: dataLoaded ? vehicleNumber : "Loading…"; font.pixelSize: 22; font.bold: true }
-                            Label { text: dataLoaded ? sarthiName : ""; font.pixelSize: 18 }
-                            Label {
-                                text: dataLoaded ? "★★★★★ " + sarthiRating.toFixed(1) : ""
-                                font.pixelSize: 16
-                            }
-                        }
+    spacing: 5
+
+    Label {
+        text: dataLoaded
+              ? appState.driverVehicleModel + " • " + vehicleNumber
+              : "Loading…"
+        font.pixelSize: 18
+        font.bold: true
+    }
+
+    Label {
+        text: dataLoaded ? sarthiName : ""
+        font.pixelSize: 18
+    }
+
+    Label {
+        text: dataLoaded
+              ? "★★★★★ " + sarthiRating.toFixed(1)
+              : ""
+        font.pixelSize: 16
+    }
+}
                     }
 
                     Row {
