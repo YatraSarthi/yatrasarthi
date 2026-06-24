@@ -24,8 +24,8 @@ app.add_middleware(
 
 app.mount("/web", StaticFiles(directory="app/web"), name="web")
 
-search_cache  = {}
-RECENT_FILE   = "recent_places.json"
+search_cache = {}
+RECENT_FILE = "recent_places.json"
 SOS_INFO_FILE = "sos_info.json"
 
 # Pool of driver names/vehicles — rotated on retry so UI name changes too
@@ -58,7 +58,7 @@ DRIVER_POOL = [
     {
         "name": "Devaj",
         "vehicle": "KA03EF9012",
-        "vehicleModel": "Hyundai Aura",
+        "vehicleModel": "Mitsubishi Pajero",
         "rating": 4.6,
         "photo": "devaj.jpg"
     },
@@ -82,6 +82,8 @@ DRIVER_POOL = [
 # ----------------------------
 # Home Endpoint
 # ----------------------------
+
+
 @app.get("/")
 def home():
     return {"message": "YatraSarthi Backend Running"}
@@ -188,11 +190,12 @@ def estimate(
     lat1, lon1 = math.radians(pickup_lat), math.radians(pickup_lon)
     lat2, lon2 = math.radians(destination_lat), math.radians(destination_lon)
     dlat, dlon = lat2 - lat1, lon2 - lon1
-    a = (math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2)
+    a = (math.sin(dlat/2)**2 + math.cos(lat1)
+         * math.cos(lat2)*math.sin(dlon/2)**2)
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     distance = round(R * c, 2)
     cab_fare = round(80 + distance * 16)
-    cab_eta  = max(4, round(distance * 2))
+    cab_eta = max(4, round(distance * 2))
     return {
         "distance": distance,
         "bike":    {"fare": round(25 + distance * 8),  "eta": max(2, round(distance * 2))},
@@ -230,13 +233,13 @@ def route(
 # ----------------------------
 # Driver Simulation
 # ----------------------------
-driver_step       = 0
-driver_lat        = 0.0
-driver_lon        = 0.0
+driver_step = 0
+driver_lat = 0.0
+driver_lon = 0.0
 pickup_lat_global = 0.0
 pickup_lon_global = 0.0
-driver_eta        = 0
-driver_distance   = 0.0
+driver_eta = 0
+driver_distance = 0.0
 driver_pool_index = 0   # advances on each /reset-driver so name changes
 
 
@@ -262,15 +265,16 @@ def start_driver(pickup_lat: float, pickup_lon: float):
     profile = DRIVER_POOL[driver_pool_index % len(DRIVER_POOL)]
 
     return {
-    "driverLat": driver_lat,
-    "driverLon": driver_lon,
-    "distance": driver_distance,
-    "eta": driver_eta,
-    "driverName": profile["name"],
-    "vehicleNumber": profile["vehicle"],
-    "driverRating": profile["rating"],
-    "driverPhoto": profile["photo"]
-}
+        "driverLat": driver_lat,
+        "driverLon": driver_lon,
+        "distance": driver_distance,
+        "eta": driver_eta,
+        "driverName": profile["name"],
+        "vehicleNumber": profile["vehicle"],
+        "vehicleModel": profile["vehicleModel"],
+        "driverRating": profile["rating"],
+        "driverPhoto": profile["photo"]
+    }
 
 
 @app.get("/driver-location")
@@ -307,8 +311,8 @@ def driver_location():
 @app.get("/reset-driver")
 def reset_driver():
     global driver_step, driver_distance, driver_pool_index
-    driver_step      = 0
-    driver_distance  = 0
+    driver_step = 0
+    driver_distance = 0
     driver_pool_index += 1   # advance pool so next /start-driver returns new name
     return {"message": "Driver reset", "nextDriverIndex": driver_pool_index}
 
@@ -390,9 +394,11 @@ def save_sos_info(
 # Favourites
 # ----------------------------
 favourites_store = [
-    {"label": "Home", "emoji": "🏠", "color": "#E3F2FD", "name": "", "lat": 0, "lon": 0},
+    {"label": "Home", "emoji": "🏠", "color": "#E3F2FD",
+        "name": "", "lat": 0, "lon": 0},
     {"label": "Work", "emoji": "💼", "color": "#FFF3E0", "name": "", "lat": 0, "lon": 0}
 ]
+
 
 @app.get("/favourites")
 def get_favourites():
@@ -404,9 +410,11 @@ def get_favourites():
 # ----------------------------
 ride_history_store = []
 
+
 @app.get("/ride-history")
 def get_ride_history():
     return ride_history_store
+
 
 @app.post("/ride-history")
 def add_ride_history(
@@ -424,10 +432,10 @@ def add_ride_history(
 # Ride In Progress
 # ----------------------------
 ride_route_coords = []
-ride_step         = 0
-ride_total_steps  = 0
-ride_dest_lat     = 0.0
-ride_dest_lon     = 0.0
+ride_step = 0
+ride_total_steps = 0
+ride_dest_lat = 0.0
+ride_dest_lon = 0.0
 ride_pickup_lat_g = 0.0
 ride_pickup_lon_g = 0.0
 
@@ -443,9 +451,9 @@ def start_ride(
 
     ride_pickup_lat_g = pickup_lat
     ride_pickup_lon_g = pickup_lon
-    ride_dest_lat     = destination_lat
-    ride_dest_lon     = destination_lon
-    ride_step         = 0
+    ride_dest_lat = destination_lat
+    ride_dest_lon = destination_lon
+    ride_step = 0
 
     try:
         url = (
@@ -495,8 +503,8 @@ def ride_location():
         }
 
     ride_step = min(ride_step + 2, len(ride_route_coords) - 1)
-    veh_lat   = ride_route_coords[ride_step][0]
-    veh_lon   = ride_route_coords[ride_step][1]
+    veh_lat = ride_route_coords[ride_step][0]
+    veh_lon = ride_route_coords[ride_step][1]
     completed = (ride_step >= len(ride_route_coords) - 1)
 
     R = 6371

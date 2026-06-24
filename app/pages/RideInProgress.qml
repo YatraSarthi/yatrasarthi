@@ -12,9 +12,20 @@ Page {
     property real remainingKm:  0
     property real currentSpeed: 0
 
-    property string driverName:    "Agnik Haldar"
-    property string vehicleNumber: "WB03AD7394"
-    property real   driverRating:  4.8
+    property string driverName:
+    appState && appState.driverName
+    ? appState.driverName
+    : ""
+
+    property string vehicleNumber:
+    appState && appState.driverVehicle
+    ? appState.driverVehicle
+    : ""
+
+    property real driverRating:
+    appState && appState.driverRating
+    ? appState.driverRating
+    : 0.0
 
     property string destinationName:    appState.destinationLocation
     property string destinationAddress: appState.destinationFullAddress
@@ -492,9 +503,9 @@ Page {
                                 color:          "#1A1A1A"
                             }
                             Label {
-                                text:           vehicleNumber
+                                text: appState.driverVehicleModel + " • " + vehicleNumber
                                 font.pixelSize: 13
-                                color:          "#555555"
+                                color: "#555555"
                             }
                             Row {
                                 spacing: 6
