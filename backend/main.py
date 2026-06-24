@@ -244,7 +244,7 @@ driver_pool_index = 0   # advances on each /reset-driver so name changes
 
 
 @app.get("/start-driver")
-def start_driver(pickup_lat: float, pickup_lon: float):
+def start_driver(pickup_lat: float, pickup_lon: float, selected_vehicle: str = "cab"):
     global driver_step, driver_lat, driver_lon
     global pickup_lat_global, pickup_lon_global
     global driver_eta, driver_distance, driver_pool_index
@@ -253,7 +253,6 @@ def start_driver(pickup_lat: float, pickup_lon: float):
     pickup_lat_global = pickup_lat
     pickup_lon_global = pickup_lon
 
-    # Ensure minimum 0.008 offset so retry driver is visibly different on map
     offset_lat = random.uniform(0.008, 0.018)
     offset_lon = random.uniform(0.008, 0.018)
     driver_lat = pickup_lat + random.choice([-1, 1]) * offset_lat
@@ -261,19 +260,60 @@ def start_driver(pickup_lat: float, pickup_lon: float):
     driver_eta = random.randint(3, 9)
     driver_distance = round(math.sqrt(offset_lat**2 + offset_lon**2) * 111, 1)
 
-    # Pick driver profile from pool
-    profile = DRIVER_POOL[driver_pool_index % len(DRIVER_POOL)]
+    # Pick driver profile from pool (copy so we don't mutate the original)
+    profile = dict(DRIVER_POOL[driver_pool_index % len(DRIVER_POOL)])
+
+    vehicle_type = selected_vehicle.lower()
+
+    VEHICLE_MODELS = {
+        "bike": [
+            "Honda SP125",
+            "TVS Raider",
+            "Bajaj Pulsar 150",
+            "Hero Splendor Plus",
+            "TVS Apache RTR 160",
+            "Honda Shine"
+        ],
+        "auto": [
+            "Bajaj RE Auto",
+            "Piaggio Ape City",
+            "Mahindra Alfa Auto",
+            "Atul Gem Auto",
+            "Mahindra Treo EV",
+            "Bajaj Compact RE"
+        ],
+        "cab": [
+            "Maruti Suzuki Dzire",
+            "Hyundai Aura",
+            "Honda Amaze",
+            "Toyota Etios",
+            "Maruti WagonR",
+            "Hyundai Grand i10"
+        ],
+        "carpool": [
+            "Toyota Innova Crysta",
+            "Maruti Suzuki Ertiga",
+            "Toyota Rumion",
+            "Kia Carens",
+            "Hyundai Creta",
+            "Mahindra XUV700"
+        ],
+    }
+
+    # Each driver index gets the matching model from their vehicle category
+    models = VEHICLE_MODELS.get(vehicle_type, VEHICLE_MODELS["cab"])
+    profile["vehicleModel"] = models[driver_pool_index % len(models)]
 
     return {
-        "driverLat": driver_lat,
-        "driverLon": driver_lon,
-        "distance": driver_distance,
-        "eta": driver_eta,
-        "driverName": profile["name"],
+        "driverLat":    driver_lat,
+        "driverLon":    driver_lon,
+        "distance":     driver_distance,
+        "eta":          driver_eta,
+        "driverName":   profile["name"],
         "vehicleNumber": profile["vehicle"],
         "vehicleModel": profile["vehicleModel"],
         "driverRating": profile["rating"],
-        "driverPhoto": profile["photo"]
+        "driverPhoto":  profile["photo"]
     }
 
 

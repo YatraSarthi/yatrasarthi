@@ -95,7 +95,8 @@ if (appState) {
             "GET",
             "http://127.0.0.1:8000/start-driver"
             + "?pickup_lat=" + appState.pickupLat
-            + "&pickup_lon=" + appState.pickupLon,
+            + "&pickup_lon=" + appState.pickupLon
+            + "&selected_vehicle=" + appState.selectedVehicle.toLowerCase(),  // ← ADD THIS
             true
         )
         xhr.send()
