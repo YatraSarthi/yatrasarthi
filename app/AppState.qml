@@ -5,15 +5,19 @@ QtObject {
     // ── Location ──────────────────────────────────────────────────────────
     property string pickupLocation: ""
     property string pickupFullAddress: ""
+
     property string destinationLocation: ""
     property string destinationFullAddress: ""
+
     property real pickupLat: 0
     property real pickupLon: 0
+
     property real destinationLat: 0
     property real destinationLon: 0
+
     property string activeSelection: ""
 
-    // ── Selected ride ─────────────────────────────────────────────────────
+    // ── Selected Ride ─────────────────────────────────────────────────────
     property string selectedVehicle: ""
     property int selectedFare: 0
     property int selectedEta: 0
@@ -32,20 +36,24 @@ QtObject {
     // ── Chat ──────────────────────────────────────────────────────────────
     property var chatMessages: []
 
-    // ── User profile (set on sign-in / sign-up) ───────────────────────────
+    // ── User Profile ──────────────────────────────────────────────────────
     property string userName: ""
     property string userPhone: ""
     property string userEmail: ""
     property bool isLoggedIn: false
 
-    // ── Driver retry state ────────────────────────────────────────────────
-    // Track how many times user has asked for a different driver this trip
+    // ── Current Driver ────────────────────────────────────────────────────
+    property string driverName: ""
+    property string driverVehicle: ""
+    property real driverRating: 0.0
+    property string driverPhoto: ""
+
+    // ── Driver Retry State ────────────────────────────────────────────────
     property int driverRetryCount: 0
-    // Name of the last driver shown — so BookingPage can skip them
     property string lastDriverName: ""
 
     function resetDriverSearch() {
         driverRetryCount = 0
-        lastDriverName   = ""
+        lastDriverName = ""
     }
 }

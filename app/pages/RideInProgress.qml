@@ -463,21 +463,22 @@ Page {
                             anchors.verticalCenter: parent.verticalCenter
 
                             Image {
-                                anchors.fill: parent
-                                source:       Qt.resolvedUrl("../../assets/image/agnik.jpeg")
-                                fillMode:     Image.PreserveAspectCrop
+    anchors.fill: parent
+    source: "../../assets/drivers/" + appState.driverPhoto
+    fillMode: Image.PreserveAspectCrop
 
-                                Rectangle {
-                                    anchors.fill: parent
-                                    color:        "#1976D2"
-                                    visible:      parent.status !== Image.Ready
-                                    Label {
-                                        anchors.centerIn: parent
-                                        text:           "👤"
-                                        font.pixelSize: 26
-                                    }
-                                }
-                            }
+    Rectangle {
+        anchors.fill: parent
+        color: "#1976D2"
+        visible: parent.status !== Image.Ready
+
+        Label {
+            anchors.centerIn: parent
+            text: "👤"
+            font.pixelSize: 26
+        }
+    }
+}
                         }
 
                         Column {

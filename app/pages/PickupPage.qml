@@ -63,12 +63,21 @@ Page {
                 driverDistance = data.distance || 0
                 eta            = data.eta      || 0
                 sarthiName     = data.driverName    || "Unknown Driver"
-                vehicleNumber  = data.vehicleNumber  || "—"
-                sarthiRating   = data.driverRating   || 0.0
-                dataLoaded     = true
+vehicleNumber  = data.vehicleNumber || "—"
+sarthiRating   = data.driverRating  || 0.0
 
-                // Store driver name so BookingPage can log who was skipped
-                if (appState) appState.lastDriverName = sarthiName
+dataLoaded = true
+
+// Save current driver in AppState
+if (appState) {
+
+    appState.driverName    = sarthiName
+    appState.driverVehicle = vehicleNumber
+    appState.driverRating  = sarthiRating
+    appState.driverPhoto   = data.driverPhoto || ""
+
+    appState.lastDriverName = sarthiName
+}
 
                 routeMap.runJavaScript(
                     "setPickupRide("
@@ -463,9 +472,13 @@ Page {
                         }
 
                         Image {
-                            source: "../../assets/image/agnik.jpeg"
-                            width: 70; height: 70
-                            fillMode: Image.PreserveAspectCrop; clip: true
+                            source: "../../assets/drivers/" + appState.driverPhoto
+
+                             width: 70
+                            height: 70
+
+                            fillMode: Image.PreserveAspectCrop
+                             clip: true
                         }
 
                         Column {

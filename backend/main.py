@@ -30,12 +30,42 @@ SOS_INFO_FILE = "sos_info.json"
 
 # Pool of driver names/vehicles — rotated on retry so UI name changes too
 DRIVER_POOL = [
-    {"name": "Ravi Kumar",    "vehicle": "WB03AD7394", "rating": 4.8},
-    {"name": "Suresh Yadav",  "vehicle": "KA01AB1234", "rating": 4.7},
-    {"name": "Anil Sharma",   "vehicle": "KA02CD5678", "rating": 4.9},
-    {"name": "Manoj Singh",   "vehicle": "KA03EF9012", "rating": 4.6},
-    {"name": "Deepak Nair",   "vehicle": "KA04GH3456", "rating": 4.5},
-    {"name": "Prakash Reddy", "vehicle": "KA05IJ7890", "rating": 4.9},
+    {
+        "name": "Johney Reji",
+        "vehicle": "WB03AD7394",
+        "rating": 4.4,
+        "photo": "johney.jpg"
+    },
+    {
+        "name": "Lokesh Royal",
+        "vehicle": "KA01AB1234",
+        "rating": 4.7,
+        "photo": "lokesh.jpg"
+    },
+    {
+        "name": "Satyakam Tripathy",
+        "vehicle": "KA02CD5678",
+        "rating": 4.7,
+        "photo": "satyakam.jpg"
+    },
+    {
+        "name": "Devaj",
+        "vehicle": "KA03EF9012",
+        "rating": 4.6,
+        "photo": "devaj.jpg"
+    },
+    {
+        "name": "Ibrahim",
+        "vehicle": "KA04GH3456",
+        "rating": 4.5,
+        "photo": "ibrahim.jpg"
+    },
+    {
+        "name": "Manaswitha",
+        "vehicle": "KA05IJ7890",
+        "rating": 4.9,
+        "photo": "manaswitha.jpg"
+    }
 ]
 
 # ----------------------------
@@ -221,14 +251,15 @@ def start_driver(pickup_lat: float, pickup_lon: float):
     profile = DRIVER_POOL[driver_pool_index % len(DRIVER_POOL)]
 
     return {
-        "driverLat":     driver_lat,
-        "driverLon":     driver_lon,
-        "distance":      driver_distance,
-        "eta":           driver_eta,
-        "driverName":    profile["name"],
-        "vehicleNumber": profile["vehicle"],
-        "driverRating":  profile["rating"]
-    }
+    "driverLat": driver_lat,
+    "driverLon": driver_lon,
+    "distance": driver_distance,
+    "eta": driver_eta,
+    "driverName": profile["name"],
+    "vehicleNumber": profile["vehicle"],
+    "driverRating": profile["rating"],
+    "driverPhoto": profile["photo"]
+}
 
 
 @app.get("/driver-location")
