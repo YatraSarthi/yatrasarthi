@@ -22,12 +22,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve all HTML/JS files from app/web over http
 app.mount("/web", StaticFiles(directory="app/web"), name="web")
 
-search_cache = {}
-RECENT_FILE = "recent_places.json"
+search_cache  = {}
+RECENT_FILE   = "recent_places.json"
 SOS_INFO_FILE = "sos_info.json"
+
+# Pool of driver names/vehicles — rotated on retry so UI name changes too
+DRIVER_POOL = [
+    {"name": "Ravi Kumar",    "vehicle": "WB03AD7394", "rating": 4.8},
+    {"name": "Suresh Yadav",  "vehicle": "KA01AB1234", "rating": 4.7},
+    {"name": "Anil Sharma",   "vehicle": "KA02CD5678", "rating": 4.9},
+    {"name": "Manoj Singh",   "vehicle": "KA03EF9012", "rating": 4.6},
+    {"name": "Deepak Nair",   "vehicle": "KA04GH3456", "rating": 4.5},
+    {"name": "Prakash Reddy", "vehicle": "KA05IJ7890", "rating": 4.9},
+]
 
 # ----------------------------
 # Home Endpoint
@@ -49,7 +58,6 @@ def reverse_geocode(lat: float, lon: float):
     headers = {"User-Agent": "YatraSarthi/1.0 (contact@yatrasarthi.com)"}
     try:
         response = requests.get(url, headers=headers, timeout=10)
-        print("Reverse Status:", response.status_code)
         if response.status_code == 200:
             data = response.json()
             display_name = data.get("display_name", "")
@@ -89,7 +97,6 @@ def search_location(query: str):
                 })
             search_cache[query] = places
             return places
-        print("Search Status:", response.status_code)
     except Exception as e:
         print("Search Error:", e)
     return []
@@ -182,38 +189,45 @@ def route(
 # ----------------------------
 # Driver Simulation
 # ----------------------------
-driver_step = 0
-driver_lat = 0
-driver_lon = 0
-pickup_lat_global = 0
-pickup_lon_global = 0
-driver_eta = 0
-driver_distance = 0
+driver_step       = 0
+driver_lat        = 0.0
+driver_lon        = 0.0
+pickup_lat_global = 0.0
+pickup_lon_global = 0.0
+driver_eta        = 0
+driver_distance   = 0.0
+driver_pool_index = 0   # advances on each /reset-driver so name changes
 
 
 @app.get("/start-driver")
 def start_driver(pickup_lat: float, pickup_lon: float):
     global driver_step, driver_lat, driver_lon
     global pickup_lat_global, pickup_lon_global
-    global driver_eta, driver_distance
+    global driver_eta, driver_distance, driver_pool_index
 
     driver_step = 0
     pickup_lat_global = pickup_lat
     pickup_lon_global = pickup_lon
 
-    offset_lat = random.uniform(0.003, 0.015)
-    offset_lon = random.uniform(0.003, 0.015)
+    # Ensure minimum 0.008 offset so retry driver is visibly different on map
+    offset_lat = random.uniform(0.008, 0.018)
+    offset_lon = random.uniform(0.008, 0.018)
     driver_lat = pickup_lat + random.choice([-1, 1]) * offset_lat
     driver_lon = pickup_lon + random.choice([-1, 1]) * offset_lon
-    driver_eta = random.randint(3, 8)
+    driver_eta = random.randint(3, 9)
     driver_distance = round(math.sqrt(offset_lat**2 + offset_lon**2) * 111, 1)
 
+    # Pick driver profile from pool
+    profile = DRIVER_POOL[driver_pool_index % len(DRIVER_POOL)]
+
     return {
-        "driverLat": driver_lat, "driverLon": driver_lon,
-        "distance": driver_distance, "eta": driver_eta,
-        "driverName": "Agnik Haldar",
-        "vehicleNumber": "WB03AD7394",
-        "driverRating": 4.8
+        "driverLat":     driver_lat,
+        "driverLon":     driver_lon,
+        "distance":      driver_distance,
+        "eta":           driver_eta,
+        "driverName":    profile["name"],
+        "vehicleNumber": profile["vehicle"],
+        "driverRating":  profile["rating"]
     }
 
 
@@ -242,18 +256,19 @@ def driver_location():
 
     return {
         "driverLat": driver_lat, "driverLon": driver_lon,
-        "distance": driver_distance,
-        "eta": max(1, round(driver_distance * 2)),
-        "arrived": arrived
+        "distance":  driver_distance,
+        "eta":       max(1, round(driver_distance * 2)),
+        "arrived":   arrived
     }
 
 
 @app.get("/reset-driver")
 def reset_driver():
-    global driver_step, driver_distance
-    driver_step = 0
-    driver_distance = 0
-    return {"message": "Driver reset"}
+    global driver_step, driver_distance, driver_pool_index
+    driver_step      = 0
+    driver_distance  = 0
+    driver_pool_index += 1   # advance pool so next /start-driver returns new name
+    return {"message": "Driver reset", "nextDriverIndex": driver_pool_index}
 
 
 # ----------------------------
@@ -287,18 +302,15 @@ def sos():
 
 
 # ----------------------------
-# SOS Info (emergency contacts)
+# SOS Info
 # ----------------------------
 @app.get("/sos/info")
 def get_sos_info():
     if not os.path.exists(SOS_INFO_FILE):
         return {
-            "contact1Name": "",
-            "contact1Phone": "",
-            "contact2Name": "",
-            "contact2Phone": "",
-            "bloodGroup": "",
-            "medicalNotes": ""
+            "contact1Name": "", "contact1Phone": "",
+            "contact2Name": "", "contact2Phone": "",
+            "bloodGroup": "", "medicalNotes": ""
         }
     try:
         with open(SOS_INFO_FILE, "r") as f:
@@ -306,32 +318,23 @@ def get_sos_info():
     except Exception as e:
         print("SOS Info Read Error:", e)
         return {
-            "contact1Name": "",
-            "contact1Phone": "",
-            "contact2Name": "",
-            "contact2Phone": "",
-            "bloodGroup": "",
-            "medicalNotes": ""
+            "contact1Name": "", "contact1Phone": "",
+            "contact2Name": "", "contact2Phone": "",
+            "bloodGroup": "", "medicalNotes": ""
         }
 
 
 @app.post("/sos/info")
 def save_sos_info(
-    contact1Name: str = "",
-    contact1Phone: str = "",
-    contact2Name: str = "",
-    contact2Phone: str = "",
-    bloodGroup: str = "",
-    medicalNotes: str = ""
+    contact1Name: str = "", contact1Phone: str = "",
+    contact2Name: str = "", contact2Phone: str = "",
+    bloodGroup: str = "", medicalNotes: str = ""
 ):
     try:
         data = {
-            "contact1Name": contact1Name,
-            "contact1Phone": contact1Phone,
-            "contact2Name": contact2Name,
-            "contact2Phone": contact2Phone,
-            "bloodGroup": bloodGroup,
-            "medicalNotes": medicalNotes
+            "contact1Name": contact1Name, "contact1Phone": contact1Phone,
+            "contact2Name": contact2Name, "contact2Phone": contact2Phone,
+            "bloodGroup": bloodGroup, "medicalNotes": medicalNotes
         }
         with open(SOS_INFO_FILE, "w") as f:
             json.dump(data, f, indent=2)
@@ -469,79 +472,44 @@ def ride_location():
         "completed": completed
     }
 
+
 # ----------------------------
 # Chat
 # ----------------------------
-
 @app.get("/send-message")
-def send_message(
-    sender: str,
-    receiver: str,
-    message: str
-):
-
+def send_message(sender: str, receiver: str, message: str):
     db = SessionLocal()
-
     try:
-
-        msg = Message(
-            sender=sender,
-            receiver=receiver,
-            message=message
-        )
-
+        msg = Message(sender=sender, receiver=receiver, message=message)
         db.add(msg)
         db.commit()
-
-        return {
-            "status": "sent"
-        }
-
+        return {"status": "sent"}
     finally:
         db.close()
 
 
 @app.get("/get-messages")
 def get_messages(user: str):
-
     db = SessionLocal()
-
     try:
-
         messages = (
             db.query(Message)
-            .filter(
-                (Message.sender == user)
-                |
-                (Message.receiver == user)
-            )
+            .filter((Message.sender == user) | (Message.receiver == user))
             .order_by(Message.id)
             .all()
         )
-
         result = []
-
         for msg in messages:
-
             result.append({
-
-                "sender":
-                    msg.sender,
-
-                "receiver":
-                    msg.receiver,
-
-                "message":
-                    msg.message,
-
-                "time":
-                    str(msg.created_at)
+                "sender":   msg.sender,
+                "receiver": msg.receiver,
+                "message":  msg.message,
+                "time":     str(msg.created_at)
             })
-
         return result
-
     finally:
         db.close()
+
 
 print("CHAT ENDPOINTS LOADED")
 
