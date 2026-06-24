@@ -52,6 +52,10 @@ QtObject {
     property int driverRetryCount: 0
     property string lastDriverName: ""
 
+    // ── Theme ─────────────────────────────────────────────────────────────
+    property bool darkMode: false
+
+    // ── Helpers ───────────────────────────────────────────────────────────
     function resetDriverSearch() {
         driverRetryCount = 0
         lastDriverName = ""
