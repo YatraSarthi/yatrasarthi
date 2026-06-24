@@ -248,7 +248,7 @@ Page {
                 Rectangle {
                     x: 16; width: parent.width - 32
                     radius: 14; color: "white"; border.color: "#EEEEEE"; clip: true
-                    height: profileSectionCol.height
+                    height: profileSectionCol.implicitHeight
 
                     Column {
                         id: profileSectionCol
@@ -264,7 +264,8 @@ Page {
 
                                 Row {
                                     anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                    Rectangle {
+                                        width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
                                         Image { source: Qt.resolvedUrl("../../assets/icons/driver.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
                                     }
                                     Column {
@@ -387,7 +388,6 @@ Page {
                             }
                         }
 
-                        // Divider
                         Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
 
                         // ── Payment Methods row ───────────────────────
@@ -399,7 +399,8 @@ Page {
                                 color: payMouse.containsMouse ? "#F8F8F8" : "transparent"
                                 Row {
                                     anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                    Rectangle {
+                                        width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
                                         Image { source: Qt.resolvedUrl("../../assets/icons/star.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
                                     }
                                     Column {
@@ -455,7 +456,8 @@ Page {
                                             width: parent.width; height: 52; radius: 10; color: "#F8F9FA"; border.color: "#EEEEEE"
                                             Row {
                                                 anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14; spacing: 10
-                                                Rectangle { width: 32; height: 32; radius: 8; color: "#E3F2FD"; anchors.verticalCenter: parent.verticalCenter
+                                                Rectangle {
+                                                    width: 32; height: 32; radius: 8; color: "#E3F2FD"; anchors.verticalCenter: parent.verticalCenter
                                                     Text { anchors.centerIn: parent; text: "Rs"; font.pixelSize: 12; font.bold: true; color: "#1976D2" }
                                                 }
                                                 Column {
@@ -518,7 +520,8 @@ Page {
                                         width: parent.width; height: 64; radius: 12; color: "#F1F8E9"; border.color: "#C5E1A5"
                                         Row {
                                             anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 12
-                                            Rectangle { width: 36; height: 36; radius: 18; color: "#43A047"; anchors.verticalCenter: parent.verticalCenter
+                                            Rectangle {
+                                                width: 36; height: 36; radius: 18; color: "#43A047"; anchors.verticalCenter: parent.verticalCenter
                                                 Text { anchors.centerIn: parent; text: "Rs"; font.pixelSize: 13; font.bold: true; color: "white" }
                                             }
                                             Column {
@@ -551,7 +554,8 @@ Page {
                                 color: emgMouse.containsMouse ? "#F8F8F8" : "transparent"
                                 Row {
                                     anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                    Rectangle {
+                                        width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
                                         Image { source: Qt.resolvedUrl("../../assets/icons/sos.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
                                     }
                                     Column {
@@ -604,7 +608,10 @@ Page {
                                 TextField { id: accBG; width: parent.width - 32; placeholderText: "e.g. O+"; readOnly: !emergencyEditMode; onTextChanged: bloodGroup = text }
 
                                 Label { text: "Medical Notes"; font.pixelSize: 12; color: "#888" }
-                                TextArea { id: accMN; width: parent.width - 32; placeholderText: "Allergies, conditions, medications..."; readOnly: !emergencyEditMode; wrapMode: TextArea.Wrap; onTextChanged: medicalNotes = text }
+                                TextArea {
+                                    id: accMN; width: parent.width - 32; placeholderText: "Allergies, conditions, medications..."
+                                    readOnly: !emergencyEditMode; wrapMode: TextArea.Wrap; onTextChanged: medicalNotes = text
+                                }
 
                                 Rectangle {
                                     visible: emergencyEditMode
@@ -612,7 +619,11 @@ Page {
                                     Text { anchors.centerIn: parent; text: "Save Emergency Info"; font.pixelSize: 14; font.bold: true; color: "white" }
                                     MouseArea { anchors.fill: parent; onClicked: saveEmergencyInfo() }
                                 }
-                                Label { visible: emergencySaveMessage !== ""; text: emergencySaveMessage; font.pixelSize: 12; wrapMode: Text.WordWrap; width: parent.width - 32; color: emergencySaveMessage === "Saved successfully" ? "#388E3C" : "#E53935" }
+                                Label {
+                                    visible: emergencySaveMessage !== ""; text: emergencySaveMessage
+                                    font.pixelSize: 12; wrapMode: Text.WordWrap; width: parent.width - 32
+                                    color: emergencySaveMessage === "Saved successfully" ? "#388E3C" : "#E53935"
+                                }
                             }
                         }
 
@@ -627,7 +638,8 @@ Page {
                                 color: rideMouse.containsMouse ? "#F8F8F8" : "transparent"
                                 Row {
                                     anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                    Rectangle {
+                                        width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
                                         Image { source: Qt.resolvedUrl("../../assets/icons/rider.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
                                     }
                                     Column {
@@ -658,7 +670,7 @@ Page {
                                             anchors.fill: parent; anchors.margins: 12; spacing: 10
                                             Column {
                                                 anchors.verticalCenter: parent.verticalCenter; spacing: 3; width: parent.width - 80
-                                                Label { text: (rd ? rd.from : "") + "  to  " + (rd ? rd.to : ""); font.pixelSize: 13; font.bold: true; color: "#111"; elide: Text.ElideRight; width: parent.width }
+                                                Label { text: (rd ? rd.from : "") + "  →  " + (rd ? rd.to : ""); font.pixelSize: 13; font.bold: true; color: "#111"; elide: Text.ElideRight; width: parent.width }
                                                 Label { text: rd ? rd.date : ""; font.pixelSize: 11; color: "#999" }
                                             }
                                             Column {
@@ -693,7 +705,8 @@ Page {
                                 color: rwdMouse.containsMouse ? "#F8F8F8" : "transparent"
                                 Row {
                                     anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                    Rectangle {
+                                        width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
                                         Image { source: Qt.resolvedUrl("../../assets/icons/star.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
                                     }
                                     Column {
@@ -768,14 +781,15 @@ Page {
                 // ════════════════════════════════════════════════════════
                 // SECTION LABEL: PREFERENCES
                 // ════════════════════════════════════════════════════════
-                Item { x: 16; width: parent.width - 32; height: 24
+                Item {
+                    x: 16; width: parent.width - 32; height: 24
                     Label { text: "PREFERENCES"; font.pixelSize: 11; font.bold: true; color: "#AAAAAA"; leftPadding: 4; anchors.bottom: parent.bottom }
                 }
 
                 Rectangle {
                     x: 16; width: parent.width - 32
                     radius: 14; color: "white"; border.color: "#EEEEEE"; clip: true
-                    height: prefCol.height
+                    height: prefCol.implicitHeight
 
                     Column {
                         id: prefCol; width: parent.width; spacing: 0
@@ -787,7 +801,8 @@ Page {
                                 width: parent.width; height: 60; color: notifMouse.containsMouse ? "#F8F8F8" : "transparent"
                                 Row {
                                     anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                    Rectangle {
+                                        width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
                                         Image { source: Qt.resolvedUrl("../../assets/icons/destination.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
                                     }
                                     Column {
@@ -806,13 +821,12 @@ Page {
 
                                 Rectangle { width: parent.width - 32; height: 1; color: "#F0F0F0" }
 
-                                // Notification toggles
                                 Repeater {
                                     model: [
-                                        { lbl: "Ride Alerts",     sub: "Updates on your trips",       tog: 0 },
-                                        { lbl: "Offers & Promos", sub: "Deals and discount codes",    tog: 1 },
-                                        { lbl: "SMS Alerts",      sub: "Text message notifications",  tog: 2 },
-                                        { lbl: "Email Updates",   sub: "Weekly digest & receipts",    tog: 3 }
+                                        { lbl: "Ride Alerts",     sub: "Updates on your trips",      tog: 0 },
+                                        { lbl: "Offers & Promos", sub: "Deals and discount codes",   tog: 1 },
+                                        { lbl: "SMS Alerts",      sub: "Text message notifications", tog: 2 },
+                                        { lbl: "Email Updates",   sub: "Weekly digest & receipts",   tog: 3 }
                                     ]
                                     delegate: Rectangle {
                                         width: parent.width - 32; height: 52; color: "transparent"
@@ -838,15 +852,93 @@ Page {
                                                     anchors.fill: parent
                                                     onClicked: {
                                                         if (!ni) return
-                                                        if (ni.tog === 0) notifRideAlerts = !notifRideAlerts
-                                                        else if (ni.tog === 1) notifOffers = !notifOffers
-                                                        else if (ni.tog === 2) notifSMS = !notifSMS
-                                                        else notifEmail = !notifEmail
+                                                        if (ni.tog === 0)      notifRideAlerts = !notifRideAlerts
+                                                        else if (ni.tog === 1) notifOffers     = !notifOffers
+                                                        else if (ni.tog === 2) notifSMS        = !notifSMS
+                                                        else                   notifEmail      = !notifEmail
                                                     }
                                                 }
                                             }
                                         }
                                         Rectangle { visible: index < 3; height: 1; color: "#F5F5F5"; anchors.bottom: parent.bottom; width: parent.width }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
+
+                        // ── Safety ────────────────────────────────────
+                        Column {
+                            width: parent.width
+                            Rectangle {
+                                width: parent.width; height: 60; color: safetyMouse.containsMouse ? "#F8F8F8" : "transparent"
+                                Row {
+                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle {
+                                        width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Image { source: Qt.resolvedUrl("../../assets/icons/sos.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
+                                    }
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                        Label { text: "Safety Settings"; font.pixelSize: 14; color: "#111" }
+                                        Label { text: "Trip sharing, incognito mode"; font.pixelSize: 11; color: "#AAA" }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter; rotation: safetyExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
+                                }
+                                MouseArea { id: safetyMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { var w = safetyExpanded; collapseAll(); safetyExpanded = !w } }
+                            }
+
+                            Column {
+                                visible: safetyExpanded; width: parent.width
+                                topPadding: 4; bottomPadding: 8; leftPadding: 16; rightPadding: 16; spacing: 0
+
+                                Rectangle { width: parent.width - 32; height: 1; color: "#F0F0F0" }
+
+                                // Share Trip toggle
+                                Rectangle {
+                                    width: parent.width - 32; height: 52; color: "transparent"
+                                    Row {
+                                        anchors.fill: parent; spacing: 0
+                                        Column {
+                                            anchors.verticalCenter: parent.verticalCenter; width: parent.width - 52; spacing: 2
+                                            Label { text: "Share Trip"; font.pixelSize: 14; color: "#111" }
+                                            Label { text: "Auto-share live location with contacts"; font.pixelSize: 11; color: "#AAA" }
+                                        }
+                                        Rectangle {
+                                            width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
+                                            color: safetyShareTrip ? "#1976D2" : "#CCCCCC"
+                                            Behavior on color { ColorAnimation { duration: 150 } }
+                                            Rectangle {
+                                                width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
+                                                x: safetyShareTrip ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
+                                            }
+                                            MouseArea { anchors.fill: parent; onClicked: safetyShareTrip = !safetyShareTrip }
+                                        }
+                                    }
+                                    Rectangle { height: 1; color: "#F5F5F5"; anchors.bottom: parent.bottom; width: parent.width }
+                                }
+
+                                // Incognito toggle
+                                Rectangle {
+                                    width: parent.width - 32; height: 52; color: "transparent"
+                                    Row {
+                                        anchors.fill: parent; spacing: 0
+                                        Column {
+                                            anchors.verticalCenter: parent.verticalCenter; width: parent.width - 52; spacing: 2
+                                            Label { text: "Incognito Mode"; font.pixelSize: 14; color: "#111" }
+                                            Label { text: "Hide your profile from drivers"; font.pixelSize: 11; color: "#AAA" }
+                                        }
+                                        Rectangle {
+                                            width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
+                                            color: safetyIncognito ? "#1976D2" : "#CCCCCC"
+                                            Behavior on color { ColorAnimation { duration: 150 } }
+                                            Rectangle {
+                                                width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
+                                                x: safetyIncognito ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
+                                            }
+                                            MouseArea { anchors.fill: parent; onClicked: safetyIncognito = !safetyIncognito }
+                                        }
                                     }
                                 }
                             }
@@ -861,7 +953,8 @@ Page {
                                 width: parent.width; height: 60; color: langMouse.containsMouse ? "#F8F8F8" : "transparent"
                                 Row {
                                     anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                    Rectangle {
+                                        width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
                                         Image { source: Qt.resolvedUrl("../../assets/icons/map.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
                                     }
                                     Column {
@@ -907,7 +1000,8 @@ Page {
                             width: parent.width; height: 60; color: "transparent"
                             Row {
                                 anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                Rectangle {
+                                    width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
                                     Image { source: Qt.resolvedUrl("../../assets/icons/star.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
                                 }
                                 Column {
@@ -917,7 +1011,8 @@ Page {
                                 }
                                 Rectangle {
                                     width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
-                                    color: darkModeEnabled ? "#1976D2" : "#CCCCCC"; Behavior on color { ColorAnimation { duration: 150 } }
+                                    color: darkModeEnabled ? "#1976D2" : "#CCCCCC"
+                                    Behavior on color { ColorAnimation { duration: 150 } }
                                     Rectangle {
                                         width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
                                         x: darkModeEnabled ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
@@ -932,14 +1027,15 @@ Page {
                 // ════════════════════════════════════════════════════════
                 // SECTION LABEL: SUPPORT
                 // ════════════════════════════════════════════════════════
-                Item { x: 16; width: parent.width - 32; height: 24
+                Item {
+                    x: 16; width: parent.width - 32; height: 24
                     Label { text: "SUPPORT"; font.pixelSize: 11; font.bold: true; color: "#AAAAAA"; leftPadding: 4; anchors.bottom: parent.bottom }
                 }
 
                 Rectangle {
                     x: 16; width: parent.width - 32
                     radius: 14; color: "white"; border.color: "#EEEEEE"; clip: true
-                    height: suppCol.height
+                    height: suppCol.implicitHeight
 
                     Column {
                         id: suppCol; width: parent.width; spacing: 0
@@ -951,5 +1047,125 @@ Page {
                                 width: parent.width; height: 60; color: helpMouse.containsMouse ? "#F8F8F8" : "transparent"
                                 Row {
                                     anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
-                                        Image { source: Qt.resolvedUrl("..
+                                    Rectangle {
+                                        width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Text { anchors.centerIn: parent; text: "?"; font.pixelSize: 18; font.bold: true; color: "#1976D2" }
+                                    }
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                        Label { text: "Help & Support"; font.pixelSize: 14; color: "#111" }
+                                        Label { text: "FAQs, chat with support"; font.pixelSize: 11; color: "#AAA" }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter; rotation: helpExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
+                                }
+                                MouseArea { id: helpMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { var w = helpExpanded; collapseAll(); helpExpanded = !w } }
+                            }
+
+                            Column {
+                                visible: helpExpanded; width: parent.width
+                                topPadding: 4; bottomPadding: 12; leftPadding: 16; rightPadding: 16; spacing: 8
+
+                                Rectangle { width: parent.width - 32; height: 1; color: "#F0F0F0" }
+
+                                Repeater {
+                                    model: [
+                                        { title: "Report an Issue",      icon: "!" },
+                                        { title: "Lost & Found",         icon: "⊕" },
+                                        { title: "Billing & Payments",   icon: "Rs" },
+                                        { title: "Safety Concerns",      icon: "⚑" },
+                                        { title: "App Feedback",         icon: "✉" }
+                                    ]
+                                    delegate: Rectangle {
+                                        width: parent.width - 32; height: 48; radius: 10; color: "#FAFAFA"; border.color: "#EEEEEE"
+                                        property var hi: modelData
+                                        Row {
+                                            anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 10
+                                            Rectangle {
+                                                width: 30; height: 30; radius: 8; color: "#E3F2FD"; anchors.verticalCenter: parent.verticalCenter
+                                                Text { anchors.centerIn: parent; text: hi ? hi.icon : ""; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
+                                            }
+                                            Label { text: hi ? hi.title : ""; font.pixelSize: 13; color: "#111"; anchors.verticalCenter: parent.verticalCenter }
+                                            Item { Layout.fillWidth: true }
+                                            Text { text: "›"; font.pixelSize: 18; color: "#CCC"; anchors.verticalCenter: parent.verticalCenter }
+                                        }
+                                        MouseArea { anchors.fill: parent; onClicked: console.log("Help:", hi ? hi.title : "") }
+                                    }
+                                }
+
+                                Rectangle {
+                                    width: parent.width - 32; height: 44; radius: 10
+                                    gradient: Gradient {
+                                        orientation: Gradient.Horizontal
+                                        GradientStop { position: 0.0; color: "#1976D2" }
+                                        GradientStop { position: 1.0; color: "#42A5F5" }
+                                    }
+                                    Row { anchors.centerIn: parent; spacing: 8
+                                        Text { text: "💬"; font.pixelSize: 16 }
+                                        Text { text: "Chat with Support"; font.pixelSize: 13; font.bold: true; color: "white" }
+                                    }
+                                    MouseArea { anchors.fill: parent; onClicked: console.log("Open support chat") }
+                                }
+                            }
+                        }
+
+                        Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
+
+                        // ── About ─────────────────────────────────────
+                        Rectangle {
+                            width: parent.width; height: 60; color: aboutMouse.containsMouse ? "#F8F8F8" : "transparent"
+                            Row {
+                                anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                Rectangle {
+                                    width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                    Text { anchors.centerIn: parent; text: "ℹ"; font.pixelSize: 16; color: "#1976D2" }
+                                }
+                                Column {
+                                    anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                    Label { text: "About YatraSarthi"; font.pixelSize: 14; color: "#111" }
+                                    Label { text: "Version 1.0.0 · Terms · Privacy"; font.pixelSize: 11; color: "#AAA" }
+                                }
+                                Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter }
+                            }
+                            MouseArea { id: aboutMouse; anchors.fill: parent; hoverEnabled: true; onClicked: console.log("About") }
+                        }
+
+                        Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
+
+                        // ── Rate the App ──────────────────────────────
+                        Rectangle {
+                            width: parent.width; height: 60; color: rateMouse.containsMouse ? "#F8F8F8" : "transparent"
+                            Row {
+                                anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                Rectangle {
+                                    width: 36; height: 36; radius: 18; color: "#FFF8E1"; anchors.verticalCenter: parent.verticalCenter
+                                    Text { anchors.centerIn: parent; text: "★"; font.pixelSize: 18; color: "#FFB300" }
+                                }
+                                Column {
+                                    anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                    Label { text: "Rate the App"; font.pixelSize: 14; color: "#111" }
+                                    Label { text: "Enjoying YatraSarthi? Leave a review"; font.pixelSize: 11; color: "#AAA" }
+                                }
+                                Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter }
+                            }
+                            MouseArea { id: rateMouse; anchors.fill: parent; hoverEnabled: true; onClicked: console.log("Rate app") }
+                        }
+                    }
+                }
+
+                // ── LOGOUT BUTTON ─────────────────────────────────────
+                Rectangle {
+                    x: 16; width: parent.width - 32; height: 50; radius: 14
+                    color: "#FFF0F0"; border.color: "#FFCDD2"
+                    Row {
+                        anchors.centerIn: parent; spacing: 10
+                        Text { text: "⏻"; font.pixelSize: 18; color: "#E53935" }
+                        Text { text: "Log Out"; font.pixelSize: 15; font.bold: true; color: "#E53935" }
+                    }
+                    MouseArea { anchors.fill: parent; onClicked: console.log("Logout") }
+                }
+
+                Item { width: 1; height: 20 }
+            }
+        }
+    }
+}
