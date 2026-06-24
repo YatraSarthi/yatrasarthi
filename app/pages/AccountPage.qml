@@ -1,6 +1,5 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
-import QtQuick.Controls.Material 2.12
 
 Page {
 
@@ -20,7 +19,6 @@ Page {
     property bool emergencyExpanded: false
     property bool emergencyEditMode: false
     property string emergencySaveMessage: ""
-
     property string contact1Name: ""
     property string contact1Phone: ""
     property string contact2Name: ""
@@ -40,22 +38,22 @@ Page {
 
     // ── PAYMENT STATE ────────────────────────────────────────────────────
     property bool paymentExpanded: false
-    property int selectedPaymentIndex: 0   // 0=UPI, 1=Card, 2=Wallet
+    property int selectedPaymentTab: 0
 
     // ── RIDE HISTORY STATE ───────────────────────────────────────────────
     property bool rideHistoryExpanded: false
     property var rideHistoryData: [
-        { date: "22 Jun 2026", from: "Koramangala", to: "Indiranagar", fare: "₹148", status: "Completed" },
-        { date: "20 Jun 2026", from: "MG Road",     to: "Whitefield",  fare: "₹320", status: "Completed" },
-        { date: "18 Jun 2026", from: "HSR Layout",  to: "Jayanagar",   fare: "₹95",  status: "Cancelled" }
+        { date: "22 Jun 2026", from: "Koramangala", to: "Indiranagar", fare: "148", status: "Completed" },
+        { date: "20 Jun 2026", from: "MG Road",     to: "Whitefield",  fare: "320", status: "Completed" },
+        { date: "18 Jun 2026", from: "HSR Layout",  to: "Jayanagar",   fare: "95",  status: "Cancelled" }
     ]
 
     // ── REWARDS STATE ────────────────────────────────────────────────────
     property bool rewardsExpanded: false
     property int rewardPoints: 1240
     property var couponList: [
-        { code: "RIDE20",  desc: "20% off next ride",    expiry: "30 Jun 2026" },
-        { code: "FLAT50",  desc: "₹50 off on ₹200+",    expiry: "15 Jul 2026" },
+        { code: "RIDE20",  desc: "20% off next ride",     expiry: "30 Jun 2026" },
+        { code: "FLAT50",  desc: "Rs.50 off on Rs.200+",  expiry: "15 Jul 2026" },
         { code: "GOLD10",  desc: "Gold member bonus 10%", expiry: "31 Jul 2026" }
     ]
 
@@ -66,27 +64,42 @@ Page {
     property bool notifSMS: false
     property bool notifEmail: true
 
-    // ── HELP STATE ───────────────────────────────────────────────────────
-    property bool helpExpanded: false
-
     // ── SAFETY STATE ─────────────────────────────────────────────────────
     property bool safetyExpanded: false
     property bool safetyShareTrip: false
     property bool safetyIncognito: false
 
+    // ── HELP STATE ───────────────────────────────────────────────────────
+    property bool helpExpanded: false
+
+    // ── LANGUAGE STATE ───────────────────────────────────────────────────
+    property bool langExpanded: false
+    property int selectedLang: 0
+    property var languages: ["English", "Hindi", "Kannada", "Tamil", "Telugu"]
+
     // ── DARK MODE ────────────────────────────────────────────────────────
     property bool darkModeEnabled: false
 
-    // ── LANGUAGE ─────────────────────────────────────────────────────────
-    property bool langExpanded: false
-    property int selectedLang: 0  // 0=English
-    property var languages: ["English", "हिन्दी", "ಕನ್ನಡ", "தமிழ்", "తెలుగు"]
+    // ── GENDER ───────────────────────────────────────────────────────────
+    property int selectedGender: 0
 
     Component.onCompleted: { loadEmergencyInfo() }
 
-    onEmergencyExpandedChanged: { if (emergencyExpanded) emergencySyncTick++ }
-    onEmergencyEditModeChanged: { if (!emergencyEditMode) emergencySyncTick++ }
-    onProfileEditExpandedChanged: { if (profileEditExpanded) profileSyncTick++ }
+    onEmergencyExpandedChanged:   { if (emergencyExpanded)   emergencySyncTick++ }
+    onEmergencyEditModeChanged:   { if (!emergencyEditMode)  emergencySyncTick++ }
+    onProfileEditExpandedChanged: { if (profileEditExpanded) profileSyncTick++   }
+
+    function collapseAll() {
+        profileEditExpanded  = false; profileEditMode   = false
+        paymentExpanded      = false
+        emergencyExpanded    = false; emergencyEditMode = false
+        rideHistoryExpanded  = false
+        rewardsExpanded      = false
+        notifExpanded        = false
+        helpExpanded         = false
+        safetyExpanded       = false
+        langExpanded         = false
+    }
 
     function loadEmergencyInfo() {
         var xhr = new XMLHttpRequest()
@@ -101,7 +114,7 @@ Page {
                     bloodGroup    = data.bloodGroup    || ""
                     medicalNotes  = data.medicalNotes  || ""
                     emergencySyncTick++
-                } catch (e) { console.log("Emergency Info Parse Error:", e) }
+                } catch(e) { console.log("Parse error:", e) }
             }
         }
         xhr.open("GET", "http://127.0.0.1:8000/sos/info", true)
@@ -112,8 +125,12 @@ Page {
         var xhr = new XMLHttpRequest()
         xhr.onreadystatechange = function() {
             if (xhr.readyState === XMLHttpRequest.DONE) {
-                emergencySaveMessage = (xhr.status === 200) ? "Saved successfully" : "Failed to save"
-                if (xhr.status === 200) emergencyEditMode = false
+                if (xhr.status === 200) {
+                    emergencySaveMessage = "Saved successfully"
+                    emergencyEditMode = false
+                } else {
+                    emergencySaveMessage = "Failed to save"
+                }
             }
         }
         xhr.onerror = function() { emergencySaveMessage = "Unable to contact server" }
@@ -128,63 +145,7 @@ Page {
         xhr.send()
     }
 
-    function saveProfile() {
-        profileName = pNameField.text
-        profileEmail = pEmailField.text
-        profilePhone = pPhoneField.text
-        profileEditMode = false
-        profileSaveMessage = "Profile updated successfully"
-        profileSyncTick++
-    }
-
-    function collapseAll() {
-        profileEditExpanded = false
-        profileEditMode = false
-        paymentExpanded = false
-        emergencyExpanded = false
-        emergencyEditMode = false
-        rideHistoryExpanded = false
-        rewardsExpanded = false
-        notifExpanded = false
-        helpExpanded = false
-        safetyExpanded = false
-        langExpanded = false
-    }
-
-    // ── REUSABLE COMPONENTS ──────────────────────────────────────────────
-
-    // Section header label component (used inline below)
-    // Inline field row: label + read/edit TextField
-    component FieldRow: Column {
-        property string fieldLabel: ""
-        property string fieldPlaceholder: ""
-        property bool editMode: false
-        property alias fieldText: tf.text
-        property alias tf: tf
-        spacing: 4
-        width: parent.width
-
-        Label {
-            text: fieldLabel
-            font.pixelSize: 11; color: "#999"
-        }
-        TextField {
-            id: tf
-            width: parent.width
-            placeholderText: fieldPlaceholder
-            readOnly: !editMode
-            background: Rectangle {
-                color: editMode ? "white" : "#F8F9FA"
-                radius: 8
-                border.color: editMode ? "#1976D2" : "#EEEEEE"
-                border.width: editMode ? 1.5 : 1
-            }
-            leftPadding: 12; rightPadding: 12
-            font.pixelSize: 13
-        }
-    }
-
-    // ── UI ───────────────────────────────────────────────────────────────
+    // ── UI ROOT ──────────────────────────────────────────────────────────
     ScrollView {
         anchors.fill: parent
         contentWidth: width
@@ -194,23 +155,18 @@ Page {
             width: parent.width
             spacing: 0
 
-            // ── Top header bar ─────────────────────────────────────────
+            // ── TOP HEADER BAR ──────────────────────────────────────────
             Rectangle {
-                width: parent.width
-                height: 56
-                color: "#1976D2"
+                width: parent.width; height: 56; color: "#1976D2"
 
                 Rectangle {
                     id: backBtn
-                    width: 36; height: 36; radius: 18
-                    color: backBtnMouse.containsMouse ? "#E3F2FD" : "white"
+                    width: 36; height: 36; radius: 18; color: "white"
                     anchors.left: parent.left; anchors.leftMargin: 12
                     anchors.verticalCenter: parent.verticalCenter
-                    Behavior on color { ColorAnimation { duration: 120 } }
                     Text { text: "‹"; font.pixelSize: 28; font.bold: true; color: "#1565C0"; anchors.centerIn: parent; anchors.horizontalCenterOffset: -1 }
-                    MouseArea { id: backBtnMouse; anchors.fill: parent; hoverEnabled: true; onClicked: switchTab(0) }
+                    MouseArea { anchors.fill: parent; onClicked: switchTab(0) }
                 }
-
                 Label {
                     anchors.verticalCenter: parent.verticalCenter
                     anchors.left: backBtn.right; anchors.leftMargin: 10
@@ -218,7 +174,7 @@ Page {
                 }
             }
 
-            // ── Profile header card ────────────────────────────────────
+            // ── PROFILE HEADER ──────────────────────────────────────────
             Rectangle {
                 width: parent.width; height: 170; color: "#1976D2"; clip: true
 
@@ -239,7 +195,6 @@ Page {
                             source: Qt.resolvedUrl("../../assets/icons/driver.png")
                             width: 42; height: 42; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent
                         }
-
                         Rectangle {
                             width: 22; height: 22; radius: 11; color: "#FFD600"
                             anchors.right: parent.right; anchors.bottom: parent.bottom
@@ -247,11 +202,7 @@ Page {
                             Text { text: "✎"; font.pixelSize: 10; color: "#333"; anchors.centerIn: parent }
                             MouseArea {
                                 anchors.fill: parent
-                                onClicked: {
-                                    collapseAll()
-                                    profileEditExpanded = true
-                                    profileEditMode = true
-                                }
+                                onClicked: { collapseAll(); profileEditExpanded = true; profileEditMode = true; profileSaveMessage = "" }
                             }
                         }
                     }
@@ -268,523 +219,546 @@ Page {
                     Row {
                         anchors.horizontalCenter: parent.horizontalCenter; spacing: 8
                         Repeater {
-                            model: ["⭐ 4.8 Rating", "142 Rides", "Gold Member"]
+                            model: ["4.8 Rating", "142 Rides", "Gold Member"]
                             delegate: Rectangle {
                                 height: 20; radius: 10; color: "#ffffff25"; border.color: "#ffffff40"
-                                width: badgeText.implicitWidth + 16
-                                Text { id: badgeText; anchors.centerIn: parent; text: modelData; font.pixelSize: 10; color: "white" }
+                                width: bdgTxt.implicitWidth + 16
+                                Text { id: bdgTxt; anchors.centerIn: parent; text: modelData; font.pixelSize: 10; color: "white" }
                             }
                         }
                     }
                 }
             }
 
+            // ── MAIN CONTENT COLUMN ─────────────────────────────────────
             Column {
                 width: parent.width; spacing: 14
 
                 Item { width: 1; height: 14 }
 
                 // ════════════════════════════════════════════════════════
-                // PROFILE SECTION
+                // SECTION LABEL: PROFILE
                 // ════════════════════════════════════════════════════════
-                SectionLabel { sectionTitle: "PROFILE" }
+                Item {
+                    x: 16; width: parent.width - 32; height: 24
+                    Label { text: "PROFILE"; font.pixelSize: 11; font.bold: true; color: "#AAAAAA"; leftPadding: 4; anchors.bottom: parent.bottom }
+                }
 
-                SectionCard {
-                    // ── Edit Profile ──────────────────────────────────
-                    ExpandableRow {
-                        rowIcon: Qt.resolvedUrl("../../assets/icons/driver.png")
-                        rowLabel: "Edit Profile"
-                        rowSub: profileName + " · " + profileEmail
-                        expanded: profileEditExpanded
-                        onRowClicked: {
-                            var wasOpen = profileEditExpanded
-                            collapseAll()
-                            profileEditExpanded = !wasOpen
-                            if (profileEditExpanded) { profileSaveMessage = "" }
-                            else { profileEditMode = false }
-                        }
+                // ── PROFILE SECTION CARD ──────────────────────────────
+                Rectangle {
+                    x: 16; width: parent.width - 32
+                    radius: 14; color: "white"; border.color: "#EEEEEE"; clip: true
+                    height: profileSectionCol.height
 
-                        expandedContent: Column {
-                            width: parent.width; spacing: 12
-                            topPadding: 4; bottomPadding: 16
-                            leftPadding: 16; rightPadding: 16
+                    Column {
+                        id: profileSectionCol
+                        width: parent.width; spacing: 0
 
-                            ExpandDivider {}
+                        // ── Edit Profile row ──────────────────────────
+                        Column {
+                            width: parent.width
 
-                            Row {
-                                width: parent.width - 32
-                                Label {
-                                    text: "Personal Details"
-                                    font.pixelSize: 12; font.bold: true; color: "#888"
-                                    width: parent.width - editProfileBtn.width
-                                }
-                                Button {
-                                    id: editProfileBtn
-                                    text: profileEditMode ? "Cancel" : "Edit"
-                                    flat: true; font.pixelSize: 13; font.bold: true
-                                    palette.buttonText: "#1976D2"
-                                    onClicked: {
-                                        if (profileEditMode) {
-                                            // restore
-                                            profileSyncTick++
-                                            profileSaveMessage = ""
-                                        }
-                                        profileEditMode = !profileEditMode
-                                    }
-                                }
-                            }
+                            Rectangle {
+                                width: parent.width; height: 60
+                                color: editProfMouse.containsMouse ? "#F8F8F8" : "transparent"
 
-                            Item {
-                                property int tick: profileSyncTick
-                                onTickChanged: {
-                                    pNameField.text  = profileName
-                                    pEmailField.text = profileEmail
-                                    pPhoneField.text = profilePhone
-                                }
-                                Component.onCompleted: {
-                                    pNameField.text  = profileName
-                                    pEmailField.text = profileEmail
-                                    pPhoneField.text = profilePhone
-                                }
-                            }
-
-                            Column {
-                                width: parent.width - 32; spacing: 10
-
-                                FieldRow {
-                                    id: pNameRow
-                                    fieldLabel: "Full Name"
-                                    fieldPlaceholder: "Your name"
-                                    editMode: profileEditMode
-                                    tf.id: pNameField
-                                    width: parent.width
-                                }
-                                FieldRow {
-                                    id: pEmailRow
-                                    fieldLabel: "Email"
-                                    fieldPlaceholder: "your@email.com"
-                                    editMode: profileEditMode
-                                    tf.id: pEmailField
-                                    width: parent.width
-                                }
-                                FieldRow {
-                                    id: pPhoneRow
-                                    fieldLabel: "Phone Number"
-                                    fieldPlaceholder: "+91 XXXXX XXXXX"
-                                    editMode: profileEditMode
-                                    tf.inputMethodHints: Qt.ImhDialableCharactersOnly
-                                    tf.id: pPhoneField
-                                    width: parent.width
-                                }
-                            }
-
-                            // Gender selector (read-only in view, editable in edit)
-                            Column {
-                                width: parent.width - 32; spacing: 4
-                                Label { text: "Gender"; font.pixelSize: 11; color: "#999" }
                                 Row {
-                                    spacing: 8
-                                    property int selGender: 0
-                                    Repeater {
-                                        model: ["Male", "Female", "Other"]
-                                        delegate: Rectangle {
-                                            width: genderText.implicitWidth + 20; height: 30; radius: 15
-                                            color: (parent.selGender === index) ? "#1976D2" : "#F0F4FF"
-                                            border.color: (parent.selGender === index) ? "#1565C0" : "#D0D8FF"
-                                            opacity: profileEditMode ? 1.0 : 0.6
-                                            Text {
-                                                id: genderText; anchors.centerIn: parent
-                                                text: modelData; font.pixelSize: 12
-                                                color: (parent.parent.selGender === index) ? "white" : "#555"
-                                            }
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                enabled: profileEditMode
-                                                onClicked: parent.parent.selGender = index
-                                            }
-                                        }
+                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Image { source: Qt.resolvedUrl("../../assets/icons/driver.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
+                                    }
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2
+                                        width: parent.width - 36 - 14 - 30
+                                        Label { text: "Edit Profile"; font.pixelSize: 14; color: "#111" }
+                                        Label { text: profileName + " · " + profileEmail; font.pixelSize: 11; color: "#AAA"; elide: Text.ElideRight; width: parent.width }
+                                    }
+                                    Text {
+                                        text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter
+                                        rotation: profileEditExpanded ? 90 : 0
+                                        Behavior on rotation { NumberAnimation { duration: 150 } }
+                                    }
+                                }
+                                MouseArea {
+                                    id: editProfMouse; anchors.fill: parent; hoverEnabled: true
+                                    onClicked: {
+                                        var wasOpen = profileEditExpanded
+                                        collapseAll()
+                                        profileEditExpanded = !wasOpen
+                                        if (profileEditExpanded) { profileSaveMessage = "" }
                                     }
                                 }
                             }
 
-                            ActionButton {
-                                visible: profileEditMode
-                                btnText: "Save Profile"
-                                onBtnClicked: saveProfile()
-                            }
-
-                            SaveMessage { msg: profileSaveMessage }
-                        }
-                    }
-
-                    RowDivider {}
-
-                    // ── Payment Methods ───────────────────────────────
-                    ExpandableRow {
-                        rowIcon: Qt.resolvedUrl("../../assets/icons/star.png")
-                        rowLabel: "Payment Methods"
-                        rowSub: "UPI, cards, wallets"
-                        expanded: paymentExpanded
-                        onRowClicked: {
-                            var wasOpen = paymentExpanded
-                            collapseAll()
-                            paymentExpanded = !wasOpen
-                        }
-
-                        expandedContent: Column {
-                            width: parent.width; spacing: 0
-                            topPadding: 4; bottomPadding: 8
-
-                            ExpandDivider {}
-
-                            // Payment method tabs
-                            Row {
-                                x: 16; spacing: 0
-                                width: parent.width - 32
-
-                                Repeater {
-                                    model: ["UPI", "Cards", "Wallet"]
-                                    delegate: Rectangle {
-                                        width: (parent.width) / 3; height: 36
-                                        color: selectedPaymentIndex === index ? "#E3F2FD" : "transparent"
-                                        border.color: selectedPaymentIndex === index ? "#1976D2" : "transparent"
-                                        radius: selectedPaymentIndex === index ? 8 : 0
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: modelData; font.pixelSize: 13
-                                            font.bold: selectedPaymentIndex === index
-                                            color: selectedPaymentIndex === index ? "#1976D2" : "#888"
-                                        }
-                                        MouseArea { anchors.fill: parent; onClicked: selectedPaymentIndex = index }
-                                    }
-                                }
-                            }
-
-                            Rectangle { width: parent.width - 32; height: 1; color: "#EEE"; x: 16 }
-
-                            // UPI Panel
+                            // Edit Profile Expanded Panel
                             Column {
-                                visible: selectedPaymentIndex === 0
-                                width: parent.width - 32; x: 16
-                                spacing: 8; topPadding: 12; bottomPadding: 8
+                                width: parent.width; visible: profileEditExpanded
+                                spacing: 10; topPadding: 4; bottomPadding: 16; leftPadding: 16; rightPadding: 16
 
-                                // Saved UPI IDs
-                                Repeater {
-                                    model: ["johney@upi", "johney@okaxis"]
-                                    delegate: Rectangle {
-                                        width: parent.width; height: 52; radius: 10
-                                        color: "#F8F9FA"; border.color: "#EEEEEE"
+                                Rectangle { width: parent.width - 32; height: 1; color: "#F0F0F0" }
+
+                                Row {
+                                    width: parent.width - 32
+                                    Label { text: "Personal Details"; font.pixelSize: 12; font.bold: true; color: "#888"; width: parent.width - editProfBtn.width; anchors.verticalCenter: parent.verticalCenter }
+                                    Button {
+                                        id: editProfBtn
+                                        text: profileEditMode ? "Cancel" : "Edit"; flat: true
+                                        contentItem: Text { text: editProfBtn.text; color: "#1976D2"; font.pixelSize: 13; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                                        onClicked: {
+                                            if (profileEditMode) { profileSyncTick++; profileSaveMessage = "" }
+                                            profileEditMode = !profileEditMode
+                                        }
+                                    }
+                                }
+
+                                // Sync helper
+                                Item {
+                                    property int tick: profileSyncTick
+                                    onTickChanged: { pNameField.text = profileName; pEmailField.text = profileEmail; pPhoneField.text = profilePhone }
+                                    Component.onCompleted: { pNameField.text = profileName; pEmailField.text = profileEmail; pPhoneField.text = profilePhone }
+                                }
+
+                                Column { width: parent.width - 32; spacing: 4
+                                    Label { text: "Full Name"; font.pixelSize: 11; color: "#999" }
+                                    TextField {
+                                        id: pNameField; width: parent.width; placeholderText: "Your name"; readOnly: !profileEditMode
+                                        background: Rectangle { color: profileEditMode ? "white" : "#F8F9FA"; radius: 8; border.color: profileEditMode ? "#1976D2" : "#EEEEEE"; border.width: profileEditMode ? 1.5 : 1 }
+                                        leftPadding: 12; font.pixelSize: 13
+                                    }
+                                }
+                                Column { width: parent.width - 32; spacing: 4
+                                    Label { text: "Email"; font.pixelSize: 11; color: "#999" }
+                                    TextField {
+                                        id: pEmailField; width: parent.width; placeholderText: "your@email.com"; readOnly: !profileEditMode
+                                        background: Rectangle { color: profileEditMode ? "white" : "#F8F9FA"; radius: 8; border.color: profileEditMode ? "#1976D2" : "#EEEEEE"; border.width: profileEditMode ? 1.5 : 1 }
+                                        leftPadding: 12; font.pixelSize: 13
+                                    }
+                                }
+                                Column { width: parent.width - 32; spacing: 4
+                                    Label { text: "Phone Number"; font.pixelSize: 11; color: "#999" }
+                                    TextField {
+                                        id: pPhoneField; width: parent.width; placeholderText: "+91 XXXXX XXXXX"; readOnly: !profileEditMode
+                                        inputMethodHints: Qt.ImhDialableCharactersOnly
+                                        background: Rectangle { color: profileEditMode ? "white" : "#F8F9FA"; radius: 8; border.color: profileEditMode ? "#1976D2" : "#EEEEEE"; border.width: profileEditMode ? 1.5 : 1 }
+                                        leftPadding: 12; font.pixelSize: 13
+                                    }
+                                }
+
+                                Column { width: parent.width - 32; spacing: 4
+                                    Label { text: "Gender"; font.pixelSize: 11; color: "#999" }
+                                    Row {
+                                        spacing: 8
+                                        Repeater {
+                                            model: ["Male", "Female", "Other"]
+                                            delegate: Rectangle {
+                                                width: gTxt.implicitWidth + 20; height: 30; radius: 15
+                                                color: selectedGender === index ? "#1976D2" : "#F0F4FF"
+                                                border.color: selectedGender === index ? "#1565C0" : "#D0D8FF"
+                                                opacity: profileEditMode ? 1.0 : 0.65
+                                                Text { id: gTxt; anchors.centerIn: parent; text: modelData; font.pixelSize: 12; color: selectedGender === index ? "white" : "#555" }
+                                                MouseArea { anchors.fill: parent; enabled: profileEditMode; onClicked: selectedGender = index }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle {
+                                    visible: profileEditMode
+                                    width: parent.width - 32; height: 44; radius: 10; color: "#1976D2"
+                                    Text { anchors.centerIn: parent; text: "Save Profile"; font.pixelSize: 14; font.bold: true; color: "white" }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            profileName  = pNameField.text
+                                            profileEmail = pEmailField.text
+                                            profilePhone = pPhoneField.text
+                                            profileEditMode = false
+                                            profileSaveMessage = "Profile updated successfully"
+                                            profileSyncTick++
+                                        }
+                                    }
+                                }
+
+                                Label {
+                                    visible: profileSaveMessage !== ""; text: profileSaveMessage
+                                    color: profileSaveMessage === "Profile updated successfully" ? "#388E3C" : "#E53935"
+                                    font.pixelSize: 12; wrapMode: Text.WordWrap; width: parent.width - 32
+                                }
+                            }
+                        }
+
+                        // Divider
+                        Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
+
+                        // ── Payment Methods row ───────────────────────
+                        Column {
+                            width: parent.width
+
+                            Rectangle {
+                                width: parent.width; height: 60
+                                color: payMouse.containsMouse ? "#F8F8F8" : "transparent"
+                                Row {
+                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Image { source: Qt.resolvedUrl("../../assets/icons/star.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
+                                    }
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                        Label { text: "Payment Methods"; font.pixelSize: 14; color: "#111" }
+                                        Label { text: "UPI, cards, wallets"; font.pixelSize: 11; color: "#AAA" }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter; rotation: paymentExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
+                                }
+                                MouseArea {
+                                    id: payMouse; anchors.fill: parent; hoverEnabled: true
+                                    onClicked: { var w = paymentExpanded; collapseAll(); paymentExpanded = !w }
+                                }
+                            }
+
+                            // Payment Expanded
+                            Column {
+                                visible: paymentExpanded; width: parent.width
+                                topPadding: 4; bottomPadding: 12
+
+                                Rectangle { x: 16; width: parent.width - 32; height: 1; color: "#F0F0F0" }
+                                Item { height: 8 }
+
+                                // Tabs
+                                Row {
+                                    x: 16; width: parent.width - 32; height: 36; spacing: 0
+                                    Repeater {
+                                        model: ["UPI", "Cards", "Wallet"]
+                                        delegate: Rectangle {
+                                            width: (parent.width) / 3; height: 36
+                                            color: selectedPaymentTab === index ? "#E3F2FD" : "transparent"
+                                            radius: selectedPaymentTab === index ? 8 : 0
+                                            Text {
+                                                anchors.centerIn: parent; text: modelData; font.pixelSize: 13
+                                                font.bold: selectedPaymentTab === index
+                                                color: selectedPaymentTab === index ? "#1976D2" : "#888"
+                                            }
+                                            MouseArea { anchors.fill: parent; onClicked: selectedPaymentTab = index }
+                                        }
+                                    }
+                                }
+                                Rectangle { x: 16; width: parent.width - 32; height: 1; color: "#EEE" }
+                                Item { height: 8 }
+
+                                // UPI Panel
+                                Column {
+                                    visible: selectedPaymentTab === 0
+                                    x: 16; width: parent.width - 32; spacing: 8
+
+                                    Repeater {
+                                        model: ["johney@upi", "johney@okaxis"]
+                                        delegate: Rectangle {
+                                            width: parent.width; height: 52; radius: 10; color: "#F8F9FA"; border.color: "#EEEEEE"
+                                            Row {
+                                                anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14; spacing: 10
+                                                Rectangle { width: 32; height: 32; radius: 8; color: "#E3F2FD"; anchors.verticalCenter: parent.verticalCenter
+                                                    Text { anchors.centerIn: parent; text: "Rs"; font.pixelSize: 12; font.bold: true; color: "#1976D2" }
+                                                }
+                                                Column {
+                                                    anchors.verticalCenter: parent.verticalCenter; spacing: 2
+                                                    Label { text: modelData; font.pixelSize: 13; color: "#111" }
+                                                    Label { text: index === 0 ? "Default" : "Linked"; font.pixelSize: 11; color: index === 0 ? "#43A047" : "#888" }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Rectangle {
+                                        width: parent.width; height: 44; radius: 10; color: "#EEF4FF"; border.color: "#C5D8FF"
+                                        Row { anchors.centerIn: parent; spacing: 8
+                                            Text { text: "+"; font.pixelSize: 18; color: "#1976D2"; font.bold: true }
+                                            Text { text: "Add UPI ID"; font.pixelSize: 13; color: "#1976D2"; font.bold: true }
+                                        }
+                                        MouseArea { anchors.fill: parent; onClicked: console.log("Add UPI") }
+                                    }
+                                }
+
+                                // Cards Panel
+                                Column {
+                                    visible: selectedPaymentTab === 1
+                                    x: 16; width: parent.width - 32; spacing: 8
+
+                                    Rectangle {
+                                        width: parent.width; height: 80; radius: 12
+                                        gradient: Gradient {
+                                            orientation: Gradient.Horizontal
+                                            GradientStop { position: 0.0; color: "#1565C0" }
+                                            GradientStop { position: 1.0; color: "#42A5F5" }
+                                        }
+                                        Column {
+                                            anchors.left: parent.left; anchors.leftMargin: 16; anchors.verticalCenter: parent.verticalCenter; spacing: 4
+                                            Label { text: "**** **** **** 4521"; font.pixelSize: 14; color: "white" }
+                                            Label { text: "JOHNEY  Expires 09/28"; font.pixelSize: 11; color: "#B3E5FC" }
+                                        }
+                                        Rectangle {
+                                            width: 40; height: 22; radius: 4; color: "#FFD600"
+                                            anchors.right: parent.right; anchors.rightMargin: 16; anchors.verticalCenter: parent.verticalCenter
+                                            Text { anchors.centerIn: parent; text: "VISA"; font.pixelSize: 10; font.bold: true; color: "#333" }
+                                        }
+                                    }
+                                    Rectangle {
+                                        width: parent.width; height: 44; radius: 10; color: "#EEF4FF"; border.color: "#C5D8FF"
+                                        Row { anchors.centerIn: parent; spacing: 8
+                                            Text { text: "+"; font.pixelSize: 18; color: "#1976D2"; font.bold: true }
+                                            Text { text: "Add Card"; font.pixelSize: 13; color: "#1976D2"; font.bold: true }
+                                        }
+                                        MouseArea { anchors.fill: parent; onClicked: console.log("Add Card") }
+                                    }
+                                }
+
+                                // Wallet Panel
+                                Column {
+                                    visible: selectedPaymentTab === 2
+                                    x: 16; width: parent.width - 32; spacing: 8
+
+                                    Rectangle {
+                                        width: parent.width; height: 64; radius: 12; color: "#F1F8E9"; border.color: "#C5E1A5"
                                         Row {
-                                            anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14
-                                            spacing: 10
-                                            Rectangle { width: 32; height: 32; radius: 8; color: "#E3F2FD"; anchors.verticalCenter: parent.verticalCenter
-                                                Text { anchors.centerIn: parent; text: "₹"; font.pixelSize: 16; font.bold: true; color: "#1976D2" }
+                                            anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 12
+                                            Rectangle { width: 36; height: 36; radius: 18; color: "#43A047"; anchors.verticalCenter: parent.verticalCenter
+                                                Text { anchors.centerIn: parent; text: "Rs"; font.pixelSize: 13; font.bold: true; color: "white" }
                                             }
                                             Column {
                                                 anchors.verticalCenter: parent.verticalCenter; spacing: 2
-                                                Label { text: modelData; font.pixelSize: 13; color: "#111" }
-                                                Label { text: index === 0 ? "Default" : "Linked"; font.pixelSize: 11; color: index === 0 ? "#43A047" : "#888" }
+                                                Label { text: "YatraCash Balance"; font.pixelSize: 13; font.bold: true; color: "#2E7D32" }
+                                                Label { text: "Rs.250 available"; font.pixelSize: 12; color: "#555" }
                                             }
-                                            Item { width: 1; Layout.fillWidth: true }
+                                        }
+                                    }
+                                    Rectangle {
+                                        width: parent.width; height: 44; radius: 10; color: "#E8F5E9"; border.color: "#A5D6A7"
+                                        Row { anchors.centerIn: parent; spacing: 8
+                                            Text { text: "+"; font.pixelSize: 18; color: "#43A047"; font.bold: true }
+                                            Text { text: "Add Money"; font.pixelSize: 13; color: "#43A047"; font.bold: true }
+                                        }
+                                        MouseArea { anchors.fill: parent; onClicked: console.log("Add Money") }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
+
+                        // ── Emergency Contacts row ────────────────────
+                        Column {
+                            width: parent.width
+
+                            Rectangle {
+                                width: parent.width; height: 60
+                                color: emgMouse.containsMouse ? "#F8F8F8" : "transparent"
+                                Row {
+                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Image { source: Qt.resolvedUrl("../../assets/icons/sos.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
+                                    }
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                        Label { text: "Emergency Contacts"; font.pixelSize: 14; color: "#111" }
+                                        Label { text: "SOS contacts & medical info"; font.pixelSize: 11; color: "#AAA" }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter; rotation: emergencyExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
+                                }
+                                MouseArea {
+                                    id: emgMouse; anchors.fill: parent; hoverEnabled: true
+                                    onClicked: {
+                                        var w = emergencyExpanded; collapseAll(); emergencyExpanded = !w
+                                        if (emergencyExpanded) { emergencySaveMessage = ""; loadEmergencyInfo() }
+                                    }
+                                }
+                            }
+
+                            Column {
+                                visible: emergencyExpanded; width: parent.width
+                                spacing: 10; topPadding: 4; bottomPadding: 16; leftPadding: 16; rightPadding: 16
+
+                                Rectangle { width: parent.width - 32; height: 1; color: "#F0F0F0" }
+
+                                Row {
+                                    width: parent.width - 32
+                                    Label { text: "Saved Information"; font.pixelSize: 12; font.bold: true; color: "#888"; anchors.verticalCenter: parent.verticalCenter; width: parent.width - emgEditBtn.width }
+                                    Button {
+                                        id: emgEditBtn; text: emergencyEditMode ? "Cancel" : "Edit"; flat: true
+                                        contentItem: Text { text: emgEditBtn.text; color: "#1976D2"; font.pixelSize: 13; font.bold: true; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
+                                        onClicked: { if (emergencyEditMode) { loadEmergencyInfo(); emergencySaveMessage = "" }; emergencyEditMode = !emergencyEditMode }
+                                    }
+                                }
+
+                                Item {
+                                    property int tick: emergencySyncTick
+                                    onTickChanged: { acc1N.text = contact1Name; acc1P.text = contact1Phone; acc2N.text = contact2Name; acc2P.text = contact2Phone; accBG.text = bloodGroup; accMN.text = medicalNotes }
+                                    Component.onCompleted: { acc1N.text = contact1Name; acc1P.text = contact1Phone; acc2N.text = contact2Name; acc2P.text = contact2Phone; accBG.text = bloodGroup; accMN.text = medicalNotes }
+                                }
+
+                                Label { text: "Emergency Contact 1"; font.pixelSize: 12; color: "#888" }
+                                TextField { id: acc1N; width: parent.width - 32; placeholderText: "Name"; readOnly: !emergencyEditMode; onTextChanged: contact1Name = text }
+                                TextField { id: acc1P; width: parent.width - 32; placeholderText: "Phone number"; readOnly: !emergencyEditMode; inputMethodHints: Qt.ImhDialableCharactersOnly; onTextChanged: contact1Phone = text }
+
+                                Label { text: "Emergency Contact 2"; font.pixelSize: 12; color: "#888" }
+                                TextField { id: acc2N; width: parent.width - 32; placeholderText: "Name"; readOnly: !emergencyEditMode; onTextChanged: contact2Name = text }
+                                TextField { id: acc2P; width: parent.width - 32; placeholderText: "Phone number"; readOnly: !emergencyEditMode; inputMethodHints: Qt.ImhDialableCharactersOnly; onTextChanged: contact2Phone = text }
+
+                                Label { text: "Blood Group"; font.pixelSize: 12; color: "#888" }
+                                TextField { id: accBG; width: parent.width - 32; placeholderText: "e.g. O+"; readOnly: !emergencyEditMode; onTextChanged: bloodGroup = text }
+
+                                Label { text: "Medical Notes"; font.pixelSize: 12; color: "#888" }
+                                TextArea { id: accMN; width: parent.width - 32; placeholderText: "Allergies, conditions, medications..."; readOnly: !emergencyEditMode; wrapMode: TextArea.Wrap; onTextChanged: medicalNotes = text }
+
+                                Rectangle {
+                                    visible: emergencyEditMode
+                                    width: parent.width - 32; height: 44; radius: 10; color: "#1976D2"
+                                    Text { anchors.centerIn: parent; text: "Save Emergency Info"; font.pixelSize: 14; font.bold: true; color: "white" }
+                                    MouseArea { anchors.fill: parent; onClicked: saveEmergencyInfo() }
+                                }
+                                Label { visible: emergencySaveMessage !== ""; text: emergencySaveMessage; font.pixelSize: 12; wrapMode: Text.WordWrap; width: parent.width - 32; color: emergencySaveMessage === "Saved successfully" ? "#388E3C" : "#E53935" }
+                            }
+                        }
+
+                        Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
+
+                        // ── Ride History row ──────────────────────────
+                        Column {
+                            width: parent.width
+
+                            Rectangle {
+                                width: parent.width; height: 60
+                                color: rideMouse.containsMouse ? "#F8F8F8" : "transparent"
+                                Row {
+                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Image { source: Qt.resolvedUrl("../../assets/icons/rider.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
+                                    }
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                        Label { text: "Ride History"; font.pixelSize: 14; color: "#111" }
+                                        Label { text: "142 past trips & receipts"; font.pixelSize: 11; color: "#AAA" }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter; rotation: rideHistoryExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
+                                }
+                                MouseArea {
+                                    id: rideMouse; anchors.fill: parent; hoverEnabled: true
+                                    onClicked: { var w = rideHistoryExpanded; collapseAll(); rideHistoryExpanded = !w }
+                                }
+                            }
+
+                            Column {
+                                visible: rideHistoryExpanded; width: parent.width
+                                topPadding: 4; bottomPadding: 12; leftPadding: 16; rightPadding: 16; spacing: 8
+
+                                Rectangle { width: parent.width - 32; height: 1; color: "#F0F0F0" }
+
+                                Repeater {
+                                    model: rideHistoryData
+                                    delegate: Rectangle {
+                                        width: parent.width - 32; height: 68; radius: 10; color: "#FAFAFA"; border.color: "#EEEEEE"
+                                        property var rd: modelData
+                                        Row {
+                                            anchors.fill: parent; anchors.margins: 12; spacing: 10
+                                            Column {
+                                                anchors.verticalCenter: parent.verticalCenter; spacing: 3; width: parent.width - 80
+                                                Label { text: (rd ? rd.from : "") + "  to  " + (rd ? rd.to : ""); font.pixelSize: 13; font.bold: true; color: "#111"; elide: Text.ElideRight; width: parent.width }
+                                                Label { text: rd ? rd.date : ""; font.pixelSize: 11; color: "#999" }
+                                            }
+                                            Column {
+                                                anchors.verticalCenter: parent.verticalCenter; spacing: 4
+                                                Label { text: rd ? "Rs." + rd.fare : ""; font.pixelSize: 14; font.bold: true; color: "#111" }
+                                                Rectangle {
+                                                    height: 16; radius: 8; width: stLbl.implicitWidth + 10
+                                                    color: (rd && rd.status === "Completed") ? "#E8F5E9" : "#FFEBEE"
+                                                    Text { id: stLbl; anchors.centerIn: parent; text: rd ? rd.status : ""; font.pixelSize: 10; font.bold: true; color: (rd && rd.status === "Completed") ? "#388E3C" : "#C62828" }
+                                                }
+                                            }
                                         }
                                     }
                                 }
 
-                                // Add UPI
                                 Rectangle {
-                                    width: parent.width; height: 44; radius: 10
-                                    color: "#EEF4FF"; border.color: "#C5D8FF"
-                                    Row {
-                                        anchors.centerIn: parent; spacing: 8
-                                        Text { text: "+"; font.pixelSize: 18; color: "#1976D2"; font.bold: true }
-                                        Text { text: "Add UPI ID"; font.pixelSize: 13; color: "#1976D2"; font.bold: true }
+                                    width: parent.width - 32; height: 40; radius: 10; color: "#F5F5F5"; border.color: "#E0E0E0"
+                                    Text { anchors.centerIn: parent; text: "View All Trips"; font.pixelSize: 13; color: "#1976D2"; font.bold: true }
+                                    MouseArea { anchors.fill: parent; onClicked: console.log("View all trips") }
+                                }
+                            }
+                        }
+
+                        Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
+
+                        // ── Rewards & Coupons row ─────────────────────
+                        Column {
+                            width: parent.width
+
+                            Rectangle {
+                                width: parent.width; height: 60
+                                color: rwdMouse.containsMouse ? "#F8F8F8" : "transparent"
+                                Row {
+                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Image { source: Qt.resolvedUrl("../../assets/icons/star.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
                                     }
-                                    MouseArea { anchors.fill: parent; onClicked: console.log("Add UPI") }
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 80
+                                        Label { text: "Rewards & Coupons"; font.pixelSize: 14; color: "#111" }
+                                        Label { text: rewardPoints + " pts · 3 Offers"; font.pixelSize: 11; color: "#AAA" }
+                                    }
+                                    Rectangle {
+                                        height: 18; radius: 9; color: "#FFF3E0"; width: rwdTag.implicitWidth + 12; anchors.verticalCenter: parent.verticalCenter
+                                        Text { id: rwdTag; anchors.centerIn: parent; text: "3 Offers"; font.pixelSize: 10; font.bold: true; color: "#E65100" }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter; rotation: rewardsExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
+                                }
+                                MouseArea {
+                                    id: rwdMouse; anchors.fill: parent; hoverEnabled: true
+                                    onClicked: { var w = rewardsExpanded; collapseAll(); rewardsExpanded = !w }
                                 }
                             }
 
-                            // Card Panel
                             Column {
-                                visible: selectedPaymentIndex === 1
-                                width: parent.width - 32; x: 16
-                                spacing: 8; topPadding: 12; bottomPadding: 8
+                                visible: rewardsExpanded; width: parent.width
+                                topPadding: 4; bottomPadding: 12; leftPadding: 16; rightPadding: 16; spacing: 10
+
+                                Rectangle { width: parent.width - 32; height: 1; color: "#F0F0F0" }
 
                                 Rectangle {
-                                    width: parent.width; height: 80; radius: 12
+                                    width: parent.width - 32; height: 70; radius: 12
                                     gradient: Gradient {
                                         orientation: Gradient.Horizontal
-                                        GradientStop { position: 0.0; color: "#1565C0" }
-                                        GradientStop { position: 1.0; color: "#42A5F5" }
+                                        GradientStop { position: 0.0; color: "#FF8F00" }
+                                        GradientStop { position: 1.0; color: "#FFD54F" }
                                     }
-                                    Column {
-                                        anchors.left: parent.left; anchors.leftMargin: 16
-                                        anchors.verticalCenter: parent.verticalCenter; spacing: 4
-                                        Label { text: "**** **** **** 4521"; font.pixelSize: 14; color: "white"; font.letterSpacing: 1 }
-                                        Label { text: "JOHNEY  ·  Expires 09/28"; font.pixelSize: 11; color: "#B3E5FC" }
-                                    }
-                                    Rectangle {
-                                        width: 40; height: 24; radius: 4; color: "#FFD600"
-                                        anchors.right: parent.right; anchors.rightMargin: 16
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        Text { anchors.centerIn: parent; text: "VISA"; font.pixelSize: 10; font.bold: true; color: "#333" }
-                                    }
-                                }
-
-                                Rectangle {
-                                    width: parent.width; height: 44; radius: 10
-                                    color: "#EEF4FF"; border.color: "#C5D8FF"
-                                    Row { anchors.centerIn: parent; spacing: 8
-                                        Text { text: "+"; font.pixelSize: 18; color: "#1976D2"; font.bold: true }
-                                        Text { text: "Add Card"; font.pixelSize: 13; color: "#1976D2"; font.bold: true }
-                                    }
-                                    MouseArea { anchors.fill: parent; onClicked: console.log("Add Card") }
-                                }
-                            }
-
-                            // Wallet Panel
-                            Column {
-                                visible: selectedPaymentIndex === 2
-                                width: parent.width - 32; x: 16
-                                spacing: 8; topPadding: 12; bottomPadding: 8
-
-                                Rectangle {
-                                    width: parent.width; height: 64; radius: 12
-                                    color: "#F1F8E9"; border.color: "#C5E1A5"
                                     Row {
                                         anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 12
-                                        Rectangle { width: 36; height: 36; radius: 18; color: "#43A047"; anchors.verticalCenter: parent.verticalCenter
-                                            Text { anchors.centerIn: parent; text: "₹"; font.pixelSize: 18; font.bold: true; color: "white" }
-                                        }
                                         Column {
                                             anchors.verticalCenter: parent.verticalCenter; spacing: 2
-                                            Label { text: "YatraCash Balance"; font.pixelSize: 13; font.bold: true; color: "#2E7D32" }
-                                            Label { text: "₹250.00 available"; font.pixelSize: 12; color: "#555" }
+                                            Label { text: rewardPoints + " Points"; font.pixelSize: 22; font.bold: true; color: "white" }
+                                            Label { text: "Rs." + Math.floor(rewardPoints / 10) + " off on next ride"; font.pixelSize: 11; color: "#FFF8E1" }
                                         }
                                     }
                                 }
 
-                                Rectangle {
-                                    width: parent.width; height: 44; radius: 10
-                                    color: "#E8F5E9"; border.color: "#A5D6A7"
-                                    Row { anchors.centerIn: parent; spacing: 8
-                                        Text { text: "+"; font.pixelSize: 18; color: "#43A047"; font.bold: true }
-                                        Text { text: "Add Money"; font.pixelSize: 13; color: "#43A047"; font.bold: true }
-                                    }
-                                    MouseArea { anchors.fill: parent; onClicked: console.log("Add Money") }
-                                }
-                            }
-                        }
-                    }
+                                Label { text: "Available Coupons"; font.pixelSize: 12; font.bold: true; color: "#888" }
 
-                    RowDivider {}
-
-                    // ── Emergency Contacts ────────────────────────────
-                    ExpandableRow {
-                        rowIcon: Qt.resolvedUrl("../../assets/icons/sos.png")
-                        rowLabel: "Emergency Contacts"
-                        rowSub: "SOS contacts & medical info"
-                        expanded: emergencyExpanded
-                        onRowClicked: {
-                            var wasOpen = emergencyExpanded
-                            collapseAll()
-                            emergencyExpanded = !wasOpen
-                            if (emergencyExpanded) { emergencySaveMessage = ""; loadEmergencyInfo() }
-                        }
-
-                        expandedContent: Column {
-                            width: parent.width; spacing: 14
-                            topPadding: 4; bottomPadding: 16; leftPadding: 16; rightPadding: 16
-
-                            ExpandDivider {}
-
-                            Row {
-                                width: parent.width - 32
-                                Label { text: "Saved Information"; font.pixelSize: 12; font.bold: true; color: "#888"; width: parent.width - editToggleBtn.width }
-                                Button {
-                                    id: editToggleBtn
-                                    text: emergencyEditMode ? "Cancel" : "Edit"; flat: true
-                                    palette.buttonText: "#1976D2"
-                                    onClicked: {
-                                        if (emergencyEditMode) { loadEmergencyInfo(); emergencySaveMessage = "" }
-                                        emergencyEditMode = !emergencyEditMode
-                                    }
-                                }
-                            }
-
-                            Label { text: "Emergency Contact 1"; font.pixelSize: 12; color: "#888" }
-                            TextField { id: acc1NameField; width: parent.width - 32; placeholderText: "Name"; readOnly: !emergencyEditMode; onTextChanged: contact1Name = text }
-                            TextField { id: acc1PhoneField; width: parent.width - 32; placeholderText: "Phone number"; readOnly: !emergencyEditMode; inputMethodHints: Qt.ImhDialableCharactersOnly; onTextChanged: contact1Phone = text }
-
-                            Label { text: "Emergency Contact 2"; font.pixelSize: 12; color: "#888" }
-                            TextField { id: acc2NameField; width: parent.width - 32; placeholderText: "Name"; readOnly: !emergencyEditMode; onTextChanged: contact2Name = text }
-                            TextField { id: acc2PhoneField; width: parent.width - 32; placeholderText: "Phone number"; readOnly: !emergencyEditMode; inputMethodHints: Qt.ImhDialableCharactersOnly; onTextChanged: contact2Phone = text }
-
-                            Label { text: "Blood Group"; font.pixelSize: 12; color: "#888" }
-                            TextField { id: accBloodField; width: parent.width - 32; placeholderText: "e.g. O+"; readOnly: !emergencyEditMode; onTextChanged: bloodGroup = text }
-
-                            Label { text: "Medical Notes"; font.pixelSize: 12; color: "#888" }
-                            TextArea { id: accNotesField; width: parent.width - 32; placeholderText: "Allergies, conditions, medications..."; readOnly: !emergencyEditMode; wrapMode: TextArea.Wrap; onTextChanged: medicalNotes = text }
-
-                            Item {
-                                property int tick: emergencySyncTick
-                                onTickChanged: { acc1NameField.text = contact1Name; acc1PhoneField.text = contact1Phone; acc2NameField.text = contact2Name; acc2PhoneField.text = contact2Phone; accBloodField.text = bloodGroup; accNotesField.text = medicalNotes }
-                                Component.onCompleted: { acc1NameField.text = contact1Name; acc1PhoneField.text = contact1Phone; acc2NameField.text = contact2Name; acc2PhoneField.text = contact2Phone; accBloodField.text = bloodGroup; accNotesField.text = medicalNotes }
-                            }
-
-                            ActionButton { visible: emergencyEditMode; btnText: "Save Emergency Info"; onBtnClicked: saveEmergencyInfo() }
-                            SaveMessage { msg: emergencySaveMessage }
-                        }
-                    }
-
-                    RowDivider {}
-
-                    // ── Ride History ──────────────────────────────────
-                    ExpandableRow {
-                        rowIcon: Qt.resolvedUrl("../../assets/icons/rider.png")
-                        rowLabel: "Ride History"
-                        rowSub: "142 past trips"
-                        expanded: rideHistoryExpanded
-                        onRowClicked: {
-                            var wasOpen = rideHistoryExpanded
-                            collapseAll()
-                            rideHistoryExpanded = !wasOpen
-                        }
-
-                        expandedContent: Column {
-                            width: parent.width; spacing: 0
-                            topPadding: 4; bottomPadding: 8; leftPadding: 16; rightPadding: 16
-
-                            ExpandDivider {}
-
-                            Repeater {
-                                model: rideHistoryData
-                                delegate: Rectangle {
-                                    width: parent.width - 32; height: 72; radius: 10
-                                    color: "#FAFAFA"; border.color: "#EEEEEE"
-                                    property var ride: modelData
-
-                                    Row {
-                                        anchors.fill: parent; anchors.margins: 12; spacing: 12
-
-                                        Column {
-                                            anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 80
-
-                                            Label {
-                                                text: (ride ? ride.from : "") + "  →  " + (ride ? ride.to : "")
-                                                font.pixelSize: 13; font.bold: true; color: "#111"
-                                                elide: Text.ElideRight; width: parent.width
-                                            }
-                                            Label { text: ride ? ride.date : ""; font.pixelSize: 11; color: "#999" }
-                                        }
-
-                                        Column {
-                                            anchors.verticalCenter: parent.verticalCenter; spacing: 4
-                                            Label {
-                                                text: ride ? ride.fare : ""
-                                                font.pixelSize: 14; font.bold: true; color: "#111"
-                                                anchors.right: parent.right
+                                Repeater {
+                                    model: couponList
+                                    delegate: Rectangle {
+                                        width: parent.width - 32; height: 62; radius: 10; color: "white"; border.color: "#E0E0E0"
+                                        property var cpn: modelData
+                                        Rectangle { width: 4; height: parent.height - 12; radius: 2; color: "#1976D2"; anchors.left: parent.left; anchors.leftMargin: 0; anchors.verticalCenter: parent.verticalCenter }
+                                        Row {
+                                            anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 12; spacing: 8
+                                            Column {
+                                                anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 70
+                                                Label { text: cpn ? cpn.code : ""; font.pixelSize: 14; font.bold: true; color: "#1976D2" }
+                                                Label { text: cpn ? cpn.desc : ""; font.pixelSize: 12; color: "#444" }
+                                                Label { text: "Expires: " + (cpn ? cpn.expiry : ""); font.pixelSize: 10; color: "#AAA" }
                                             }
                                             Rectangle {
-                                                height: 16; radius: 8; width: statusLbl.implicitWidth + 10
-                                                color: (ride && ride.status === "Completed") ? "#E8F5E9" : "#FFEBEE"
-                                                Text {
-                                                    id: statusLbl; anchors.centerIn: parent
-                                                    text: ride ? ride.status : ""
-                                                    font.pixelSize: 10; font.bold: true
-                                                    color: (ride && ride.status === "Completed") ? "#388E3C" : "#C62828"
-                                                }
+                                                width: 52; height: 28; radius: 8; color: "#1976D2"; anchors.verticalCenter: parent.verticalCenter
+                                                Text { anchors.centerIn: parent; text: "Apply"; font.pixelSize: 12; font.bold: true; color: "white" }
+                                                MouseArea { anchors.fill: parent; onClicked: console.log("Apply:", cpn ? cpn.code : "") }
                                             }
                                         }
                                     }
-
-                                    // Spacer between cards
-                                    Rectangle { visible: index < rideHistoryData.length - 1; height: 8; color: "transparent"; anchors.bottom: parent.bottom }
-                                }
-                            }
-
-                            Item { height: 8 }
-
-                            Rectangle {
-                                width: parent.width - 32; height: 40; radius: 10
-                                color: "#F5F5F5"; border.color: "#E0E0E0"
-                                Text { anchors.centerIn: parent; text: "View All Trips"; font.pixelSize: 13; color: "#1976D2"; font.bold: true }
-                                MouseArea { anchors.fill: parent; onClicked: console.log("View all trips") }
-                            }
-                        }
-                    }
-
-                    RowDivider {}
-
-                    // ── Rewards & Coupons ─────────────────────────────
-                    ExpandableRow {
-                        rowIcon: Qt.resolvedUrl("../../assets/icons/star.png")
-                        rowLabel: "Rewards & Coupons"
-                        rowSub: rewardPoints + " pts · 3 Offers"
-                        rowTag: "3 Offers"
-                        expanded: rewardsExpanded
-                        onRowClicked: {
-                            var wasOpen = rewardsExpanded
-                            collapseAll()
-                            rewardsExpanded = !wasOpen
-                        }
-
-                        expandedContent: Column {
-                            width: parent.width; spacing: 0
-                            topPadding: 4; bottomPadding: 12; leftPadding: 16; rightPadding: 16
-
-                            ExpandDivider {}
-
-                            // Points card
-                            Rectangle {
-                                width: parent.width - 32; height: 70; radius: 12
-                                gradient: Gradient {
-                                    orientation: Gradient.Horizontal
-                                    GradientStop { position: 0.0; color: "#FF8F00" }
-                                    GradientStop { position: 1.0; color: "#FFD54F" }
-                                }
-                                Row {
-                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 12
-                                    Column {
-                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2
-                                        Label { text: rewardPoints + " Points"; font.pixelSize: 22; font.bold: true; color: "white" }
-                                        Label { text: "≈ ₹" + Math.floor(rewardPoints / 10) + " off on next ride"; font.pixelSize: 11; color: "#FFF8E1" }
-                                    }
-                                    Item { width: 1; Layout.fillWidth: true }
-                                    Text { anchors.verticalCenter: parent.verticalCenter; text: "🏆"; font.pixelSize: 32 }
-                                }
-                            }
-
-                            Item { height: 12 }
-                            Label { text: "Available Coupons"; font.pixelSize: 12; font.bold: true; color: "#888"; x: 0 }
-                            Item { height: 8 }
-
-                            Repeater {
-                                model: couponList
-                                delegate: Rectangle {
-                                    width: parent.width - 32; height: 62; radius: 10
-                                    color: "white"; border.color: "#E0E0E0"
-                                    property var cpn: modelData
-
-                                    // Left dash border accent
-                                    Rectangle { width: 4; height: parent.height; radius: 2; color: "#1976D2"; anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter }
-
-                                    Row {
-                                        anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 12; spacing: 10
-                                        Column {
-                                            anchors.verticalCenter: parent.verticalCenter; spacing: 3; width: parent.width - 60
-                                            Label { text: cpn ? cpn.code : ""; font.pixelSize: 14; font.bold: true; color: "#1976D2"; font.letterSpacing: 1 }
-                                            Label { text: cpn ? cpn.desc : ""; font.pixelSize: 12; color: "#444" }
-                                            Label { text: "Expires: " + (cpn ? cpn.expiry : ""); font.pixelSize: 10; color: "#AAA" }
-                                        }
-                                        Rectangle {
-                                            width: 52; height: 28; radius: 8; color: "#1976D2"
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            Text { anchors.centerIn: parent; text: "Apply"; font.pixelSize: 12; font.bold: true; color: "white" }
-                                            MouseArea { anchors.fill: parent; onClicked: console.log("Apply coupon:", cpn ? cpn.code : "") }
-                                        }
-                                    }
-                                    Rectangle { height: 8; color: "transparent"; anchors.bottom: parent.bottom; width: parent.width }
                                 }
                             }
                         }
@@ -792,499 +766,190 @@ Page {
                 }
 
                 // ════════════════════════════════════════════════════════
-                // PREFERENCES SECTION
+                // SECTION LABEL: PREFERENCES
                 // ════════════════════════════════════════════════════════
-                SectionLabel { sectionTitle: "PREFERENCES" }
-
-                SectionCard {
-                    // ── Notifications ──────────────────────────────────
-                    ExpandableRow {
-                        rowIcon: Qt.resolvedUrl("../../assets/icons/destination.png")
-                        rowLabel: "Notifications"
-                        rowSub: "Ride alerts, offers"
-                        expanded: notifExpanded
-                        onRowClicked: {
-                            var wasOpen = notifExpanded
-                            collapseAll()
-                            notifExpanded = !wasOpen
-                        }
-
-                        expandedContent: Column {
-                            width: parent.width; spacing: 0
-                            topPadding: 4; bottomPadding: 8; leftPadding: 16; rightPadding: 16
-
-                            ExpandDivider {}
-
-                            Repeater {
-                                model: [
-                                    { label: "Ride Alerts",     sub: "Updates on your trips",        ref: "ride" },
-                                    { label: "Offers & Promos", sub: "Deals and discount codes",     ref: "offers" },
-                                    { label: "SMS Alerts",      sub: "Text message notifications",   ref: "sms" },
-                                    { label: "Email Updates",   sub: "Weekly digest & receipts",     ref: "email" }
-                                ]
-                                delegate: Rectangle {
-                                    width: parent.width - 32; height: 54
-                                    color: "transparent"
-                                    property var ni: modelData
-
-                                    Row {
-                                        anchors.fill: parent; spacing: 0
-                                        Column {
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            width: parent.width - 52; spacing: 2
-                                            Label { text: ni ? ni.label : ""; font.pixelSize: 14; color: "#111" }
-                                            Label { text: ni ? ni.sub : ""; font.pixelSize: 11; color: "#AAA" }
-                                        }
-                                        // Toggle
-                                        Rectangle {
-                                            width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
-                                            color: {
-                                                if (!ni) return "#CCC"
-                                                if (ni.ref === "ride")   return notifRideAlerts ? "#1976D2" : "#CCC"
-                                                if (ni.ref === "offers") return notifOffers ? "#1976D2" : "#CCC"
-                                                if (ni.ref === "sms")    return notifSMS ? "#1976D2" : "#CCC"
-                                                if (ni.ref === "email")  return notifEmail ? "#1976D2" : "#CCC"
-                                                return "#CCC"
-                                            }
-                                            Behavior on color { ColorAnimation { duration: 150 } }
-                                            Rectangle {
-                                                width: 20; height: 20; radius: 10; color: "white"
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                x: {
-                                                    if (!ni) return 2
-                                                    if (ni.ref === "ride")   return notifRideAlerts ? 18 : 2
-                                                    if (ni.ref === "offers") return notifOffers ? 18 : 2
-                                                    if (ni.ref === "sms")    return notifSMS ? 18 : 2
-                                                    if (ni.ref === "email")  return notifEmail ? 18 : 2
-                                                    return 2
-                                                }
-                                                Behavior on x { NumberAnimation { duration: 150 } }
-                                            }
-                                            MouseArea {
-                                                anchors.fill: parent
-                                                onClicked: {
-                                                    if (!ni) return
-                                                    if (ni.ref === "ride")   notifRideAlerts = !notifRideAlerts
-                                                    if (ni.ref === "offers") notifOffers = !notifOffers
-                                                    if (ni.ref === "sms")    notifSMS = !notifSMS
-                                                    if (ni.ref === "email")  notifEmail = !notifEmail
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    Rectangle { visible: index < 3; height: 1; color: "#F5F5F5"; anchors.bottom: parent.bottom; width: parent.width }
-                                }
-                            }
-                        }
-                    }
-
-                    RowDivider {}
-
-                    // ── Language ──────────────────────────────────────
-                    ExpandableRow {
-                        rowIcon: Qt.resolvedUrl("../../assets/icons/map.png")
-                        rowLabel: "Language"
-                        rowSub: languages[selectedLang]
-                        expanded: langExpanded
-                        onRowClicked: {
-                            var wasOpen = langExpanded
-                            collapseAll()
-                            langExpanded = !wasOpen
-                        }
-
-                        expandedContent: Column {
-                            width: parent.width; spacing: 0
-                            topPadding: 4; bottomPadding: 8; leftPadding: 16; rightPadding: 16
-
-                            ExpandDivider {}
-
-                            Repeater {
-                                model: languages
-                                delegate: Rectangle {
-                                    width: parent.width - 32; height: 48
-                                    color: selectedLang === index ? "#EEF4FF" : "transparent"
-                                    radius: 8
-
-                                    Row {
-                                        anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 10
-                                        Label {
-                                            text: modelData; font.pixelSize: 14
-                                            font.bold: selectedLang === index
-                                            color: selectedLang === index ? "#1976D2" : "#333"
-                                            anchors.verticalCenter: parent.verticalCenter
-                                            width: parent.width - 32
-                                        }
-                                        Text {
-                                            visible: selectedLang === index
-                                            text: "✓"; font.pixelSize: 16; font.bold: true; color: "#1976D2"
-                                            anchors.verticalCenter: parent.verticalCenter
-                                        }
-                                    }
-                                    MouseArea { anchors.fill: parent; onClicked: { selectedLang = index; langExpanded = false } }
-                                }
-                            }
-                        }
-                    }
-
-                    RowDivider {}
-
-                    // ── Dark Mode (toggle inline) ──────────────────────
-                    Rectangle {
-                        width: parent.width; height: 60; color: "transparent"
-                        Row {
-                            anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                            Rectangle {
-                                width: 36; height: 36; radius: 18; color: "#F5F5F5"
-                                anchors.verticalCenter: parent.verticalCenter
-                                Image { source: Qt.resolvedUrl("../../assets/icons/star.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
-                            }
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter; spacing: 2
-                                width: parent.width - 36 - 14 - 50
-                                Label { text: "Dark Mode"; font.pixelSize: 14; color: "#111" }
-                                Label { text: darkModeEnabled ? "On" : "Off"; font.pixelSize: 11; color: "#AAA" }
-                            }
-                            Rectangle {
-                                width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
-                                color: darkModeEnabled ? "#1976D2" : "#CCCCCC"
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                                Rectangle {
-                                    width: 20; height: 20; radius: 10; color: "white"
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    x: darkModeEnabled ? 18 : 2
-                                    Behavior on x { NumberAnimation { duration: 150 } }
-                                }
-                                MouseArea { anchors.fill: parent; onClicked: darkModeEnabled = !darkModeEnabled }
-                            }
-                        }
-                    }
+                Item { x: 16; width: parent.width - 32; height: 24
+                    Label { text: "PREFERENCES"; font.pixelSize: 11; font.bold: true; color: "#AAAAAA"; leftPadding: 4; anchors.bottom: parent.bottom }
                 }
-
-                // ════════════════════════════════════════════════════════
-                // SUPPORT SECTION
-                // ════════════════════════════════════════════════════════
-                SectionLabel { sectionTitle: "SUPPORT" }
-
-                SectionCard {
-                    // ── Help & Support ────────────────────────────────
-                    ExpandableRow {
-                        rowIcon: Qt.resolvedUrl("../../assets/icons/rider.png")
-                        rowLabel: "Help & Support"
-                        rowSub: "FAQs, report issue, live chat"
-                        rowTag: "Live"
-                        expanded: helpExpanded
-                        onRowClicked: {
-                            var wasOpen = helpExpanded
-                            collapseAll()
-                            helpExpanded = !wasOpen
-                        }
-
-                        expandedContent: Column {
-                            width: parent.width; spacing: 8
-                            topPadding: 4; bottomPadding: 12; leftPadding: 16; rightPadding: 16
-
-                            ExpandDivider {}
-
-                            Repeater {
-                                model: [
-                                    { icon: "❓", label: "FAQs",                sub: "Common questions answered" },
-                                    { icon: "🚗", label: "Issue with a Ride",    sub: "Report problems with trips" },
-                                    { icon: "💬", label: "Live Chat",            sub: "Chat with support now" },
-                                    { icon: "📞", label: "Call Support",         sub: "1800-XXX-XXXX (toll free)" },
-                                    { icon: "📝", label: "Give Feedback",        sub: "Help us improve" }
-                                ]
-                                delegate: Rectangle {
-                                    width: parent.width - 32; height: 52; radius: 10
-                                    color: helpItemMouse.containsMouse ? "#F5F5F5" : "#FAFAFA"
-                                    border.color: "#EEEEEE"
-                                    property var hi: modelData
-
-                                    Row {
-                                        anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 10
-                                        Text { text: hi ? hi.icon : ""; font.pixelSize: 20; anchors.verticalCenter: parent.verticalCenter }
-                                        Column {
-                                            anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 60
-                                            Label { text: hi ? hi.label : ""; font.pixelSize: 13; font.bold: true; color: "#111" }
-                                            Label { text: hi ? hi.sub : "";   font.pixelSize: 11; color: "#888" }
-                                        }
-                                        Text { text: "›"; font.pixelSize: 20; color: "#CCC"; anchors.verticalCenter: parent.verticalCenter }
-                                    }
-                                    MouseArea { id: helpItemMouse; anchors.fill: parent; hoverEnabled: true; onClicked: console.log("Help:", hi ? hi.label : "") }
-                                }
-                            }
-                        }
-                    }
-
-                    RowDivider {}
-
-                    // ── Safety Features ───────────────────────────────
-                    ExpandableRow {
-                        rowIcon: Qt.resolvedUrl("../../assets/icons/sos.png")
-                        rowLabel: "Safety Features"
-                        rowSub: "Share trip, SOS, panic button"
-                        expanded: safetyExpanded
-                        onRowClicked: {
-                            var wasOpen = safetyExpanded
-                            collapseAll()
-                            safetyExpanded = !wasOpen
-                        }
-
-                        expandedContent: Column {
-                            width: parent.width; spacing: 8
-                            topPadding: 4; bottomPadding: 16; leftPadding: 16; rightPadding: 16
-
-                            ExpandDivider {}
-
-                            // Share trip live
-                            Rectangle {
-                                width: parent.width - 32; height: 56; radius: 12; color: "#F3E5F5"; border.color: "#CE93D8"
-                                Row {
-                                    anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14; spacing: 12
-                                    Text { text: "📍"; font.pixelSize: 22; anchors.verticalCenter: parent.verticalCenter }
-                                    Column {
-                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 70
-                                        Label { text: "Share Live Trip"; font.pixelSize: 13; font.bold: true; color: "#6A1B9A" }
-                                        Label { text: "Let trusted contacts track your ride"; font.pixelSize: 11; color: "#9C27B0" }
-                                    }
-                                    Rectangle {
-                                        width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
-                                        color: safetyShareTrip ? "#7B1FA2" : "#CCCCCC"
-                                        Behavior on color { ColorAnimation { duration: 150 } }
-                                        Rectangle {
-                                            width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
-                                            x: safetyShareTrip ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
-                                        }
-                                        MouseArea { anchors.fill: parent; onClicked: safetyShareTrip = !safetyShareTrip }
-                                    }
-                                }
-                            }
-
-                            // SOS Button
-                            Rectangle {
-                                width: parent.width - 32; height: 56; radius: 12; color: "#FFEBEE"; border.color: "#EF9A9A"
-                                Row {
-                                    anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14; spacing: 12
-                                    Text { text: "🆘"; font.pixelSize: 22; anchors.verticalCenter: parent.verticalCenter }
-                                    Column {
-                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 70
-                                        Label { text: "SOS Emergency Button"; font.pixelSize: 13; font.bold: true; color: "#C62828" }
-                                        Label { text: "Instantly alert emergency contacts"; font.pixelSize: 11; color: "#E53935" }
-                                    }
-                                    Rectangle {
-                                        width: 50; height: 30; radius: 15; anchors.verticalCenter: parent.verticalCenter; color: "#C62828"
-                                        Text { anchors.centerIn: parent; text: "Test"; font.pixelSize: 11; font.bold: true; color: "white" }
-                                        MouseArea { anchors.fill: parent; onClicked: console.log("SOS Test triggered") }
-                                    }
-                                }
-                            }
-
-                            // Incognito mode
-                            Rectangle {
-                                width: parent.width - 32; height: 56; radius: 12; color: "#E8EAF6"; border.color: "#9FA8DA"
-                                Row {
-                                    anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14; spacing: 12
-                                    Text { text: "🕶️"; font.pixelSize: 22; anchors.verticalCenter: parent.verticalCenter }
-                                    Column {
-                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 70
-                                        Label { text: "Incognito Mode"; font.pixelSize: 13; font.bold: true; color: "#283593" }
-                                        Label { text: "Hide your ride from history"; font.pixelSize: 11; color: "#3949AB" }
-                                    }
-                                    Rectangle {
-                                        width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
-                                        color: safetyIncognito ? "#283593" : "#CCCCCC"
-                                        Behavior on color { ColorAnimation { duration: 150 } }
-                                        Rectangle {
-                                            width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
-                                            x: safetyIncognito ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
-                                        }
-                                        MouseArea { anchors.fill: parent; onClicked: safetyIncognito = !safetyIncognito }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    RowDivider {}
-
-                    // ── Rate the App ──────────────────────────────────
-                    Rectangle {
-                        width: parent.width; height: 60; color: "transparent"
-                        property bool hovered: rateAppMouse.containsMouse
-                        color: hovered ? "#F8F8F8" : "transparent"
-                        Row {
-                            anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                            Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
-                                Image { source: Qt.resolvedUrl("../../assets/icons/star.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
-                            }
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
-                                Label { text: "Rate the App"; font.pixelSize: 14; color: "#111" }
-                                Label { text: "Tell us what you think"; font.pixelSize: 11; color: "#AAA" }
-                            }
-                            Text { text: "›"; font.pixelSize: 22; color: "#CCC"; anchors.verticalCenter: parent.verticalCenter }
-                        }
-                        MouseArea { id: rateAppMouse; anchors.fill: parent; hoverEnabled: true; onClicked: console.log("Rate app") }
-
-                        // Stars row pops up inline
-                    }
-
-                    RowDivider {}
-
-                    // ── Privacy Policy ────────────────────────────────
-                    Rectangle {
-                        width: parent.width; height: 60; color: "transparent"
-                        Row {
-                            anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                            Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
-                                Image { source: Qt.resolvedUrl("../../assets/icons/map.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
-                            }
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
-                                Label { text: "Privacy Policy"; font.pixelSize: 14; color: "#111" }
-                                Label { text: "Data usage & your rights"; font.pixelSize: 11; color: "#AAA" }
-                            }
-                            Text { text: "›"; font.pixelSize: 22; color: "#CCC"; anchors.verticalCenter: parent.verticalCenter }
-                        }
-                        MouseArea { anchors.fill: parent; onClicked: console.log("Privacy policy") }
-                    }
-
-                    RowDivider {}
-
-                    // ── About ─────────────────────────────────────────
-                    Rectangle {
-                        width: parent.width; height: 60; color: "transparent"
-                        Row {
-                            anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                            Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
-                                Image { source: Qt.resolvedUrl("../../assets/icons/destination.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
-                            }
-                            Column {
-                                anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
-                                Label { text: "About YatraSarthi"; font.pixelSize: 14; color: "#111" }
-                                Label { text: "Version 3.2.1"; font.pixelSize: 11; color: "#AAA" }
-                            }
-                            Text { text: "›"; font.pixelSize: 22; color: "#CCC"; anchors.verticalCenter: parent.verticalCenter }
-                        }
-                        MouseArea { anchors.fill: parent; onClicked: console.log("About") }
-                    }
-                }
-
-                // ── Log Out button ──────────────────────────────────
-                Button {
-                    x: 16; width: parent.width - 32; height: 52
-                    background: Rectangle { color: "#FFEBEE"; radius: 14; border.color: "#FFCDD2" }
-                    contentItem: Text {
-                        text: "Log Out"; font.pixelSize: 15; font.bold: true; color: "#C62828"
-                        horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
-                    }
-                    onClicked: console.log("Logout tapped")
-                }
-
-                Item { width: 1; height: 24 }
-            }
-        }
-    }
-
-    // ══════════════════════════════════════════════════════════════════════
-    // INLINE COMPONENT DEFINITIONS
-    // ══════════════════════════════════════════════════════════════════════
-
-    component SectionLabel: Item {
-        property string sectionTitle: ""
-        x: 16; width: parent.width - 32; height: 28
-        Label {
-            text: sectionTitle; font.pixelSize: 11; font.bold: true
-            color: "#AAAAAA"; leftPadding: 4; anchors.bottom: parent.bottom; anchors.bottomMargin: 4
-        }
-    }
-
-    component SectionCard: Rectangle {
-        default property alias content: innerCol.children
-        x: 16; width: parent.width - 32
-        radius: 14; color: "white"; border.color: "#EEEEEE"; clip: true
-        height: innerCol.height
-        Column { id: innerCol; width: parent.width; spacing: 0 }
-    }
-
-    component RowDivider: Rectangle {
-        x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0"
-    }
-
-    component ExpandDivider: Rectangle {
-        width: parent.width - 32; height: 1; color: "#F0F0F0"; x: 0
-    }
-
-    component ActionButton: Rectangle {
-        property string btnText: "Save"
-        signal btnClicked()
-        width: parent.width - 32; height: 44; radius: 10
-        color: "#1976D2"
-        Text { anchors.centerIn: parent; text: btnText; font.pixelSize: 14; font.bold: true; color: "white"; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
-        MouseArea { anchors.fill: parent; onClicked: parent.btnClicked() }
-    }
-
-    component SaveMessage: Label {
-        property string msg: ""
-        visible: msg !== ""; text: msg; wrapMode: Text.WordWrap
-        color: msg === "Saved successfully" || msg === "Profile updated successfully" ? "#388E3C" : "#E53935"
-        font.pixelSize: 12; width: parent.width - 32
-    }
-
-    component ExpandableRow: Column {
-        property string rowIcon: ""
-        property string rowLabel: ""
-        property string rowSub: ""
-        property string rowTag: ""
-        property bool expanded: false
-        property alias expandedContent: expandPanel.children
-        signal rowClicked()
-
-        width: parent.width
-
-        // ── Main clickable row ──────────────────────────────────────────
-        Rectangle {
-            width: parent.width; height: 60; color: eRowMouse.containsMouse ? "#F8F8F8" : "transparent"
-
-            Row {
-                anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
 
                 Rectangle {
-                    width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
-                    Image { source: rowIcon; width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
-                }
+                    x: 16; width: parent.width - 32
+                    radius: 14; color: "white"; border.color: "#EEEEEE"; clip: true
+                    height: prefCol.height
 
-                Column {
-                    anchors.verticalCenter: parent.verticalCenter; spacing: 2
-                    width: parent.width - 36 - 14 - 60 - 32
-                    Label { text: rowLabel; font.pixelSize: 14; color: "#111" }
-                    Label { text: rowSub; font.pixelSize: 11; color: "#AAA"; visible: rowSub !== ""; elide: Text.ElideRight; width: parent.width }
-                }
+                    Column {
+                        id: prefCol; width: parent.width; spacing: 0
 
-                Item {
-                    width: 60; height: parent.height; anchors.verticalCenter: parent.verticalCenter
-                    Rectangle {
-                        visible: rowTag !== ""
-                        height: 18; radius: 9; color: rowTag === "Live" ? "#E8F5E9" : "#FFF3E0"
-                        width: tagLbl.implicitWidth + 12
-                        anchors.right: chevron.left; anchors.rightMargin: 4; anchors.verticalCenter: parent.verticalCenter
-                        Text { id: tagLbl; anchors.centerIn: parent; text: rowTag; font.pixelSize: 10; font.bold: true; color: rowTag === "Live" ? "#388E3C" : "#E65100" }
+                        // ── Notifications ─────────────────────────────
+                        Column {
+                            width: parent.width
+                            Rectangle {
+                                width: parent.width; height: 60; color: notifMouse.containsMouse ? "#F8F8F8" : "transparent"
+                                Row {
+                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Image { source: Qt.resolvedUrl("../../assets/icons/destination.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
+                                    }
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                        Label { text: "Notifications"; font.pixelSize: 14; color: "#111" }
+                                        Label { text: "Ride alerts, offers"; font.pixelSize: 11; color: "#AAA" }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter; rotation: notifExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
+                                }
+                                MouseArea { id: notifMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { var w = notifExpanded; collapseAll(); notifExpanded = !w } }
+                            }
+
+                            Column {
+                                visible: notifExpanded; width: parent.width
+                                topPadding: 4; bottomPadding: 8; leftPadding: 16; rightPadding: 16; spacing: 0
+
+                                Rectangle { width: parent.width - 32; height: 1; color: "#F0F0F0" }
+
+                                // Notification toggles
+                                Repeater {
+                                    model: [
+                                        { lbl: "Ride Alerts",     sub: "Updates on your trips",       tog: 0 },
+                                        { lbl: "Offers & Promos", sub: "Deals and discount codes",    tog: 1 },
+                                        { lbl: "SMS Alerts",      sub: "Text message notifications",  tog: 2 },
+                                        { lbl: "Email Updates",   sub: "Weekly digest & receipts",    tog: 3 }
+                                    ]
+                                    delegate: Rectangle {
+                                        width: parent.width - 32; height: 52; color: "transparent"
+                                        property var ni: modelData
+                                        property bool togVal: ni ? (ni.tog === 0 ? notifRideAlerts : ni.tog === 1 ? notifOffers : ni.tog === 2 ? notifSMS : notifEmail) : false
+
+                                        Row {
+                                            anchors.fill: parent; spacing: 0
+                                            Column {
+                                                anchors.verticalCenter: parent.verticalCenter; width: parent.width - 52; spacing: 2
+                                                Label { text: ni ? ni.lbl : ""; font.pixelSize: 14; color: "#111" }
+                                                Label { text: ni ? ni.sub : ""; font.pixelSize: 11; color: "#AAA" }
+                                            }
+                                            Rectangle {
+                                                width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
+                                                color: togVal ? "#1976D2" : "#CCCCCC"
+                                                Behavior on color { ColorAnimation { duration: 150 } }
+                                                Rectangle {
+                                                    width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
+                                                    x: togVal ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
+                                                }
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    onClicked: {
+                                                        if (!ni) return
+                                                        if (ni.tog === 0) notifRideAlerts = !notifRideAlerts
+                                                        else if (ni.tog === 1) notifOffers = !notifOffers
+                                                        else if (ni.tog === 2) notifSMS = !notifSMS
+                                                        else notifEmail = !notifEmail
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        Rectangle { visible: index < 3; height: 1; color: "#F5F5F5"; anchors.bottom: parent.bottom; width: parent.width }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
+
+                        // ── Language ──────────────────────────────────
+                        Column {
+                            width: parent.width
+                            Rectangle {
+                                width: parent.width; height: 60; color: langMouse.containsMouse ? "#F8F8F8" : "transparent"
+                                Row {
+                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Image { source: Qt.resolvedUrl("../../assets/icons/map.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
+                                    }
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                        Label { text: "Language"; font.pixelSize: 14; color: "#111" }
+                                        Label { text: languages[selectedLang]; font.pixelSize: 11; color: "#AAA" }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: "#CCCCCC"; anchors.verticalCenter: parent.verticalCenter; rotation: langExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
+                                }
+                                MouseArea { id: langMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { var w = langExpanded; collapseAll(); langExpanded = !w } }
+                            }
+
+                            Column {
+                                visible: langExpanded; width: parent.width
+                                topPadding: 4; bottomPadding: 8; leftPadding: 16; rightPadding: 16; spacing: 0
+
+                                Rectangle { width: parent.width - 32; height: 1; color: "#F0F0F0" }
+
+                                Repeater {
+                                    model: languages
+                                    delegate: Rectangle {
+                                        width: parent.width - 32; height: 46; radius: 8
+                                        color: selectedLang === index ? "#EEF4FF" : "transparent"
+                                        Row {
+                                            anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 10
+                                            Label {
+                                                text: modelData; font.pixelSize: 14; font.bold: selectedLang === index
+                                                color: selectedLang === index ? "#1976D2" : "#333"; anchors.verticalCenter: parent.verticalCenter
+                                                width: parent.width - 30
+                                            }
+                                            Text { visible: selectedLang === index; text: "✓"; font.pixelSize: 16; font.bold: true; color: "#1976D2"; anchors.verticalCenter: parent.verticalCenter }
+                                        }
+                                        MouseArea { anchors.fill: parent; onClicked: { selectedLang = index; langExpanded = false } }
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle { x: 66; width: parent.width - 66; height: 1; color: "#F0F0F0" }
+
+                        // ── Dark Mode (inline toggle) ──────────────────
+                        Rectangle {
+                            width: parent.width; height: 60; color: "transparent"
+                            Row {
+                                anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                    Image { source: Qt.resolvedUrl("../../assets/icons/star.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
+                                }
+                                Column {
+                                    anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 50
+                                    Label { text: "Dark Mode"; font.pixelSize: 14; color: "#111" }
+                                    Label { text: darkModeEnabled ? "On" : "Off"; font.pixelSize: 11; color: "#AAA" }
+                                }
+                                Rectangle {
+                                    width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
+                                    color: darkModeEnabled ? "#1976D2" : "#CCCCCC"; Behavior on color { ColorAnimation { duration: 150 } }
+                                    Rectangle {
+                                        width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
+                                        x: darkModeEnabled ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
+                                    }
+                                    MouseArea { anchors.fill: parent; onClicked: darkModeEnabled = !darkModeEnabled }
+                                }
+                            }
+                        }
                     }
-                    Text {
-                        id: chevron; text: "›"; font.pixelSize: 22; color: "#CCCCCC"
-                        anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-                        rotation: expanded ? 90 : 0
-                        Behavior on rotation { NumberAnimation { duration: 150 } }
-                    }
                 }
-            }
-            MouseArea { id: eRowMouse; anchors.fill: parent; hoverEnabled: true; onClicked: parent.parent.rowClicked() }
-        }
 
-        // ── Expanded panel ──────────────────────────────────────────────
-        Column {
-            id: expandPanel
-            width: parent.width; visible: expanded; spacing: 8
-        }
-    }
-}
+                // ════════════════════════════════════════════════════════
+                // SECTION LABEL: SUPPORT
+                // ════════════════════════════════════════════════════════
+                Item { x: 16; width: parent.width - 32; height: 24
+                    Label { text: "SUPPORT"; font.pixelSize: 11; font.bold: true; color: "#AAAAAA"; leftPadding: 4; anchors.bottom: parent.bottom }
+                }
+
+                Rectangle {
+                    x: 16; width: parent.width - 32
+                    radius: 14; color: "white"; border.color: "#EEEEEE"; clip: true
+                    height: suppCol.height
+
+                    Column {
+                        id: suppCol; width: parent.width; spacing: 0
+
+                        // ── Help & Support ────────────────────────────
+                        Column {
+                            width: parent.width
+                            Rectangle {
+                                width: parent.width; height: 60; color: helpMouse.containsMouse ? "#F8F8F8" : "transparent"
+                                Row {
+                                    anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: "#F5F5F5"; anchors.verticalCenter: parent.verticalCenter
+                                        Image { source: Qt.resolvedUrl("..
