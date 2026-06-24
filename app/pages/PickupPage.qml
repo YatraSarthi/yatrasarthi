@@ -483,19 +483,24 @@ if (appState) {
                         }
 
                         Column {
-    spacing: 5
+    spacing: 4
 
     Label {
-        text: dataLoaded
-              ? appState.driverVehicleModel + " • " + vehicleNumber
-              : "Loading…"
+        text: dataLoaded ? sarthiName : ""
         font.pixelSize: 18
         font.bold: true
     }
 
     Label {
-        text: dataLoaded ? sarthiName : ""
-        font.pixelSize: 18
+        text: dataLoaded ? vehicleNumber : ""
+        font.pixelSize: 15
+        color: "#444444"
+    }
+
+    Label {
+        text: dataLoaded ? appState.driverVehicleModel : ""
+        font.pixelSize: 15
+        color: "#666666"
     }
 
     Label {
@@ -503,6 +508,7 @@ if (appState) {
               ? "★★★★★ " + sarthiRating.toFixed(1)
               : ""
         font.pixelSize: 16
+        color: "#F4A700"
     }
 }
                     }
