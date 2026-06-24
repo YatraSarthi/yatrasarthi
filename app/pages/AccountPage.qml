@@ -12,7 +12,10 @@ Page {
     header: null
 
     onVisibleChanged: {
-        if (visible && appState) appState.showBottomBar = true
+        if (visible && appState) {
+            appState.showBottomBar = true
+            darkModeEnabled = appState.darkMode
+        }
     }
 
     // ── EMERGENCY CONTACTS STATE ─────────────────────────────────────────
@@ -77,8 +80,8 @@ Page {
     property int selectedLang: 0
     property var languages: ["English", "Hindi", "Kannada", "Tamil", "Telugu"]
 
-    // ── DARK MODE ────────────────────────────────────────────────────────
-    property bool darkModeEnabled: false
+    // ── DARK MODE — mirrors appState.darkMode ────────────────────────────
+    property bool darkModeEnabled: appState ? appState.darkMode : false
 
     // ── GENDER ───────────────────────────────────────────────────────────
     property int selectedGender: 0
@@ -1017,7 +1020,12 @@ Page {
                                         width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
                                         x: darkModeEnabled ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
                                     }
-                                    MouseArea { anchors.fill: parent; onClicked: darkModeEnabled = !darkModeEnabled }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        onClicked: {
+                                            if (appState) appState.darkMode = !appState.darkMode
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1084,8 +1092,7 @@ Page {
                                                 width: 30; height: 30; radius: 8; color: "#E3F2FD"; anchors.verticalCenter: parent.verticalCenter
                                                 Text { anchors.centerIn: parent; text: hi ? hi.icon : ""; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
                                             }
-                                            Label { text: hi ? hi.title : ""; font.pixelSize: 13; color: "#111"; anchors.verticalCenter: parent.verticalCenter }
-                                            Item { Layout.fillWidth: true }
+                                            Label { text: hi ? hi.title : ""; font.pixelSize: 13; color: "#111"; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 30 - 10 - 10 - 18 }
                                             Text { text: "›"; font.pixelSize: 18; color: "#CCC"; anchors.verticalCenter: parent.verticalCenter }
                                         }
                                         MouseArea { anchors.fill: parent; onClicked: console.log("Help:", hi ? hi.title : "") }
