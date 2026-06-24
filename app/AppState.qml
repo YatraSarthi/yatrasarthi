@@ -39,10 +39,11 @@ QtObject {
     property bool isLoggedIn: false
 
     // ── Driver retry state ────────────────────────────────────────────────
-    // Track how many times user has asked for a different driver this trip
     property int driverRetryCount: 0
-    // Name of the last driver shown — so BookingPage can skip them
     property string lastDriverName: ""
+
+    // ── Theme ─────────────────────────────────────────────────────────────
+    property bool darkMode: false
 
     function resetDriverSearch() {
         driverRetryCount = 0
