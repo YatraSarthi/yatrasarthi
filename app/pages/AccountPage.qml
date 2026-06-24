@@ -1084,8 +1084,7 @@ Page {
                                                 width: 30; height: 30; radius: 8; color: "#E3F2FD"; anchors.verticalCenter: parent.verticalCenter
                                                 Text { anchors.centerIn: parent; text: hi ? hi.icon : ""; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
                                             }
-                                            Label { text: hi ? hi.title : ""; font.pixelSize: 13; color: "#111"; anchors.verticalCenter: parent.verticalCenter }
-                                            Item { Layout.fillWidth: true }
+                                            Label { text: hi ? hi.title : ""; font.pixelSize: 13; color: "#111"; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 30 - 10 - 10 - 18 }
                                             Text { text: "›"; font.pixelSize: 18; color: "#CCC"; anchors.verticalCenter: parent.verticalCenter }
                                         }
                                         MouseArea { anchors.fill: parent; onClicked: console.log("Help:", hi ? hi.title : "") }
