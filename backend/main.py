@@ -29,62 +29,66 @@ RECENT_FILE = "recent_places.json"
 SOS_INFO_FILE = "sos_info.json"
 
 # Pool of driver names/vehicles — rotated on retry so UI name changes too
-# Photo filenames match exactly what is in assets/image/ folder
+# Photo filenames match EXACTLY what is in assets/image/ folder (case-sensitive
+# on Linux/WSL — confirmed via `ls -la assets/image/`):
+#   agnik.jpeg, Devaj.jpeg, Ibrahim.jpeg, Johney.jpeg, Lokesh.jpeg,
+#   Manu.jpeg, Satyakam.jpeg
 DRIVER_POOL = [
     {
         "name": "Johney Reji",
         "vehicle": "WB03AD7394",
         "vehicleModel": "Honda SP125",
         "rating": 4.4,
-        "photo": "Johney"          # → assets/image/Johney (jpg/png detected in QML)
+        "photo": "Johney.jpeg"
     },
     {
         "name": "Lokesh Royal",
         "vehicle": "KA01AB1234",
         "vehicleModel": "Bajaj RE Auto",
         "rating": 4.7,
-        "photo": "Lokesh"
+        "photo": "Lokesh.jpeg"
     },
     {
         "name": "Satyakam Tripathy",
         "vehicle": "KA02CD5678",
         "vehicleModel": "Maruti Suzuki Dzire",
         "rating": 4.7,
-        "photo": "Satyakam"
+        "photo": "Satyakam.jpeg"
     },
     {
         "name": "Devaj",
         "vehicle": "KA03EF9012",
         "vehicleModel": "Mitsubishi Pajero",
         "rating": 4.6,
-        "photo": "Devaj"
+        "photo": "Devaj.jpeg"
     },
     {
         "name": "Ibrahim",
         "vehicle": "KA04GH3456",
         "vehicleModel": "Maruti Suzuki Ertiga",
         "rating": 4.5,
-        "photo": "Ibrahim"
+        "photo": "Ibrahim.jpeg"
     },
     {
         "name": "Manaswitha",
         "vehicle": "KA05IJ7890",
         "vehicleModel": "Toyota Innova Crysta",
         "rating": 4.9,
-        "photo": "Manu"
+        "photo": "Manu.jpeg"
     },
     {
         "name": "Agnik",
         "vehicle": "KA06KL2345",
         "vehicleModel": "Hyundai Grand i10",
         "rating": 4.3,
-        "photo": "agnik"           # lowercase 'a' — matches actual filename
+        "photo": "agnik.jpeg"          # lowercase 'a' — matches actual filename
     },
 ]
 
 # ----------------------------
 # Home Endpoint
 # ----------------------------
+
 
 @app.get("/")
 def home():
@@ -319,7 +323,7 @@ def start_driver(pickup_lat: float, pickup_lon: float, selected_vehicle: str = "
         "vehicleNumber": profile["vehicle"],
         "vehicleModel": profile["vehicleModel"],
         "driverRating": profile["rating"],
-        "driverPhoto":  profile["photo"]   # e.g. "Johney", "Lokesh", "agnik" …
+        "driverPhoto":  profile["photo"]   # e.g. "Johney.jpeg", "agnik.jpeg" …
     }
 
 

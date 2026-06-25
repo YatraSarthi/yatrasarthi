@@ -111,7 +111,9 @@ function makeVehicleIcon(vType, dPhoto) {
     var size   = 52;
     var vImg   = getVehiclePng(vType);
     var dSrc   = dPhoto
-                 ? "../../assets/image/" + dPhoto + ".jpeg"
+                 ? (/\.(jpe?g|png|webp)$/i.test(dPhoto)
+                    ? "../../assets/image/" + dPhoto
+                    : "../../assets/image/" + dPhoto + ".jpeg")
                  : "../../assets/icons/driver.png";
 
     var html = '<div class="vehicle-wrap">'

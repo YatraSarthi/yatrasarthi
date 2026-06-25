@@ -34,10 +34,12 @@ Page {
     title: "Sarthi Arriving"
 
     // ── Driver photo helper ─────────────────────────────────────────────────
-    // Backend sends a bare name (e.g. "Johney", "agnik") with no extension.
-    // Actual files live in assets/image/<name>.jpeg
+    // Backend now sends the filename WITH extension (e.g. "Johney.jpeg").
+    // This helper still tolerates a bare name (no extension) for safety.
     function driverPhotoUrl(photo) {
         if (!photo || photo.length === 0) return ""
+        if (/\.(jpe?g|png|webp)$/i.test(photo))
+            return "../../assets/image/" + photo
         return "../../assets/image/" + photo + ".jpeg"
     }
 
