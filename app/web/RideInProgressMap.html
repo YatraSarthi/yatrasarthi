@@ -159,6 +159,8 @@ function setDriverPhoto(photo) {
 
 /* ══════════════════════════════════════════════════════════
    initializeRide  — called once from QML after startRide()
+   Places pins + vehicle marker. Does NOT fetch the route itself —
+   QML fetches it from the backend and pushes it in via drawRoute().
 ══════════════════════════════════════════════════════════ */
 function initializeRide(pickupLat, pickupLon,
                         destLat,   destLon,
@@ -190,41 +192,50 @@ function initializeRide(pickupLat, pickupLon,
           zIndexOffset: 300 })
         .addTo(map).bindPopup('<b>Your ride</b>');
 
-    // ── Fetch road route via OSRM ───────────────────────────
-    var osrmUrl = "https://router.project-osrm.org/route/v1/driving/"
-                + pickupLon + "," + pickupLat + ";"
-                + destLon   + "," + destLat
-                + "?overview=full&geometries=geojson&steps=false";
+    // Fit pickup + destination + vehicle for now.
+    // map.fitBounds() will be called again, tighter, once drawRoute() runs.
+    var group = L.featureGroup([pickupMarker, destinationMarker, vehicleMarker]);
+    map.fitBounds(group.getBounds(), { padding: [48, 48] });
+}
 
-    fetch(osrmUrl)
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
-            if (!data.routes || data.routes.length === 0) return;
+/* ══════════════════════════════════════════════════════════
+   drawRoute  — called from QML once it has fetched the road
+   route from the backend (FastAPI → OSRM, or whatever routing
+   provider). This replaces the old in-page fetch() to OSRM,
+   which is unreliable from inside a WebEngineView.
 
-            var coords = data.routes[0].geometry.coordinates;
-            // OSRM gives [lon,lat] → flip to [lat,lon]
-            fullRouteCoords = coords.map(function(c) { return [c[1], c[0]]; });
+   routePoints: [[lat,lon], [lat,lon], ...]
+══════════════════════════════════════════════════════════ */
+function drawRoute(routePoints) {
 
-            // Remaining route (light blue)
-            routeLine = L.polyline(fullRouteCoords, {
-                color:   '#1976D2',
-                weight:  6,
-                opacity: 0.85
-            }).addTo(map);
+    if (!routePoints || routePoints.length === 0) return;
 
-            // Snap vehicle to closest route point
-            vehicleRouteIdx = closestPointIdx(vehLat, vehLon);
+    fullRouteCoords = routePoints;
+    vehicleRouteIdx = 0;
 
-            // Fit full route + all markers
-            var bounds = routeLine.getBounds()
-                .extend([pickupLat, pickupLon])
-                .extend([destLat,   destLon]);
-            map.fitBounds(bounds, { padding: [48, 48] });
-        })
-        .catch(function(e) {
-            console.warn("OSRM error:", e);
-            // No fallback dashes — just show markers without line
-        });
+    if (routeLine)     { map.removeLayer(routeLine);     routeLine = null; }
+    if (travelledLine) { map.removeLayer(travelledLine); travelledLine = null; }
+
+    // Remaining route (light blue) — full route to start
+    routeLine = L.polyline(fullRouteCoords, {
+        color:   '#1976D2',
+        weight:  6,
+        opacity: 0.85
+    }).addTo(map);
+
+    // Snap vehicle to closest route point, if vehicle marker already exists
+    if (vehicleMarker) {
+        var v = vehicleMarker.getLatLng();
+        vehicleRouteIdx = closestPointIdx(v.lat, v.lng);
+    }
+
+    // Fit full route + pickup + destination
+    var bounds = routeLine.getBounds();
+    if (pickupMarker)      bounds.extend(pickupMarker.getLatLng());
+    if (destinationMarker) bounds.extend(destinationMarker.getLatLng());
+    map.fitBounds(bounds, { padding: [48, 48] });
+
+    if (vehicleMarker) vehicleMarker.bringToFront();
 }
 
 /* ══════════════════════════════════════════════════════════

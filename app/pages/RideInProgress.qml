@@ -51,7 +51,7 @@ Page {
             eta          = data.eta      || appState.selectedEta
             currentSpeed = data.speed    || 30
 
-            // ── NEW: tell the map which driver photo + vehicle type to use ──
+            // ── Tell the map which driver photo + vehicle type to use ──
             rideMap.runJavaScript(
                 "setVehicleType('" + appState.selectedVehicle + "')"
             )
@@ -67,6 +67,13 @@ Page {
                 + data.vehicleLat         + "," + data.vehicleLon
                 + ")"
             )
+
+            // ── NEW: fetch the road route (pickup → destination) from the
+            //    backend and push the coordinates into the map. The map
+            //    page no longer calls OSRM itself — WebEngineView can't
+            //    reliably reach external hosts via in-page fetch().
+            fetchRideRoute()
+
             rideSessionReady = true
         }
     }
@@ -79,6 +86,38 @@ Page {
         true)
     xhr.send()
 }
+
+    // ── Fetch road route (pickup → destination) and push to map ───────────────
+    function fetchRideRoute() {
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
+                if (xhr.status !== 200) {
+                    console.warn("fetchRideRoute failed:", xhr.status)
+                    return
+                }
+                var data = JSON.parse(xhr.responseText)
+                if (!data.routes || data.routes.length === 0) return
+                var coordinates = data.routes[0].geometry.coordinates
+                var routePoints = []
+                for (var i = 0; i < coordinates.length; i++)
+                    routePoints.push([coordinates[i][1], coordinates[i][0]])
+                rideMap.runJavaScript(
+                    "drawRoute(" + JSON.stringify(routePoints) + ")"
+                )
+            }
+        }
+        xhr.open(
+            "GET",
+            "http://127.0.0.1:8000/pickup-route"
+            + "?driver_lat="  + appState.pickupLat
+            + "&driver_lon="  + appState.pickupLon
+            + "&pickup_lat="  + appState.destinationLat
+            + "&pickup_lon="  + appState.destinationLon,
+            true
+        )
+        xhr.send()
+    }
 
 // ─────────────────────────────────────────────────────────────────────
 // Also replace the Destination card Row (the icon + "Destination" label)

@@ -159,10 +159,13 @@ Page {
                             // Pickup row
                             Row {
                                 spacing: 10; width: parent.width
-                                Rectangle {
-                                    width: 10; height: 10; radius: 5; color: "#1976D2"
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
+                                Image {
+    source: "../../assets/icons/pickup.png"
+    width: 18
+    height: 18
+    fillMode: Image.PreserveAspectFit
+    anchors.verticalCenter: parent.verticalCenter
+}
                                 Label {
                                     text: appState ? appState.pickupLocation : "–"
                                     font.pixelSize: 13; color: "#333"
@@ -182,20 +185,33 @@ Page {
                                 }
                             }
 
-                            // Destination row
-                            Row {
-                                spacing: 10; width: parent.width
-                                Rectangle {
-                                    width: 10; height: 10; radius: 2; color: "#E53935"
-                                    anchors.verticalCenter: parent.verticalCenter
-                                }
-                                Label {
-                                    text: appState ? appState.destinationLocation : "–"
-                                    font.pixelSize: 13; color: "#333"
-                                    wrapMode: Text.WordWrap
-                                    width: parent.width - 20
-                                }
-                            }
+                           // Destination row
+Row {
+    width: parent.width
+    spacing: 10
+
+    Image {
+        source: Qt.resolvedUrl("../../assets/icons/destination.png")
+        width: 22
+        height: 22
+        fillMode: Image.PreserveAspectFit
+    }
+
+    Label {
+        text: appState ? appState.destinationLocation : "–"
+
+        width: parent.width - 40
+
+        wrapMode: Text.WordWrap
+
+        font.pixelSize: 13
+        font.bold: true
+        color: "#333333"
+
+        verticalAlignment: Text.AlignVCenter
+    }
+}
+                                
 
                             // Divider
                             Rectangle { width: parent.width; height: 1; color: "#F0F0F0" }
