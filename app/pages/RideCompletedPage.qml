@@ -191,23 +191,20 @@ Row {
     spacing: 10
 
     Image {
-        source: Qt.resolvedUrl("../../assets/icons/destination.png")
+        source: "../../assets/icons/destination.png"
         width: 22
         height: 22
         fillMode: Image.PreserveAspectFit
+        anchors.verticalCenter: parent.verticalCenter
     }
 
-    Label {
+    Text {
         text: appState ? appState.destinationLocation : "–"
-
         width: parent.width - 40
-
         wrapMode: Text.WordWrap
-
         font.pixelSize: 13
         font.bold: true
         color: "#333333"
-
         verticalAlignment: Text.AlignVCenter
     }
 }
