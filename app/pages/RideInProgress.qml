@@ -39,37 +39,67 @@ Page {
 
     // ── Start ride session ────────────────────────────────────────────────────
     function startRide() {
-        var xhr = new XMLHttpRequest()
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status !== 200) {
-                    console.warn("startRide failed:", xhr.status)
-                    return
-                }
-                var data = JSON.parse(xhr.responseText)
-                remainingKm  = data.distance || 0
-                eta          = data.eta      || appState.selectedEta
-                currentSpeed = data.speed    || 30
-
-                rideMap.runJavaScript(
-                    "initializeRide("
-                    + appState.pickupLat      + "," + appState.pickupLon      + ","
-                    + appState.destinationLat + "," + appState.destinationLon + ","
-                    + data.vehicleLat         + "," + data.vehicleLon
-                    + ")"
-                )
-                rideSessionReady = true
+    var xhr = new XMLHttpRequest()
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status !== 200) {
+                console.warn("startRide failed:", xhr.status)
+                return
             }
+            var data = JSON.parse(xhr.responseText)
+            remainingKm  = data.distance || 0
+            eta          = data.eta      || appState.selectedEta
+            currentSpeed = data.speed    || 30
+
+            // ── NEW: tell the map which driver photo + vehicle type to use ──
+            rideMap.runJavaScript(
+                "setVehicleType('" + appState.selectedVehicle + "')"
+            )
+            rideMap.runJavaScript(
+                "setDriverPhoto('" + (appState.driverPhoto || "") + "')"
+            )
+            // ────────────────────────────────────────────────────────────────
+
+            rideMap.runJavaScript(
+                "initializeRide("
+                + appState.pickupLat      + "," + appState.pickupLon      + ","
+                + appState.destinationLat + "," + appState.destinationLon + ","
+                + data.vehicleLat         + "," + data.vehicleLon
+                + ")"
+            )
+            rideSessionReady = true
         }
-        xhr.open("GET",
-            "http://127.0.0.1:8000/start-ride"
-            + "?pickup_lat="      + appState.pickupLat
-            + "&pickup_lon="      + appState.pickupLon
-            + "&destination_lat=" + appState.destinationLat
-            + "&destination_lon=" + appState.destinationLon,
-            true)
-        xhr.send()
     }
+    xhr.open("GET",
+        "http://127.0.0.1:8000/start-ride"
+        + "?pickup_lat="      + appState.pickupLat
+        + "&pickup_lon="      + appState.pickupLon
+        + "&destination_lat=" + appState.destinationLat
+        + "&destination_lon=" + appState.destinationLon,
+        true)
+    xhr.send()
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Also replace the Destination card Row (the icon + "Destination" label)
+// with this — uses destination.png instead of the emoji 📍
+// ─────────────────────────────────────────────────────────────────────
+
+Row {
+    spacing: 6
+    Image {
+        source: "../../assets/icons/destination.png"
+        width: 16; height: 16
+        fillMode: Image.PreserveAspectFit
+        anchors.verticalCenter: parent.verticalCenter
+    }
+    Label {
+        text:           "Destination"
+        color:          "#888888"
+        font.pixelSize: 12
+        anchors.verticalCenter: parent.verticalCenter
+    }
+}
 
     // ── Poll ride location ────────────────────────────────────────────────────
     function fetchRideLocation() {

@@ -6,13 +6,45 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        html, body, #map {
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
+        html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; }
+
+        /* ── Pickup pin ── */
+        .pin-pickup {
+            width: 36px; height: 44px;
+            position: relative;
         }
-        /* Smooth vehicle rotation */
-        .vehicle-icon-img {
-            transition: transform 0.4s ease;
+        .pin-pickup svg { width: 36px; height: 44px; }
+
+        /* ── Destination pin ── */
+        .pin-dest {
+            width: 36px; height: 44px;
+            position: relative;
+        }
+        .pin-dest svg { width: 36px; height: 44px; }
+
+        /* ── Vehicle marker ── */
+        .vehicle-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0;
+        }
+        .vehicle-bubble {
+            background: white;
+            border: 2.5px solid #1976D2;
+            border-radius: 50%;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .vehicle-bubble img {
+            display: block;
+            object-fit: cover;
+        }
+        .vehicle-tail {
+            width: 3px;
+            height: 10px;
+            background: #1976D2;
+            border-radius: 2px;
         }
     </style>
 </head>
@@ -20,178 +52,233 @@
 <div id="map"></div>
 <script>
 
-/* ── Base map ─────────────────────────────────────────────────────────── */
-var map = L.map("map", { zoomControl: false })
+/* ══════════════════════════════════════════════════════════
+   Map
+══════════════════════════════════════════════════════════ */
+var map = L.map("map", { zoomControl: true })
            .setView([12.9716, 77.5946], 13);
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 19,
-    attribution: '© OpenStreetMap contributors'
+    attribution: "© OpenStreetMap"
 }).addTo(map);
 
-/* ── State ───────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   State
+══════════════════════════════════════════════════════════ */
 var pickupMarker      = null;
 var destinationMarker = null;
 var vehicleMarker     = null;
-var routeBorder       = null;   /* white underline layer  */
-var routeLine         = null;   /* blue top layer         */
-var lastLat           = null;
-var lastLon           = null;
-var currentVehicleType = "Cab";
+var routeLine         = null;
+var travelledLine     = null;   // darker segment already covered
+var vehicleType       = "Cab";
+var driverPhoto       = "";
+var fullRouteCoords   = [];     // [[lat,lon], ...] full road route
+var vehicleRouteIdx   = 0;      // which index vehicle is at
 
-/* ── PNG-based icons ─────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   Icons
+══════════════════════════════════════════════════════════ */
 
-/* Pickup / destination use your existing PNG assets */
-var pickupIcon = L.icon({
-    iconUrl:    "../../assets/icons/pickup.png",
-    iconSize:   [40, 40],
-    iconAnchor: [20, 40]
-});
-
-var destinationIcon = L.icon({
-    iconUrl:    "../../assets/icons/destination.png",
-    iconSize:   [40, 40],
-    iconAnchor: [20, 40]
-});
-
-/* Vehicle — PNG image, centred on position */
-function makeVehicleIcon(vehicleType) {
-    var img = "../../assets/icons/cab.png";
-    if (vehicleType === "Bike")    img = "../../assets/icons/bike.png";
-    if (vehicleType === "Auto")    img = "../../assets/icons/auto.png";
-    if (vehicleType === "Carpool") img = "../../assets/icons/carpool.png";
-
-    return L.icon({
-        iconUrl:    img,
-        iconSize:   [48, 48],
-        iconAnchor: [24, 24]
+// Green pickup pin (map-pin shape)
+function makePickupIcon() {
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 44" width="36" height="44">'
+            + '<path d="M18 0 C8.06 0 0 8.06 0 18 C0 31.5 18 44 18 44 C18 44 36 31.5 36 18 C36 8.06 27.94 0 18 0Z" fill="#2E7D32"/>'
+            + '<circle cx="18" cy="18" r="9" fill="white" opacity="0.95"/>'
+            + '<circle cx="18" cy="18" r="5" fill="#2E7D32"/>'
+            + '</svg>';
+    return L.divIcon({
+        html: svg, iconSize: [36, 44], iconAnchor: [18, 44],
+        popupAnchor: [0, -44], className: ''
     });
 }
 
-var vehicleIcon = makeVehicleIcon("Cab");
+// Red destination pin
+function makeDestIcon() {
+    var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 44" width="36" height="44">'
+            + '<path d="M18 0 C8.06 0 0 8.06 0 18 C0 31.5 18 44 18 44 C18 44 36 31.5 36 18 C36 8.06 27.94 0 18 0Z" fill="#C62828"/>'
+            + '<circle cx="18" cy="18" r="9" fill="white" opacity="0.95"/>'
+            + '<circle cx="18" cy="18" r="5" fill="#C62828"/>'
+            + '</svg>';
+    return L.divIcon({
+        html: svg, iconSize: [36, 44], iconAnchor: [18, 44],
+        popupAnchor: [0, -44], className: ''
+    });
+}
 
-/* ── setVehicleType — called from QML BEFORE initializeRide ─────────── */
+// Vehicle marker: driver photo circle + vehicle PNG badge + tail
+function makeVehicleIcon(vType, dPhoto) {
+    var size   = 52;
+    var vImg   = getVehiclePng(vType);
+    var dSrc   = dPhoto
+                 ? "../../assets/drivers/" + dPhoto
+                 : "../../assets/icons/driver.png";
+
+    var html = '<div class="vehicle-wrap">'
+             // Driver photo circle
+             + '<div class="vehicle-bubble" style="width:' + size + 'px;height:' + size + 'px;">'
+             + '<img src="' + dSrc + '" width="' + size + '" height="' + size + '" '
+             + 'onerror="this.src=\'../../assets/icons/driver.png\'">'
+             + '</div>'
+             // Vehicle type PNG badge underneath
+             + '<div style="background:white;border:2px solid #1976D2;border-radius:8px;'
+             + 'padding:2px 4px;margin-top:2px;display:flex;align-items:center;gap:3px;">'
+             + '<img src="' + vImg + '" width="18" height="18" style="object-fit:contain">'
+             + '</div>'
+             // Tail
+             + '<div class="vehicle-tail"></div>'
+             + '</div>';
+
+    return L.divIcon({
+        html:        html,
+        iconSize:    [size, size + 36],
+        iconAnchor:  [size / 2, size + 36],
+        className:   ''
+    });
+}
+
+function getVehiclePng(type) {
+    if (!type) return "../../assets/icons/rider.png";
+    var t = type.toLowerCase();
+    if (t === "bike")    return "../../assets/icons/bike.png";
+    if (t === "auto")    return "../../assets/icons/auto.png";
+    if (t === "carpool") return "../../assets/icons/carpool.png";
+    return "../../assets/icons/cab.png";   // Cab default
+}
+
+/* ══════════════════════════════════════════════════════════
+   QML-callable setters
+══════════════════════════════════════════════════════════ */
 function setVehicleType(type) {
-    currentVehicleType = type;
-    vehicleIcon = makeVehicleIcon(type);
-    if (vehicleMarker) {
-        vehicleMarker.setIcon(vehicleIcon);
-    }
+    vehicleType = type || "Cab";
 }
 
-/* ── initializeRide — called from QML once /start-ride responds ─────── */
-function initializeRide(
-    pickupLat, pickupLon,
-    destinationLat, destinationLon,
-    vehicleLat, vehicleLon
-) {
-    /* clear previous session */
-    if (pickupMarker)      { map.removeLayer(pickupMarker);      pickupMarker      = null; }
-    if (destinationMarker) { map.removeLayer(destinationMarker); destinationMarker = null; }
-    if (vehicleMarker)     { map.removeLayer(vehicleMarker);     vehicleMarker     = null; }
-    if (routeBorder)       { map.removeLayer(routeBorder);       routeBorder       = null; }
-    if (routeLine)         { map.removeLayer(routeLine);         routeLine         = null; }
+function setDriverPhoto(photo) {
+    driverPhoto = photo || "";
+}
 
-    lastLat = null;
-    lastLon = null;
+/* ══════════════════════════════════════════════════════════
+   initializeRide  — called once from QML after startRide()
+══════════════════════════════════════════════════════════ */
+function initializeRide(pickupLat, pickupLon,
+                        destLat,   destLon,
+                        vehLat,    vehLon) {
 
+    // Clear old layers
+    [pickupMarker, destinationMarker, vehicleMarker,
+     routeLine, travelledLine].forEach(function(l) {
+        if (l) map.removeLayer(l);
+    });
+    pickupMarker = destinationMarker = vehicleMarker =
+    routeLine    = travelledLine     = null;
+    fullRouteCoords = [];
+    vehicleRouteIdx = 0;
+
+    // ── Pickup pin ──────────────────────────────────────────
     pickupMarker = L.marker([pickupLat, pickupLon],
-        { icon: pickupIcon }).addTo(map);
+        { icon: makePickupIcon(), zIndexOffset: 100 })
+        .addTo(map).bindPopup('<b>Pickup</b>');
 
-    destinationMarker = L.marker([destinationLat, destinationLon],
-        { icon: destinationIcon }).addTo(map);
+    // ── Destination pin ─────────────────────────────────────
+    destinationMarker = L.marker([destLat, destLon],
+        { icon: makeDestIcon(), zIndexOffset: 100 })
+        .addTo(map).bindPopup('<b>Destination</b>');
 
-    vehicleMarker = L.marker([vehicleLat, vehicleLon],
-        { icon: vehicleIcon }).addTo(map);
+    // ── Vehicle marker ──────────────────────────────────────
+    vehicleMarker = L.marker([vehLat, vehLon],
+        { icon: makeVehicleIcon(vehicleType, driverPhoto),
+          zIndexOffset: 300 })
+        .addTo(map).bindPopup('<b>Your ride</b>');
 
-    map.fitBounds(L.latLngBounds([
-        [pickupLat,      pickupLon],
-        [destinationLat, destinationLon],
-        [vehicleLat,     vehicleLon]
-    ]), { padding: [50, 50] });
+    // ── Fetch road route via OSRM ───────────────────────────
+    var osrmUrl = "https://router.project-osrm.org/route/v1/driving/"
+                + pickupLon + "," + pickupLat + ";"
+                + destLon   + "," + destLat
+                + "?overview=full&geometries=geojson&steps=false";
 
-    /* draw the full route line pickup → destination */
-    fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon);
-}
-
-/* ── fetchRoute — XHR (no fetch, avoids file:// CORS block) ─────────── */
-function fetchRoute(pickupLat, pickupLon, destinationLat, destinationLon) {
-    var url = "http://127.0.0.1:8000/route"
-        + "?pickup_lat="      + pickupLat
-        + "&pickup_lon="      + pickupLon
-        + "&destination_lat=" + destinationLat
-        + "&destination_lon=" + destinationLon;
-
-    var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState !== 4) return;
-        if (xhr.status !== 200) {
-            console.log("fetchRoute HTTP error:", xhr.status);
-            return;
-        }
-        try {
-            var data = JSON.parse(xhr.responseText);
+    fetch(osrmUrl)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
             if (!data.routes || data.routes.length === 0) return;
+
             var coords = data.routes[0].geometry.coordinates;
-            var points = [];
-            for (var i = 0; i < coords.length; i++) {
-                /* OSRM: [lon, lat] → Leaflet: [lat, lon] */
-                points.push([coords[i][1], coords[i][0]]);
-            }
-            drawRoute(points);
-        } catch (e) {
-            console.log("fetchRoute parse error:", e);
-        }
-    };
-    xhr.open("GET", url, true);
-    xhr.send();
+            // OSRM gives [lon,lat] → flip to [lat,lon]
+            fullRouteCoords = coords.map(function(c) { return [c[1], c[0]]; });
+
+            // Remaining route (light blue)
+            routeLine = L.polyline(fullRouteCoords, {
+                color:   '#1976D2',
+                weight:  6,
+                opacity: 0.85
+            }).addTo(map);
+
+            // Snap vehicle to closest route point
+            vehicleRouteIdx = closestPointIdx(vehLat, vehLon);
+
+            // Fit full route + all markers
+            var bounds = routeLine.getBounds()
+                .extend([pickupLat, pickupLon])
+                .extend([destLat,   destLon]);
+            map.fitBounds(bounds, { padding: [48, 48] });
+        })
+        .catch(function(e) {
+            console.warn("OSRM error:", e);
+            // No fallback dashes — just show markers without line
+        });
 }
 
-/* ── drawRoute — Uber-style dual-layer polyline ─────────────────────── */
-function drawRoute(routePoints) {
-    if (routeBorder) { map.removeLayer(routeBorder); routeBorder = null; }
-    if (routeLine)   { map.removeLayer(routeLine);   routeLine   = null; }
-
-    /* bottom layer: white border gives the "floating" look */
-    routeBorder = L.polyline(routePoints, {
-        color:   "white",
-        weight:  14,
-        opacity: 1,
-        lineJoin: "round",
-        lineCap:  "round"
-    }).addTo(map);
-
-    /* top layer: solid blue route */
-    routeLine = L.polyline(routePoints, {
-        color:   "#1976D2",
-        weight:  8,
-        opacity: 1,
-        lineJoin: "round",
-        lineCap:  "round"
-    }).addTo(map);
-
-    /* bring vehicle marker above the route line */
-    if (vehicleMarker) vehicleMarker.bringToFront();
-}
-
-/* ── moveVehicle — called every 5 s from QML, rotates icon ──────────── */
+/* ══════════════════════════════════════════════════════════
+   moveVehicle  — called every 5 s from QML timer
+══════════════════════════════════════════════════════════ */
 function moveVehicle(lat, lon) {
     if (!vehicleMarker) return;
 
-    /* rotate icon to face direction of travel */
-    if (lastLat !== null) {
-        var angle = Math.atan2(lon - lastLon, lat - lastLat) * 180 / Math.PI;
-        var el = vehicleMarker.getElement();
-        if (el) {
-            el.style.transition  = "transform 0.4s ease";
-            el.style.transformOrigin = "center center";
-            el.style.transform   = "rotate(" + angle + "deg)";
+    // Move marker
+    vehicleMarker.setLatLng([lat, lon]);
+
+    // Advance along route
+    if (fullRouteCoords.length > 0) {
+        var newIdx = closestPointIdx(lat, lon);
+        if (newIdx > vehicleRouteIdx) vehicleRouteIdx = newIdx;
+
+        // Travelled segment: dark blue, thicker
+        if (travelledLine) map.removeLayer(travelledLine);
+        if (vehicleRouteIdx > 0) {
+            travelledLine = L.polyline(
+                fullRouteCoords.slice(0, vehicleRouteIdx + 1),
+                { color: '#0D47A1', weight: 7, opacity: 0.9 }
+            ).addTo(map);
         }
+
+        // Remaining segment: standard blue
+        if (routeLine) map.removeLayer(routeLine);
+        routeLine = L.polyline(
+            fullRouteCoords.slice(vehicleRouteIdx),
+            { color: '#1976D2', weight: 6, opacity: 0.75 }
+        ).addTo(map);
+
+        // Re-bring vehicle on top
+        if (vehicleMarker) vehicleMarker.bringToFront();
     }
 
-    vehicleMarker.setLatLng([lat, lon]);
-    lastLat = lat;
-    lastLon = lon;
+    // Pan to keep vehicle visible
+    if (!map.getBounds().contains([lat, lon])) {
+        map.panTo([lat, lon], { animate: true, duration: 0.8 });
+    }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Helper: find closest route point index to [lat,lon]
+══════════════════════════════════════════════════════════ */
+function closestPointIdx(lat, lon) {
+    var best = 0, bestDist = Infinity;
+    for (var i = 0; i < fullRouteCoords.length; i++) {
+        var dlat = fullRouteCoords[i][0] - lat;
+        var dlon = fullRouteCoords[i][1] - lon;
+        var d    = dlat * dlat + dlon * dlon;
+        if (d < bestDist) { bestDist = d; best = i; }
+    }
+    return best;
 }
 
 </script>

@@ -53,6 +53,7 @@ QtObject {
     // ── Theme ─────────────────────────────────────────────────────────────
     property bool darkMode: false
 
+    // ── Reset everything between rides ────────────────────────────────────
     function resetDriverSearch() {
         driverRetryCount   = 0
         lastDriverName     = ""
@@ -61,5 +62,11 @@ QtObject {
         driverVehicleModel = ""
         driverRating       = 0.0
         driverPhoto        = ""
+        chatMessages       = []   // clear chat so next ride starts fresh
+    }
+
+    // ── Clear chat only (called when opening ChatPage) ────────────────────
+    function clearChat() {
+        chatMessages = []
     }
 }
