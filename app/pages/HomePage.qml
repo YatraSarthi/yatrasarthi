@@ -7,6 +7,7 @@ Page {
     property var appState
 
     signal switchTab(int tabIndex)
+    signal openAbout()          // ← new signal: tells parent to open About
 
     footer: null
     header: null
@@ -45,12 +46,83 @@ Page {
 
             // ── Header ────────────────────────────────────────────
             Rectangle {
-                width: parent.width; height: 65; color: "#1976D2"
-                Label {
+                width: parent.width
+                height: 140
+                color: "#1976D2"
+
+                Row {
                     anchors.verticalCenter: parent.verticalCenter
-                    anchors.left: parent.left; anchors.leftMargin: 20
-                    text: "YatraSarthi"; font.pixelSize: 22
-                    font.bold: true; color: "white"
+                    anchors.left: parent.left
+                    anchors.leftMargin: 16
+                    spacing: 16
+
+                    // ── Tappable Logo ──────────────────────────────
+                    Item {
+                        width: 105
+                        height: 105
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Image {
+                            id: logoImg
+                            source: "../../assets/icons/logo.png"
+                            width: 105
+                            height: 105
+                            fillMode: Image.PreserveAspectFit
+                            smooth: true
+                            anchors.centerIn: parent
+
+                            // Press scale feedback
+                            scale: logoMouse.pressed ? 0.92 : 1.0
+                            Behavior on scale {
+                                NumberAnimation { duration: 100; easing.type: Easing.OutCubic }
+                            }
+                        }
+
+                        // Glow ring on hover/press
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 108; height: 108
+                            radius: 54
+                            color: "transparent"
+                            border.color: logoMouse.containsMouse
+                                          ? "#ffffff55" : "transparent"
+                            border.width: 2
+                            visible: logoMouse.containsMouse || logoMouse.pressed
+                        }
+
+                        MouseArea {
+                            id: logoMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+
+                            onClicked: {
+                                // 1. Switch to Account tab (index 3)
+                                switchTab(3)
+                                // 2. Tell parent to trigger About section
+                                openAbout()
+                            }
+                        }
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 4
+
+                        Text {
+                            text: "YatraSarthi"
+                            color: "white"
+                            font.pixelSize: 32
+                            font.bold: true
+                        }
+
+                        Text {
+                            text: "The Sarthi for Every Yatra"
+                            color: "#E3F2FD"
+                            font.pixelSize: 14
+                            font.italic: true
+                        }
+                    }
                 }
             }
 
