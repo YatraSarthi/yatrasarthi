@@ -29,60 +29,62 @@ RECENT_FILE = "recent_places.json"
 SOS_INFO_FILE = "sos_info.json"
 
 # Pool of driver names/vehicles — rotated on retry so UI name changes too
+# Photo filenames match exactly what is in assets/image/ folder
 DRIVER_POOL = [
-
     {
         "name": "Johney Reji",
         "vehicle": "WB03AD7394",
         "vehicleModel": "Honda SP125",
         "rating": 4.4,
-        "photo": "johney.jpg"
+        "photo": "Johney"          # → assets/image/Johney (jpg/png detected in QML)
     },
-
     {
         "name": "Lokesh Royal",
         "vehicle": "KA01AB1234",
         "vehicleModel": "Bajaj RE Auto",
         "rating": 4.7,
-        "photo": "lokesh.jpg"
+        "photo": "Lokesh"
     },
-
     {
         "name": "Satyakam Tripathy",
         "vehicle": "KA02CD5678",
         "vehicleModel": "Maruti Suzuki Dzire",
         "rating": 4.7,
-        "photo": "satyakam.jpg"
+        "photo": "Satyakam"
     },
-
     {
         "name": "Devaj",
         "vehicle": "KA03EF9012",
         "vehicleModel": "Mitsubishi Pajero",
         "rating": 4.6,
-        "photo": "devaj.jpg"
+        "photo": "Devaj"
     },
-
     {
         "name": "Ibrahim",
         "vehicle": "KA04GH3456",
         "vehicleModel": "Maruti Suzuki Ertiga",
         "rating": 4.5,
-        "photo": "ibrahim.jpg"
+        "photo": "Ibrahim"
     },
-
     {
         "name": "Manaswitha",
         "vehicle": "KA05IJ7890",
         "vehicleModel": "Toyota Innova Crysta",
         "rating": 4.9,
-        "photo": "manaswitha.jpg"
-    }
+        "photo": "Manu"
+    },
+    {
+        "name": "Agnik",
+        "vehicle": "KA06KL2345",
+        "vehicleModel": "Hyundai Grand i10",
+        "rating": 4.3,
+        "photo": "agnik"           # lowercase 'a' — matches actual filename
+    },
 ]
+
 # ----------------------------
 # Home Endpoint
 # ----------------------------
-
 
 @app.get("/")
 def home():
@@ -272,7 +274,8 @@ def start_driver(pickup_lat: float, pickup_lon: float, selected_vehicle: str = "
             "Bajaj Pulsar 150",
             "Hero Splendor Plus",
             "TVS Apache RTR 160",
-            "Honda Shine"
+            "Honda Shine",
+            "Yamaha FZ-S"
         ],
         "auto": [
             "Bajaj RE Auto",
@@ -280,7 +283,8 @@ def start_driver(pickup_lat: float, pickup_lon: float, selected_vehicle: str = "
             "Mahindra Alfa Auto",
             "Atul Gem Auto",
             "Mahindra Treo EV",
-            "Bajaj Compact RE"
+            "Bajaj Compact RE",
+            "TVS King Deluxe"
         ],
         "cab": [
             "Maruti Suzuki Dzire",
@@ -288,7 +292,8 @@ def start_driver(pickup_lat: float, pickup_lon: float, selected_vehicle: str = "
             "Honda Amaze",
             "Toyota Etios",
             "Maruti WagonR",
-            "Hyundai Grand i10"
+            "Hyundai Grand i10",
+            "Tata Tigor"
         ],
         "carpool": [
             "Toyota Innova Crysta",
@@ -296,7 +301,8 @@ def start_driver(pickup_lat: float, pickup_lon: float, selected_vehicle: str = "
             "Toyota Rumion",
             "Kia Carens",
             "Hyundai Creta",
-            "Mahindra XUV700"
+            "Mahindra XUV700",
+            "MG Hector Plus"
         ],
     }
 
@@ -313,7 +319,7 @@ def start_driver(pickup_lat: float, pickup_lon: float, selected_vehicle: str = "
         "vehicleNumber": profile["vehicle"],
         "vehicleModel": profile["vehicleModel"],
         "driverRating": profile["rating"],
-        "driverPhoto":  profile["photo"]
+        "driverPhoto":  profile["photo"]   # e.g. "Johney", "Lokesh", "agnik" …
     }
 
 
