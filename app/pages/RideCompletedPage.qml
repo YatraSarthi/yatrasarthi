@@ -6,6 +6,16 @@ Page {
     property var appStack
     property var appState
 
+    // ── Driver photo helper ─────────────────────────────────────────────────
+    // Backend now sends the filename WITH extension (e.g. "Johney.jpeg").
+    // This helper still tolerates a bare name (no extension) for safety.
+    function driverPhotoUrl(photo) {
+        if (!photo || photo.length === 0) return ""
+        if (/\.(jpe?g|png|webp)$/i.test(photo))
+            return "../../assets/image/" + photo
+        return "../../assets/image/" + photo + ".jpeg"
+    }
+
     Component.onCompleted: {
         if (appState) appState.showBottomBar = false
         if (appState) {
@@ -444,7 +454,7 @@ Row {
 
     Image {
         anchors.fill: parent
-        source: "../../assets/drivers/" + appState.driverPhoto
+        source: driverPhotoUrl(appState.driverPhoto)
         fillMode: Image.PreserveAspectCrop
 
         Rectangle {
@@ -495,5 +505,3 @@ Label {
         }
     }
 }
-
-

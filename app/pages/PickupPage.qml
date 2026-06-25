@@ -33,6 +33,14 @@ Page {
 
     title: "Sarthi Arriving"
 
+    // ── Driver photo helper ─────────────────────────────────────────────────
+    // Backend sends a bare name (e.g. "Johney", "agnik") with no extension.
+    // Actual files live in assets/image/<name>.jpeg
+    function driverPhotoUrl(photo) {
+        if (!photo || photo.length === 0) return ""
+        return "../../assets/image/" + photo + ".jpeg"
+    }
+
     // ── OTP ──────────────────────────────────────────────────────────────
     function generateOtp() {
         var otp = ""
@@ -473,14 +481,27 @@ if (appState) {
                             fillMode: Image.PreserveAspectFit
                         }
 
-                        Image {
-                            source: "../../assets/drivers/" + appState.driverPhoto
+                        Rectangle {
+                            width: 70; height: 70; radius: 35
+                            clip: true; color: "#E0E0E0"
 
-                             width: 70
-                            height: 70
+                            Image {
+                                anchors.fill: parent
+                                source: driverPhotoUrl(appState.driverPhoto)
+                                fillMode: Image.PreserveAspectCrop
 
-                            fillMode: Image.PreserveAspectCrop
-                             clip: true
+                                Rectangle {
+                                    anchors.fill: parent
+                                    color: "#1976D2"
+                                    visible: parent.status !== Image.Ready
+
+                                    Label {
+                                        anchors.centerIn: parent
+                                        text: "👤"
+                                        font.pixelSize: 26
+                                    }
+                                }
+                            }
                         }
 
                         Column {
