@@ -32,21 +32,34 @@ QtObject {
     // ── Chat ──────────────────────────────────────────────────────────────
     property var chatMessages: []
 
-    // ── User profile (set on sign-in / sign-up) ───────────────────────────
+    // ── User profile ──────────────────────────────────────────────────────
     property string userName: ""
     property string userPhone: ""
     property string userEmail: ""
     property bool isLoggedIn: false
 
     // ── Driver retry state ────────────────────────────────────────────────
-    property int driverRetryCount: 0
-    property string lastDriverName: ""
+    property int    driverRetryCount:   0
+    property string lastDriverName:     ""
+
+    // ── Driver session ────────────────────────────────────────────────────
+    property string driverName:         ""
+    property string driverVehicle:      ""
+    property string driverVehicleModel: ""
+    property real   driverRating:       0.0
+    property string driverPhoto:        ""
+    property string paymentMode:        "Cash"
 
     // ── Theme ─────────────────────────────────────────────────────────────
     property bool darkMode: false
 
     function resetDriverSearch() {
-        driverRetryCount = 0
-        lastDriverName   = ""
+        driverRetryCount   = 0
+        lastDriverName     = ""
+        driverName         = ""
+        driverVehicle      = ""
+        driverVehicleModel = ""
+        driverRating       = 0.0
+        driverPhoto        = ""
     }
 }
