@@ -405,8 +405,8 @@ Row {
                                     }
                                     Label {
                                         text: rateCard.userRating === 0 ? "Tap a star to rate"
-                                            : rateCard.userRating === 5 ? "Excellent! "
-                                            : rateCard.userRating >= 4  ? "Great ride!"
+                                            : rateCard.userRating === 5 ? "Excellent! Thank you!"
+                                            : rateCard.userRating >= 4  ? "Great ride! "
                                             : rateCard.userRating >= 3  ? "Good ride"
                                             : rateCard.userRating >= 2  ? "Could be better"
                                             : "Poor experience"

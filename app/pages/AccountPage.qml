@@ -49,9 +49,9 @@ Page {
     property bool profileEditExpanded: false
     property bool profileEditMode: false
     property string profileSaveMessage: ""
-    property string profileName: "Johney"
-    property string profileEmail: "johney@example.com"
-    property string profilePhone: "+91 98765 43210"
+    property string profileName: "Johney Reji"
+    property string profileEmail: "johneyoct@gmail.com"
+    property string profilePhone: "+91 8089011097"
     property int profileSyncTick: 0
 
     // ── PAYMENT STATE ─────────────────────────────────────────────────────
@@ -206,7 +206,7 @@ Page {
             id: thankYouRow
             anchors.centerIn: parent
             spacing: 8
-            Text { text: "🎉"; font.pixelSize: 18 }
+            Text { text: ""; font.pixelSize: 18 }
             Text {
                 text: "Thanks for rating us " + submittedRating + " ★!"
                 color: "white"; font.pixelSize: 14; font.bold: true
@@ -1019,10 +1019,10 @@ Page {
                                     Label { text: "Built by"; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
                                     Repeater {
                                         model: [
-                                           { name: "Johney Reji",       role: "Lead Backend Developer" },
-                                            								{ name: "Lokesh Royal",      role: "Lead Frontend Developer" },
-                                            								{ name: "Satyakam Tripathy", role: "Authentication & API Integration" },
-                                           								{ name: "Manaswitha",        role: "UI/UX Designer & Developer" }
+                                            { name: "Johney Reji",       role: "Lead Backend Developer" },
+                                            { name: "Lokesh Royal",      role: "Lead Frontend Developer" },
+                                            { name: "Satyakam Tripathy", role: "Authentication & API Integration" },
+                                            { name: "Manaswitha",        role: "UI/UX Designer & Developer" }
                                         ]
                                         delegate: Rectangle {
                                             width: parent.width; height: 44; radius: 10

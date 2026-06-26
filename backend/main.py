@@ -9,10 +9,13 @@ import os
 from backend.sos import send_sos
 from backend.database import engine, SessionLocal
 from backend.models import Base, Message
+from backend.routes import router as auth_router
 
 print("===== THIS MAIN.PY IS RUNNING =====")
 
 app = FastAPI()
+
+app.include_router(auth_router, prefix="/auth")
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,17 +25,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/web", StaticFiles(directory="app/web"), name="web")
+# Absolute path — works regardless of where uvicorn is launched from
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-search_cache = {}
-RECENT_FILE = "recent_places.json"
-SOS_INFO_FILE = "sos_info.json"
+app.mount("/web", StaticFiles(directory=os.path.join(BASE_DIR, "app", "web")), name="web")
 
-# Pool of driver names/vehicles — rotated on retry so UI name changes too
-# Photo filenames match EXACTLY what is in assets/image/ folder (case-sensitive
-# on Linux/WSL — confirmed via `ls -la assets/image/`):
-#   agnik.jpeg, Devaj.jpeg, Ibrahim.jpeg, Johney.jpeg, Lokesh.jpeg,
-#   Manu.jpeg, Satyakam.jpeg
+search_cache  = {}
+RECENT_FILE   = os.path.join(BASE_DIR, "recent_places.json")
+SOS_INFO_FILE = os.path.join(BASE_DIR, "sos_info.json")
+
 DRIVER_POOL = [
     {
         "name": "Johney Reji",
@@ -81,15 +82,13 @@ DRIVER_POOL = [
         "vehicle": "KA06KL2345",
         "vehicleModel": "Hyundai Grand i10",
         "rating": 4.3,
-        "photo": "agnik.jpeg"          # lowercase 'a' — matches actual filename
+        "photo": "agnik.jpeg"
     },
 ]
 
 # ----------------------------
 # Home Endpoint
 # ----------------------------
-
-
 @app.get("/")
 def home():
     return {"message": "YatraSarthi Backend Running"}
@@ -197,11 +196,11 @@ def estimate(
     lat2, lon2 = math.radians(destination_lat), math.radians(destination_lon)
     dlat, dlon = lat2 - lat1, lon2 - lon1
     a = (math.sin(dlat/2)**2 + math.cos(lat1)
-         * math.cos(lat2)*math.sin(dlon/2)**2)
+         * math.cos(lat2) * math.sin(dlon/2)**2)
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     distance = round(R * c, 2)
     cab_fare = round(80 + distance * 16)
-    cab_eta = max(4, round(distance * 2))
+    cab_eta  = max(4, round(distance * 2))
     return {
         "distance": distance,
         "bike":    {"fare": round(25 + distance * 8),  "eta": max(2, round(distance * 2))},
@@ -239,91 +238,76 @@ def route(
 # ----------------------------
 # Driver Simulation
 # ----------------------------
-driver_step = 0
-driver_lat = 0.0
-driver_lon = 0.0
+driver_step       = 0
+driver_lat        = 0.0
+driver_lon        = 0.0
 pickup_lat_global = 0.0
 pickup_lon_global = 0.0
-driver_eta = 0
-driver_distance = 0.0
-driver_pool_index = 0   # advances on each /reset-driver so name changes
+driver_eta        = 0
+driver_distance   = 0.0
+driver_pool_index = 0
 
 
 @app.get("/start-driver")
-def start_driver(pickup_lat: float, pickup_lon: float, selected_vehicle: str = "cab"):
+def start_driver(
+    pickup_lat: float,
+    pickup_lon: float,
+    selected_vehicle: str = "cab"
+):
     global driver_step, driver_lat, driver_lon
     global pickup_lat_global, pickup_lon_global
     global driver_eta, driver_distance, driver_pool_index
 
-    driver_step = 0
+    driver_step       = 0
     pickup_lat_global = pickup_lat
     pickup_lon_global = pickup_lon
 
-    offset_lat = random.uniform(0.008, 0.018)
-    offset_lon = random.uniform(0.008, 0.018)
-    driver_lat = pickup_lat + random.choice([-1, 1]) * offset_lat
-    driver_lon = pickup_lon + random.choice([-1, 1]) * offset_lon
-    driver_eta = random.randint(3, 9)
+    offset_lat    = random.uniform(0.008, 0.018)
+    offset_lon    = random.uniform(0.008, 0.018)
+    driver_lat    = pickup_lat + random.choice([-1, 1]) * offset_lat
+    driver_lon    = pickup_lon + random.choice([-1, 1]) * offset_lon
+    driver_eta    = random.randint(3, 9)
     driver_distance = round(math.sqrt(offset_lat**2 + offset_lon**2) * 111, 1)
 
-    # Pick driver profile from pool (copy so we don't mutate the original)
-    profile = dict(DRIVER_POOL[driver_pool_index % len(DRIVER_POOL)])
-
+    profile      = dict(DRIVER_POOL[driver_pool_index % len(DRIVER_POOL)])
     vehicle_type = selected_vehicle.lower()
 
     VEHICLE_MODELS = {
         "bike": [
-            "Honda SP125",
-            "TVS Raider",
-            "Bajaj Pulsar 150",
-            "Hero Splendor Plus",
-            "TVS Apache RTR 160",
-            "Honda Shine",
-            "Yamaha FZ-S"
+            "Honda SP125", "TVS Raider", "Bajaj Pulsar 150",
+            "Hero Splendor Plus", "TVS Apache RTR 160",
+            "Honda Shine", "Yamaha FZ-S"
         ],
         "auto": [
-            "Bajaj RE Auto",
-            "Piaggio Ape City",
-            "Mahindra Alfa Auto",
-            "Atul Gem Auto",
-            "Mahindra Treo EV",
-            "Bajaj Compact RE",
-            "TVS King Deluxe"
+            "Bajaj RE Auto", "Piaggio Ape City", "Mahindra Alfa Auto",
+            "Atul Gem Auto", "Mahindra Treo EV",
+            "Bajaj Compact RE", "TVS King Deluxe"
         ],
         "cab": [
-            "Maruti Suzuki Dzire",
-            "Hyundai Aura",
-            "Honda Amaze",
-            "Toyota Etios",
-            "Maruti WagonR",
-            "Hyundai Grand i10",
-            "Tata Tigor"
+            "Maruti Suzuki Dzire", "Hyundai Aura", "Honda Amaze",
+            "Toyota Etios", "Maruti WagonR",
+            "Hyundai Grand i10", "Tata Tigor"
         ],
         "carpool": [
-            "Toyota Innova Crysta",
-            "Maruti Suzuki Ertiga",
-            "Toyota Rumion",
-            "Kia Carens",
-            "Hyundai Creta",
-            "Mahindra XUV700",
-            "MG Hector Plus"
+            "Toyota Innova Crysta", "Maruti Suzuki Ertiga", "Toyota Rumion",
+            "Kia Carens", "Hyundai Creta",
+            "Mahindra XUV700", "MG Hector Plus"
         ],
     }
 
-    # Each driver index gets the matching model from their vehicle category
     models = VEHICLE_MODELS.get(vehicle_type, VEHICLE_MODELS["cab"])
     profile["vehicleModel"] = models[driver_pool_index % len(models)]
 
     return {
-        "driverLat":    driver_lat,
-        "driverLon":    driver_lon,
-        "distance":     driver_distance,
-        "eta":          driver_eta,
-        "driverName":   profile["name"],
+        "driverLat":     driver_lat,
+        "driverLon":     driver_lon,
+        "distance":      driver_distance,
+        "eta":           driver_eta,
+        "driverName":    profile["name"],
         "vehicleNumber": profile["vehicle"],
-        "vehicleModel": profile["vehicleModel"],
-        "driverRating": profile["rating"],
-        "driverPhoto":  profile["photo"]   # e.g. "Johney.jpeg", "agnik.jpeg" …
+        "vehicleModel":  profile["vehicleModel"],
+        "driverRating":  profile["rating"],
+        "driverPhoto":   profile["photo"]
     }
 
 
@@ -331,13 +315,13 @@ def start_driver(pickup_lat: float, pickup_lon: float, selected_vehicle: str = "
 def driver_location():
     global driver_step, driver_lat, driver_lon
     global pickup_lat_global, pickup_lon_global
-    global driver_distance, driver_eta
+    global driver_distance
 
     arrived = False
     if driver_step >= 15:
-        arrived = True
-        driver_lat = pickup_lat_global
-        driver_lon = pickup_lon_global
+        arrived     = True
+        driver_lat  = pickup_lat_global
+        driver_lon  = pickup_lon_global
         driver_distance = 0
     else:
         driver_lat += (pickup_lat_global - driver_lat) / 15
@@ -351,7 +335,8 @@ def driver_location():
         driver_step += 1
 
     return {
-        "driverLat": driver_lat, "driverLon": driver_lon,
+        "driverLat": driver_lat,
+        "driverLon": driver_lon,
         "distance":  driver_distance,
         "eta":       max(1, round(driver_distance * 2)),
         "arrived":   arrived
@@ -361,9 +346,9 @@ def driver_location():
 @app.get("/reset-driver")
 def reset_driver():
     global driver_step, driver_distance, driver_pool_index
-    driver_step = 0
-    driver_distance = 0
-    driver_pool_index += 1   # advance pool so next /start-driver returns new name
+    driver_step      = 0
+    driver_distance  = 0
+    driver_pool_index += 1
     return {"message": "Driver reset", "nextDriverIndex": driver_pool_index}
 
 
@@ -428,9 +413,9 @@ def save_sos_info(
 ):
     try:
         data = {
-            "contact1Name": contact1Name, "contact1Phone": contact1Phone,
-            "contact2Name": contact2Name, "contact2Phone": contact2Phone,
-            "bloodGroup": bloodGroup, "medicalNotes": medicalNotes
+            "contact1Name":  contact1Name,  "contact1Phone": contact1Phone,
+            "contact2Name":  contact2Name,  "contact2Phone": contact2Phone,
+            "bloodGroup":    bloodGroup,     "medicalNotes":  medicalNotes
         }
         with open(SOS_INFO_FILE, "w") as f:
             json.dump(data, f, indent=2)
@@ -445,8 +430,9 @@ def save_sos_info(
 # ----------------------------
 favourites_store = [
     {"label": "Home", "emoji": "🏠", "color": "#E3F2FD",
-        "name": "", "lat": 0, "lon": 0},
-    {"label": "Work", "emoji": "💼", "color": "#FFF3E0", "name": "", "lat": 0, "lon": 0}
+     "name": "", "lat": 0, "lon": 0},
+    {"label": "Work", "emoji": "💼", "color": "#FFF3E0",
+     "name": "", "lat": 0, "lon": 0}
 ]
 
 
@@ -472,8 +458,13 @@ def add_ride_history(
     fare: float, distance: float, co2_saved: float
 ):
     ride_history_store.append({
-        "date": "Today", "pickup": pickup, "destination": destination,
-        "vehicle": vehicle, "fare": fare, "distance": distance, "co2Saved": co2_saved
+        "date":        "Today",
+        "pickup":      pickup,
+        "destination": destination,
+        "vehicle":     vehicle,
+        "fare":        fare,
+        "distance":    distance,
+        "co2Saved":    co2_saved
     })
     return {"status": "ok"}
 
@@ -482,10 +473,10 @@ def add_ride_history(
 # Ride In Progress
 # ----------------------------
 ride_route_coords = []
-ride_step = 0
-ride_total_steps = 0
-ride_dest_lat = 0.0
-ride_dest_lon = 0.0
+ride_step         = 0
+ride_total_steps  = 0
+ride_dest_lat     = 0.0
+ride_dest_lon     = 0.0
 ride_pickup_lat_g = 0.0
 ride_pickup_lon_g = 0.0
 
@@ -501,9 +492,9 @@ def start_ride(
 
     ride_pickup_lat_g = pickup_lat
     ride_pickup_lon_g = pickup_lon
-    ride_dest_lat = destination_lat
-    ride_dest_lon = destination_lon
-    ride_step = 0
+    ride_dest_lat     = destination_lat
+    ride_dest_lon     = destination_lon
+    ride_step         = 0
 
     try:
         url = (
@@ -513,7 +504,7 @@ def start_ride(
         )
         resp = requests.get(url, timeout=10)
         if resp.status_code == 200:
-            data = resp.json()
+            data   = resp.json()
             coords = data["routes"][0]["geometry"]["coordinates"]
             ride_route_coords = [[c[1], c[0]] for c in coords]
         else:
@@ -553,8 +544,8 @@ def ride_location():
         }
 
     ride_step = min(ride_step + 2, len(ride_route_coords) - 1)
-    veh_lat = ride_route_coords[ride_step][0]
-    veh_lon = ride_route_coords[ride_step][1]
+    veh_lat   = ride_route_coords[ride_step][0]
+    veh_lon   = ride_route_coords[ride_step][1]
     completed = (ride_step >= len(ride_route_coords) - 1)
 
     R = 6371
@@ -566,10 +557,10 @@ def ride_location():
 
     return {
         "vehicleLat": veh_lat, "vehicleLon": veh_lon,
-        "distance": remaining_km,
-        "eta":   max(1, round(remaining_km * 2)) if not completed else 0,
-        "speed": random.randint(28, 48) if not completed else 0,
-        "completed": completed
+        "distance":   remaining_km,
+        "eta":        max(1, round(remaining_km * 2)) if not completed else 0,
+        "speed":      random.randint(28, 48) if not completed else 0,
+        "completed":  completed
     }
 
 
@@ -613,5 +604,12 @@ def get_messages(user: str):
 
 print("CHAT ENDPOINTS LOADED")
 
-Base.metadata.create_all(bind=engine)
+print("Before create_all")
+
+try:
+    Base.metadata.create_all(bind=engine)
+    print("create_all completed")
+except Exception as e:
+    print("create_all FAILED:", e)
+
 print("Loaded main.py with all endpoints")

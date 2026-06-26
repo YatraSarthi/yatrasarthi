@@ -258,9 +258,9 @@ Page {
 
         source:
             modelData.label === "Home"
-                ? Qt.resolvedUrl("../../assets/icons/Home.png")
+                ? Qt.resolvedUrl("../../assets/icons/home.png")
             : modelData.label === "Work"
-                ? Qt.resolvedUrl("../../assets/icons/Work.png")
+                ? Qt.resolvedUrl("../../assets/icons/work.png")
             : Qt.resolvedUrl("../../assets/icons/location.png")
     }
 }

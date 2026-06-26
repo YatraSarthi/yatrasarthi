@@ -640,7 +640,7 @@ Row {
                 spacing: 6
 
                 Image {
-                    source: "../../assets/icons/phone.png"
+                    source: "../../assets/icons/call.png"
                     width: 18
                     height: 18
                     fillMode: Image.PreserveAspectFit

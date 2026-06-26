@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="leaflet/leaflet.js"></script>
+</head>
+
+<body>
+
+<h1>Leaflet Test</h1>
+
+<script>
+console.log("START");
+
+console.log(typeof L);
+
+if (typeof L === "undefined") {
+    document.body.innerHTML += "<h2 style='color:red'>FAILED</h2>";
+} else {
+    document.body.innerHTML += "<h2 style='color:green'>SUCCESS</h2>";
+}
+</script>
+
+</body>
+</html>
