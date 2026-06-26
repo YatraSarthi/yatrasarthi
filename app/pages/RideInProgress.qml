@@ -472,7 +472,7 @@ Row {
 
                         Row {
                             spacing: 6
-                            Label { text: "📍"; font.pixelSize: 13 }
+                            Label { text: ""; font.pixelSize: 13 }
                             Label {
                                 text:           "Destination"
                                 color:          "#888888"
@@ -640,7 +640,7 @@ Row {
                 spacing: 6
 
                 Image {
-                    source: "../../assets/icons/call.png"
+                    source: "../../assets/icons/phone.png"
                     width: 18
                     height: 18
                     fillMode: Image.PreserveAspectFit

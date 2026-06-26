@@ -175,11 +175,11 @@ Page {
 
     // ── Star label helper ─────────────────────────────────────────────────
     function starLabel(n) {
-        if (n === 1) return "Poor 😞"
-        if (n === 2) return "Fair 😐"
-        if (n === 3) return "Good 🙂"
-        if (n === 4) return "Great 😊"
-        if (n === 5) return "Excellent 🤩"
+        if (n === 1) return "Poor "
+        if (n === 2) return "Fair "
+        if (n === 3) return "Good "
+        if (n === 4) return "Great "
+        if (n === 5) return "Excellent "
         return "Tap a star to rate"
     }
 
@@ -930,7 +930,7 @@ Page {
                                         GradientStop { position: 1.0; color: "#42A5F5" }
                                     }
                                     Row { anchors.centerIn: parent; spacing: 8
-                                        Text { text: "💬"; font.pixelSize: 16 }
+                                        Text { text: ""; font.pixelSize: 16 }
                                         Text { text: "Chat with Support"; font.pixelSize: 13; font.bold: true; color: "white" }
                                     }
                                     MouseArea { anchors.fill: parent; onClicked: console.log("Open support chat") }
@@ -975,16 +975,30 @@ Page {
                                     }
                                     Row {
                                         anchors.fill: parent; anchors.margins: 16; spacing: 14
+                                        // YatraSarthi logo
                                         Rectangle {
-                                            width: 56; height: 56; radius: 14; color: "white"
+                                            width: 56; height: 56; radius: 28; color: "white"
                                             anchors.verticalCenter: parent.verticalCenter
-                                            Text { anchors.centerIn: parent; text: "🚖"; font.pixelSize: 28 }
+                                            Image {
+                                                anchors.fill: parent
+                                                anchors.margins: 2
+                                                source: Qt.resolvedUrl("../../assets/icons/logo.png")
+                                                fillMode: Image.PreserveAspectFit
+                                                // fallback emoji if image not found
+                                                visible: status === Image.Ready
+                                            }
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: ""; font.pixelSize: 28
+                                                visible: logoImg.status !== Image.Ready
+                                                property var logoImg: parent.children[0]
+                                            }
                                         }
                                         Column {
                                             anchors.verticalCenter: parent.verticalCenter; spacing: 4
                                             Label { text: "YatraSarthi"; font.pixelSize: 20; font.bold: true; color: "white" }
                                             Label { text: "Version 1.0.0  ·  Build 2026.06"; font.pixelSize: 11; color: "#B3E5FC" }
-                                            Label { text: "The Sarthi for Every Yatra"; font.pixelSize: 11; color: "#90CAF9"; font.italic: true }
+                                            Label { text: "The Sarthi for every Yatra"; font.pixelSize: 11; color: "#90CAF9"; font.italic: true }
                                         }
                                     }
                                 }
@@ -993,28 +1007,8 @@ Page {
                                 Column { width: parent.width - 32; spacing: 6
                                     Label { text: "Our Mission"; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
                                     Label {
-                                        text: "YatraSarthi connects riders and drivers across India with safe, affordable, and reliable transport — from quick bike rides to comfortable carpools."
+                                        text: "YatraSarthi is a ride-hailing application built for Ubuntu Touch that offers secure authentication, real-time driver tracking, live navigation, in-app communication, and multiple transportation options. Designed with a focus on simplicity, safety, and reliability, it provides users with a seamless and efficient travel experience from booking to ride completion."
                                         font.pixelSize: 13; color: thText; wrapMode: Text.WordWrap; width: parent.width; lineHeight: 1.4
-                                    }
-                                }
-
-                                Rectangle { width: parent.width - 32; height: 1; color: thDivider }
-
-                                // Stats row
-                                Row {
-                                    width: parent.width - 32; spacing: 0
-                                    Repeater {
-                                        model: [
-                                            { value: "50K+",  label: "Rides" },
-                                            { value: "200+",  label: "Drivers" },
-                                            { value: "12",    label: "Cities" },
-                                            { value: "4.8★",  label: "Avg Rating" }
-                                        ]
-                                        delegate: Column {
-                                            width: parent.width / 4; spacing: 3
-                                            Label { text: modelData.value; font.pixelSize: 16; font.bold: true; color: "#1976D2"; anchors.horizontalCenter: parent.horizontalCenter }
-                                            Label { text: modelData.label; font.pixelSize: 10; color: thTextSub; anchors.horizontalCenter: parent.horizontalCenter }
-                                        }
                                     }
                                 }
 
@@ -1025,10 +1019,10 @@ Page {
                                     Label { text: "Built by"; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
                                     Repeater {
                                         model: [
-                                            { name: "Johney Reji",       role: "Lead Backend Developer" },
-                                            { name: "Lokesh Royal",      role: "Lead Frontend Developer" },
-                                            { name: "Satyakam Tripathy", role: "Authentication & API Integration" },
-                                            { name: "Manaswitha",        role: "UI/UX Designer & Developer" }
+                                           { name: "Johney Reji",       role: "Lead Backend Developer" },
+                                            								{ name: "Lokesh Royal",      role: "Lead Frontend Developer" },
+                                            								{ name: "Satyakam Tripathy", role: "Authentication & API Integration" },
+                                           								{ name: "Manaswitha",        role: "UI/UX Designer & Developer" }
                                         ]
                                         delegate: Rectangle {
                                             width: parent.width; height: 44; radius: 10
@@ -1074,9 +1068,9 @@ Page {
                                 Column { width: parent.width - 32; spacing: 8
                                     Repeater {
                                         model: [
-                                            { label: "Terms of Service",  icon: "📄" },
-                                            { label: "Privacy Policy",    icon: "🔒" },
-                                            { label: "Open Source Licences", icon: "⚖" }
+                                            { label: "Terms of Service",  icon: "" },
+                                            { label: "Privacy Policy",    icon: "" },
+                                            { label: "Open Source Licences", icon: "" }
                                         ]
                                         delegate: Rectangle {
                                             width: parent.width; height: 44; radius: 10; color: thFieldBg; border.color: thBorder
@@ -1350,7 +1344,7 @@ Page {
                     x: 16; width: parent.width - 32; height: 50; radius: 14
                     color: dm ? "#2A1A1A" : "#FFF0F0"; border.color: dm ? "#4A2A2A" : "#FFCDD2"
                     Row { anchors.centerIn: parent; spacing: 10
-                        Text { text: ""; font.pixelSize: 18; color: "#E53935" }
+                        Text { text: "⏻"; font.pixelSize: 18; color: "#E53935" }
                         Text { text: "Log Out"; font.pixelSize: 15; font.bold: true; color: "#E53935" }
                     }
                     MouseArea { anchors.fill: parent; onClicked: console.log("Logout") }

@@ -244,11 +244,26 @@ Page {
                                 Row {
                                     anchors.fill: parent; anchors.leftMargin: 14; anchors.rightMargin: 14; spacing: 12
                                     Rectangle {
-                                        width: 34; height: 34; radius: 17
-                                        color: dm ? "#2A2A2A" : (modelData.color || "#E3F2FD")
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        Text { anchors.centerIn: parent; text: modelData.emoji || "★"; font.pixelSize: 16 }
-                                    }
+    width: 38
+    height: 38
+    radius: 19
+    color: dm ? "#2A2A2A" : (modelData.color || "#E3F2FD")
+    anchors.verticalCenter: parent.verticalCenter
+
+    Image {
+        anchors.centerIn: parent
+        width: 22
+        height: 22
+        fillMode: Image.PreserveAspectFit
+
+        source:
+            modelData.label === "Home"
+                ? Qt.resolvedUrl("../../assets/icons/Home.png")
+            : modelData.label === "Work"
+                ? Qt.resolvedUrl("../../assets/icons/Work.png")
+            : Qt.resolvedUrl("../../assets/icons/location.png")
+    }
+}
                                     Column {
                                         anchors.verticalCenter: parent.verticalCenter; spacing: 2
                                         width: parent.width - 34 - 12 - 28
