@@ -14,7 +14,7 @@ Page {
     // ── Live dark-mode flag ───────────────────────────────────────────────
     readonly property bool dm: appState ? appState.darkMode : false
 
-    // ── Theme palette — every color in the page comes from here ──────────
+    // ── Theme palette ─────────────────────────────────────────────────────
     readonly property color thBg:           dm ? "#121212" : "#F5F6FA"
     readonly property color thCard:         dm ? "#1E1E1E" : "#FFFFFF"
     readonly property color thBorder:       dm ? "#2C2C2C" : "#EEEEEE"
@@ -98,6 +98,17 @@ Page {
     // ── GENDER ────────────────────────────────────────────────────────────
     property int selectedGender: 0
 
+    // ── RATE THE APP STATE ────────────────────────────────────────────────
+    property bool rateExpanded: false
+    property int selectedRating: 0          // 0 = none chosen yet
+    property int submittedRating: 0         // locked in after submit
+    property string reviewText: ""
+    property bool reviewSubmitted: false
+    property bool thankYouVisible: false
+
+    // ── ABOUT STATE ───────────────────────────────────────────────────────
+    property bool aboutExpanded: false
+
     Component.onCompleted: { loadEmergencyInfo() }
 
     onEmergencyExpandedChanged:   { if (emergencyExpanded)   emergencySyncTick++ }
@@ -114,6 +125,8 @@ Page {
         helpExpanded         = false
         safetyExpanded       = false
         langExpanded         = false
+        rateExpanded         = false
+        aboutExpanded        = false
     }
 
     function loadEmergencyInfo() {
@@ -160,10 +173,54 @@ Page {
         xhr.send()
     }
 
+    // ── Star label helper ─────────────────────────────────────────────────
+    function starLabel(n) {
+        if (n === 1) return "Poor 😞"
+        if (n === 2) return "Fair 😐"
+        if (n === 3) return "Good 🙂"
+        if (n === 4) return "Great 😊"
+        if (n === 5) return "Excellent 🤩"
+        return "Tap a star to rate"
+    }
+
     // ── PAGE BACKGROUND ───────────────────────────────────────────────────
     Rectangle {
         anchors.fill: parent
         color: thBg
+    }
+
+    // ── Thank-you toast overlay ───────────────────────────────────────────
+    Rectangle {
+        id: thankYouToast
+        visible: thankYouVisible
+        z: 100
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 100
+        width: thankYouRow.implicitWidth + 32
+        height: 46
+        radius: 23
+        color: "#1976D2"
+
+        Row {
+            id: thankYouRow
+            anchors.centerIn: parent
+            spacing: 8
+            Text { text: "🎉"; font.pixelSize: 18 }
+            Text {
+                text: "Thanks for rating us " + submittedRating + " ★!"
+                color: "white"; font.pixelSize: 14; font.bold: true
+            }
+        }
+
+        Timer {
+            running: thankYouVisible
+            interval: 3000
+            repeat: false
+            onTriggered: thankYouVisible = false
+        }
+
+        Behavior on opacity { NumberAnimation { duration: 300 } }
     }
 
     ScrollView {
@@ -302,7 +359,7 @@ Page {
                                 Column { width: parent.width - 32; spacing: 4
                                     Label { text: "Full Name"; font.pixelSize: 11; color: thTextLabel }
                                     TextField { id: pNameField; width: parent.width; placeholderText: "Your name"; readOnly: !profileEditMode; leftPadding: 12; font.pixelSize: 13; color: thText
-                                        background: Rectangle { color: profileEditMode ? thFieldBg : thFieldBg; radius: 8; border.color: profileEditMode ? "#1976D2" : thFieldBorder; border.width: profileEditMode ? 1.5 : 1 }
+                                        background: Rectangle { color: thFieldBg; radius: 8; border.color: profileEditMode ? "#1976D2" : thFieldBorder; border.width: profileEditMode ? 1.5 : 1 }
                                     }
                                 }
                                 Column { width: parent.width - 32; spacing: 4
@@ -382,7 +439,6 @@ Page {
                                 }
                                 Rectangle { x: 16; width: parent.width - 32; height: 1; color: thDivider }
                                 Item { height: 8 }
-                                // UPI
                                 Column { visible: selectedPaymentTab === 0; x: 16; width: parent.width - 32; spacing: 8
                                     Repeater {
                                         model: ["johney@upi", "johney@okaxis"]
@@ -407,7 +463,6 @@ Page {
                                         MouseArea { anchors.fill: parent; onClicked: console.log("Add UPI") }
                                     }
                                 }
-                                // Cards
                                 Column { visible: selectedPaymentTab === 1; x: 16; width: parent.width - 32; spacing: 8
                                     Rectangle { width: parent.width; height: 80; radius: 12
                                         gradient: Gradient { orientation: Gradient.Horizontal
@@ -430,7 +485,6 @@ Page {
                                         MouseArea { anchors.fill: parent; onClicked: console.log("Add Card") }
                                     }
                                 }
-                                // Wallet
                                 Column { visible: selectedPaymentTab === 2; x: 16; width: parent.width - 32; spacing: 8
                                     Rectangle { width: parent.width; height: 64; radius: 12; color: dm ? "#1A2E1A" : "#F1F8E9"; border.color: dm ? "#2A4A2A" : "#C5E1A5"
                                         Row { anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 12
@@ -794,7 +848,7 @@ Page {
                             width: parent.width; height: 60; color: "transparent"
                             Row { anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
                                 Rectangle { width: 36; height: 36; radius: 18; color: thIconBg; anchors.verticalCenter: parent.verticalCenter
-                                    Image { source: Qt.resolvedUrl("../../assets/icons/star.png"); width: 20; height: 20; fillMode: Image.PreserveAspectFit; anchors.centerIn: parent }
+                                    Text { anchors.centerIn: parent; text: dm ? "🌙" : "☀️"; font.pixelSize: 18 }
                                 }
                                 Column { anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 50
                                     Label { text: "Dark Mode"; font.pixelSize: 14; color: thText }
@@ -802,16 +856,13 @@ Page {
                                 }
                                 Rectangle {
                                     width: 40; height: 24; radius: 12; anchors.verticalCenter: parent.verticalCenter
-                                    color: dm ? "#1976D2" : (dm ? "#444444" : "#CCCCCC")
+                                    color: dm ? "#1976D2" : "#CCCCCC"
                                     Behavior on color { ColorAnimation { duration: 150 } }
                                     Rectangle {
                                         width: 20; height: 20; radius: 10; color: "white"; anchors.verticalCenter: parent.verticalCenter
                                         x: dm ? 18 : 2; Behavior on x { NumberAnimation { duration: 150 } }
                                     }
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        onClicked: { if (appState) appState.darkMode = !appState.darkMode }
-                                    }
+                                    MouseArea { anchors.fill: parent; onClicked: { if (appState) appState.darkMode = !appState.darkMode } }
                                 }
                             }
                         }
@@ -827,7 +878,6 @@ Page {
                     x: 16; width: parent.width - 32
                     radius: 14; color: thCard; border.color: thBorder; clip: true
                     height: suppCol.implicitHeight
-
 
                     Column {
                         id: suppCol; width: parent.width; spacing: 0
@@ -890,36 +940,407 @@ Page {
 
                         Rectangle { x: 66; width: parent.width - 66; height: 1; color: thDivider }
 
-                        Rectangle {
-                            width: parent.width; height: 60; color: aboutMouse.containsMouse ? thRowHover : "transparent"
-                            Row { anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                Rectangle { width: 36; height: 36; radius: 18; color: thIconBg; anchors.verticalCenter: parent.verticalCenter
-                                    Text { anchors.centerIn: parent; text: "ℹ"; font.pixelSize: 16; color: "#1976D2" }
+                        // ── ABOUT YATRASARTHI — expanded with real content ─
+                        Column {
+                            width: parent.width
+                            Rectangle {
+                                width: parent.width; height: 60; color: aboutMouse.containsMouse ? thRowHover : "transparent"
+                                Row { anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: thIconBg; anchors.verticalCenter: parent.verticalCenter
+                                        Text { anchors.centerIn: parent; text: "ℹ"; font.pixelSize: 16; color: "#1976D2" }
+                                    }
+                                    Column { anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                        Label { text: "About YatraSarthi"; font.pixelSize: 14; color: thText }
+                                        Label { text: "Version 1.0.0 · Terms · Privacy"; font.pixelSize: 11; color: thTextSub }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: thTextSub; anchors.verticalCenter: parent.verticalCenter; rotation: aboutExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
                                 }
-                                Column { anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
-                                    Label { text: "About YatraSarthi"; font.pixelSize: 14; color: thText }
-                                    Label { text: "Version 1.0.0 · Terms · Privacy"; font.pixelSize: 11; color: thTextSub }
-                                }
-                                Text { text: "›"; font.pixelSize: 22; color: thTextSub; anchors.verticalCenter: parent.verticalCenter }
+                                MouseArea { id: aboutMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { var w = aboutExpanded; collapseAll(); aboutExpanded = !w } }
                             }
-                            MouseArea { id: aboutMouse; anchors.fill: parent; hoverEnabled: true; onClicked: console.log("About") }
+
+                            // ── About expanded panel ──────────────────────
+                            Column {
+                                visible: aboutExpanded
+                                width: parent.width
+                                topPadding: 4; bottomPadding: 20; leftPadding: 16; rightPadding: 16; spacing: 14
+
+                                Rectangle { width: parent.width - 32; height: 1; color: thDivider }
+
+                                // App banner
+                                Rectangle {
+                                    width: parent.width - 32; height: 90; radius: 16
+                                    gradient: Gradient { orientation: Gradient.Horizontal
+                                        GradientStop { position: 0.0; color: "#1565C0" }
+                                        GradientStop { position: 1.0; color: "#42A5F5" }
+                                    }
+                                    Row {
+                                        anchors.fill: parent; anchors.margins: 16; spacing: 14
+                                        Rectangle {
+                                            width: 56; height: 56; radius: 14; color: "white"
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            Text { anchors.centerIn: parent; text: "🚖"; font.pixelSize: 28 }
+                                        }
+                                        Column {
+                                            anchors.verticalCenter: parent.verticalCenter; spacing: 4
+                                            Label { text: "YatraSarthi"; font.pixelSize: 20; font.bold: true; color: "white" }
+                                            Label { text: "Version 1.0.0  ·  Build 2026.06"; font.pixelSize: 11; color: "#B3E5FC" }
+                                            Label { text: "The Sarthi for Every Yatra"; font.pixelSize: 11; color: "#90CAF9"; font.italic: true }
+                                        }
+                                    }
+                                }
+
+                                // Mission
+                                Column { width: parent.width - 32; spacing: 6
+                                    Label { text: "Our Mission"; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
+                                    Label {
+                                        text: "YatraSarthi connects riders and drivers across India with safe, affordable, and reliable transport — from quick bike rides to comfortable carpools."
+                                        font.pixelSize: 13; color: thText; wrapMode: Text.WordWrap; width: parent.width; lineHeight: 1.4
+                                    }
+                                }
+
+                                Rectangle { width: parent.width - 32; height: 1; color: thDivider }
+
+                                // Stats row
+                                Row {
+                                    width: parent.width - 32; spacing: 0
+                                    Repeater {
+                                        model: [
+                                            { value: "50K+",  label: "Rides" },
+                                            { value: "200+",  label: "Drivers" },
+                                            { value: "12",    label: "Cities" },
+                                            { value: "4.8★",  label: "Avg Rating" }
+                                        ]
+                                        delegate: Column {
+                                            width: parent.width / 4; spacing: 3
+                                            Label { text: modelData.value; font.pixelSize: 16; font.bold: true; color: "#1976D2"; anchors.horizontalCenter: parent.horizontalCenter }
+                                            Label { text: modelData.label; font.pixelSize: 10; color: thTextSub; anchors.horizontalCenter: parent.horizontalCenter }
+                                        }
+                                    }
+                                }
+
+                                Rectangle { width: parent.width - 32; height: 1; color: thDivider }
+
+                                // Built by
+                                Column { width: parent.width - 32; spacing: 8
+                                    Label { text: "Built by"; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
+                                    Repeater {
+                                        model: [
+                                            { name: "Johney Reji",       role: "Lead Backend Developer" },
+                                            { name: "Lokesh Royal",      role: "Lead Frontend Developer" },
+                                            { name: "Satyakam Tripathy", role: "Authentication & API Integration" },
+                                            { name: "Manaswitha",        role: "UI/UX Designer & Developer" }
+                                        ]
+                                        delegate: Rectangle {
+                                            width: parent.width; height: 44; radius: 10
+                                            color: dm ? "#1A1A1A" : "#F8FAFF"; border.color: thBorder
+                                            Row {
+                                                anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 10
+                                                Rectangle {
+                                                    width: 30; height: 30; radius: 15; color: "#1976D2"
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    Text { anchors.centerIn: parent; text: modelData.name.charAt(0); font.pixelSize: 13; font.bold: true; color: "white" }
+                                                }
+                                                Column {
+                                                    anchors.verticalCenter: parent.verticalCenter; spacing: 1
+                                                    Label { text: modelData.name; font.pixelSize: 13; font.bold: true; color: thText }
+                                                    Label { text: modelData.role; font.pixelSize: 11; color: thTextSub }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle { width: parent.width - 32; height: 1; color: thDivider }
+
+                                // Tech stack
+                                Column { width: parent.width - 32; spacing: 8
+                                    Label { text: "Technology"; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
+                                    Flow { width: parent.width; spacing: 8
+                                        Repeater {
+                                            model: ["Qt / QML", "Python FastAPI", "OpenStreetMap", "OSRM Routing", "SQLite", "Leaflet.js"]
+                                            delegate: Rectangle {
+                                                height: 26; radius: 13
+                                                color: dm ? "#1A2A3A" : "#E3F2FD"; border.color: dm ? "#2A4A6A" : "#BBDEFB"
+                                                width: techLbl.implicitWidth + 16
+                                                Label { id: techLbl; anchors.centerIn: parent; text: modelData; font.pixelSize: 11; color: "#1976D2"; font.bold: true }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Rectangle { width: parent.width - 32; height: 1; color: thDivider }
+
+                                // Legal links
+                                Column { width: parent.width - 32; spacing: 8
+                                    Repeater {
+                                        model: [
+                                            { label: "Terms of Service",  icon: "📄" },
+                                            { label: "Privacy Policy",    icon: "🔒" },
+                                            { label: "Open Source Licences", icon: "⚖" }
+                                        ]
+                                        delegate: Rectangle {
+                                            width: parent.width; height: 44; radius: 10; color: thFieldBg; border.color: thBorder
+                                            Row { anchors.fill: parent; anchors.leftMargin: 12; anchors.rightMargin: 12; spacing: 10
+                                                Text { text: modelData.icon; font.pixelSize: 16; anchors.verticalCenter: parent.verticalCenter }
+                                                Label { text: modelData.label; font.pixelSize: 13; color: thText; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 50 }
+                                                Text { text: "›"; font.pixelSize: 18; color: thTextSub; anchors.verticalCenter: parent.verticalCenter }
+                                            }
+                                            MouseArea { anchors.fill: parent; onClicked: console.log("Open:", modelData.label) }
+                                        }
+                                    }
+                                }
+
+                                // Copyright
+                                Label {
+                                    width: parent.width - 32
+                                    text: "© 2026 YatraSarthi. Made with ❤ in India."
+                                    font.pixelSize: 11; color: thTextSub
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+                            }
                         }
 
                         Rectangle { x: 66; width: parent.width - 66; height: 1; color: thDivider }
 
-                        Rectangle {
-                            width: parent.width; height: 60; color: rateMouse.containsMouse ? thRowHover : "transparent"
-                            Row { anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
-                                Rectangle { width: 36; height: 36; radius: 18; color: "#FFF8E1"; anchors.verticalCenter: parent.verticalCenter
-                                    Text { anchors.centerIn: parent; text: "★"; font.pixelSize: 18; color: "#FFB300" }
+                        // ── RATE THE APP — fully interactive ──────────────
+                        Column {
+                            width: parent.width
+                            Rectangle {
+                                width: parent.width; height: 60; color: rateMouse.containsMouse ? thRowHover : "transparent"
+                                Row { anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 14
+                                    Rectangle { width: 36; height: 36; radius: 18; color: "#FFF8E1"; anchors.verticalCenter: parent.verticalCenter
+                                        Text { anchors.centerIn: parent; text: "★"; font.pixelSize: 18; color: "#FFB300" }
+                                    }
+                                    Column { anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
+                                        Label { text: "Rate the App"; font.pixelSize: 14; color: thText }
+                                        Label {
+                                            text: reviewSubmitted
+                                                  ? "You rated us " + submittedRating + " ★ — thank you!"
+                                                  : "Enjoying YatraSarthi? Leave a review"
+                                            font.pixelSize: 11
+                                            color: reviewSubmitted ? "#43A047" : thTextSub
+                                        }
+                                    }
+                                    Text { text: "›"; font.pixelSize: 22; color: thTextSub; anchors.verticalCenter: parent.verticalCenter; rotation: rateExpanded ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 150 } } }
                                 }
-                                Column { anchors.verticalCenter: parent.verticalCenter; spacing: 2; width: parent.width - 36 - 14 - 30
-                                    Label { text: "Rate the App"; font.pixelSize: 14; color: thText }
-                                    Label { text: "Enjoying YatraSarthi? Leave a review"; font.pixelSize: 11; color: thTextSub }
-                                }
-                                Text { text: "›"; font.pixelSize: 22; color: thTextSub; anchors.verticalCenter: parent.verticalCenter }
+                                MouseArea { id: rateMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { var w = rateExpanded; collapseAll(); rateExpanded = !w } }
                             }
-                            MouseArea { id: rateMouse; anchors.fill: parent; hoverEnabled: true; onClicked: console.log("Rate app") }
+
+                            // ── Rate panel ────────────────────────────────
+                            Column {
+                                visible: rateExpanded
+                                width: parent.width
+                                topPadding: 8; bottomPadding: 20; leftPadding: 16; rightPadding: 16; spacing: 16
+
+                                Rectangle { width: parent.width - 32; height: 1; color: thDivider }
+
+                                // Already submitted — show thank you state
+                                Column {
+                                    visible: reviewSubmitted
+                                    width: parent.width - 32; spacing: 12
+                                    anchors.horizontalCenter: parent.horizontalCenter
+
+                                    Text {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: ""
+                                        font.pixelSize: 48
+                                    }
+                                    Label {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "Thank you for your feedback!"
+                                        font.pixelSize: 16; font.bold: true; color: thText
+                                    }
+                                    // Show submitted stars read-only
+                                    Row {
+                                        anchors.horizontalCenter: parent.horizontalCenter; spacing: 8
+                                        Repeater {
+                                            model: 5
+                                            delegate: Text {
+                                                text: "★"
+                                                font.pixelSize: 32
+                                                color: index < submittedRating ? "#FFB300" : (dm ? "#444444" : "#DDDDDD")
+                                            }
+                                        }
+                                    }
+                                    Label {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: starLabel(submittedRating)
+                                        font.pixelSize: 14; font.bold: true; color: "#FFB300"
+                                    }
+                                    Label {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "Your review helps us improve YatraSarthi for everyone."
+                                        font.pixelSize: 12; color: thTextSub; wrapMode: Text.WordWrap
+                                        width: parent.width; horizontalAlignment: Text.AlignHCenter
+                                    }
+                                    // Edit review button
+                                    Rectangle {
+                                        width: parent.width; height: 44; radius: 10
+                                        color: dm ? "#1A2A3A" : "#EEF4FF"; border.color: dm ? "#2A4A6A" : "#C5D8FF"
+                                        Text { anchors.centerIn: parent; text: "Edit My Review"; font.pixelSize: 14; font.bold: true; color: "#1976D2" }
+                                        MouseArea { anchors.fill: parent; onClicked: { reviewSubmitted = false; selectedRating = submittedRating } }
+                                    }
+                                }
+
+                                // Not yet submitted — show rating UI
+                                Column {
+                                    visible: !reviewSubmitted
+                                    width: parent.width - 32; spacing: 14
+                                    anchors.horizontalCenter: parent.horizontalCenter
+
+                                    Label {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "How was your experience?"
+                                        font.pixelSize: 15; font.bold: true; color: thText
+                                    }
+
+                                    // Star row
+                                    Row {
+                                        anchors.horizontalCenter: parent.horizontalCenter; spacing: 10
+                                        Repeater {
+                                            model: 5
+                                            delegate: Item {
+                                                width: 40; height: 44
+
+                                                Text {
+                                                    id: starText
+                                                    anchors.centerIn: parent
+                                                    text: "★"
+                                                    font.pixelSize: 36
+                                                    color: index < selectedRating ? "#FFB300" : (dm ? "#444444" : "#DDDDDD")
+
+                                                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                                                    // Scale bounce on select
+                                                    property bool bouncing: false
+                                                    scale: bouncing ? 1.3 : 1.0
+                                                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                                }
+
+                                                MouseArea {
+                                                    anchors.fill: parent
+                                                    onClicked: {
+                                                        selectedRating = index + 1
+                                                        starText.bouncing = true
+                                                        starBounceReset.restart()
+                                                    }
+                                                }
+
+                                                Timer {
+                                                    id: starBounceReset
+                                                    interval: 200; repeat: false
+                                                    onTriggered: starText.bouncing = false
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Rating label
+                                    Label {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        text: starLabel(selectedRating)
+                                        font.pixelSize: 14; font.bold: selectedRating > 0
+                                        color: selectedRating > 0 ? "#FFB300" : thTextSub
+                                        Behavior on color { ColorAnimation { duration: 200 } }
+                                    }
+
+                                    // Quick-tag chips (show after star chosen)
+                                    Column {
+                                        visible: selectedRating > 0
+                                        width: parent.width; spacing: 6
+
+                                        Label { text: "What stood out?"; font.pixelSize: 12; color: thTextLabel }
+
+                                        property var allTags: selectedRating >= 4
+                                            ? ["Easy to use", "Fast pickup", "Great driver", "Safe ride", "Good value", "Clean vehicle"]
+                                            : ["App crashed", "Long wait", "Route issue", "Poor support", "Payment issue", "Driver issue"]
+
+                                        property var chosenTags: []
+
+                                        Flow {
+                                            width: parent.width; spacing: 8
+                                            Repeater {
+                                                model: selectedRating >= 4
+                                                    ? ["Easy to use", "Fast pickup", "Great driver", "Safe ride", "Good value", "Clean vehicle"]
+                                                    : ["App crashed", "Long wait", "Route issue", "Poor support", "Payment issue", "Driver issue"]
+                                                delegate: Rectangle {
+                                                    id: chipRect
+                                                    property bool chosen: false
+                                                    height: 30; radius: 15
+                                                    width: chipLbl.implicitWidth + 20
+                                                    color: chosen ? "#1976D2" : (dm ? "#2A2A2A" : "#F0F4FF")
+                                                    border.color: chosen ? "#1565C0" : (dm ? "#444444" : "#C5D0F0")
+                                                    Behavior on color { ColorAnimation { duration: 120 } }
+
+                                                    Label {
+                                                        id: chipLbl
+                                                        anchors.centerIn: parent
+                                                        text: modelData
+                                                        font.pixelSize: 12
+                                                        color: chosen ? "white" : thText
+                                                        Behavior on color { ColorAnimation { duration: 120 } }
+                                                    }
+                                                    MouseArea {
+                                                        anchors.fill: parent
+                                                        onClicked: chipRect.chosen = !chipRect.chosen
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    // Written review
+                                    Column { width: parent.width; spacing: 4
+                                        Label { text: "Write a review (optional)"; font.pixelSize: 12; color: thTextLabel }
+                                        Rectangle {
+                                            width: parent.width; height: 88; radius: 10
+                                            color: thFieldBg; border.color: reviewArea.activeFocus ? "#1976D2" : thFieldBorder
+                                            border.width: reviewArea.activeFocus ? 1.5 : 1
+                                            TextArea {
+                                                id: reviewArea
+                                                anchors.fill: parent; anchors.margins: 10
+                                                placeholderText: "Tell us what you love or what we can improve..."
+                                                wrapMode: TextArea.Wrap; font.pixelSize: 13; color: thText
+                                                background: Item {}
+                                                onTextChanged: reviewText = text
+                                            }
+                                        }
+                                    }
+
+                                    // Character count
+                                    Label {
+                                        anchors.right: parent.right
+                                        text: reviewText.length + " / 300"
+                                        font.pixelSize: 10; color: reviewText.length > 280 ? "#E53935" : thTextSub
+                                    }
+
+                                    // Submit button
+                                    Rectangle {
+                                        width: parent.width; height: 48; radius: 12
+                                        opacity: selectedRating > 0 ? 1.0 : 0.4
+                                        gradient: Gradient { orientation: Gradient.Horizontal
+                                            GradientStop { position: 0.0; color: "#1565C0" }
+                                            GradientStop { position: 1.0; color: "#42A5F5" }
+                                        }
+                                        Behavior on opacity { NumberAnimation { duration: 200 } }
+
+                                        Row { anchors.centerIn: parent; spacing: 8
+                                            Text { text: "★"; font.pixelSize: 16; color: "#FFD600" }
+                                            Text { text: "Submit Review"; font.pixelSize: 15; font.bold: true; color: "white" }
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            enabled: selectedRating > 0
+                                            onClicked: {
+                                                submittedRating = selectedRating
+                                                reviewSubmitted = true
+                                                thankYouVisible = true
+                                                console.log("Review submitted — Rating:", submittedRating, "Text:", reviewText)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -929,7 +1350,7 @@ Page {
                     x: 16; width: parent.width - 32; height: 50; radius: 14
                     color: dm ? "#2A1A1A" : "#FFF0F0"; border.color: dm ? "#4A2A2A" : "#FFCDD2"
                     Row { anchors.centerIn: parent; spacing: 10
-                        Text { text: "⏻"; font.pixelSize: 18; color: "#E53935" }
+                        Text { text: ""; font.pixelSize: 18; color: "#E53935" }
                         Text { text: "Log Out"; font.pixelSize: 15; font.bold: true; color: "#E53935" }
                     }
                     MouseArea { anchors.fill: parent; onClicked: console.log("Logout") }
