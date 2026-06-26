@@ -1,190 +1,625 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route Map</title>
 
-<title>YatraSarthi Route Preview</title>
-
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- LOCAL Leaflet — no CDN dependency -->
+<link rel="stylesheet" href="./leaflet/leaflet.css">
+<script src="./leaflet/leaflet.js"></script>
 
 <style>
-html, body, #map {
-    height: 100%;
-    width: 100%;
-    margin: 0;
-}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { width: 100%; height: 100%; }
 </style>
-
 </head>
-
 <body>
-
 <div id="map"></div>
-
 <script>
+var map = L.map('map', { zoomControl: false, attributionControl: false });
 
-var map = L.map('map').setView([12.9716, 77.5946], 12);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
 
-L.tileLayer(
-    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    {
-        attribution: '&copy; OpenStreetMap contributors'
-    }
-).addTo(map);
-
-
-/* Green Pickup Marker */
-var pickupIcon = L.icon({
-    iconUrl:
-        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
-
-    shadowUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
-
-/* Red Destination Marker */
-var destinationIcon = L.icon({
-    iconUrl:
-        "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
-
-    shadowUrl:
-        "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-});
-
-
+var routeLayer   = null;
 var pickupMarker = null;
-var destinationMarker = null;
-var routeLine = null;
+var destMarker   = null;
 
-
-/*
- * Called from QML
- */
-function setRoute(
-    pickupLat,
-    pickupLon,
-    destinationLat,
-    destinationLon
-) {
-
-    if (pickupMarker)
-        map.removeLayer(pickupMarker);
-
-    if (destinationMarker)
-        map.removeLayer(destinationMarker);
-
-    if (routeLine)
-        map.removeLayer(routeLine);
-
-
-    /* Pickup */
-    pickupMarker =
-    L.marker(
-        [pickupLat, pickupLon],
-        { icon: pickupIcon }
-    )
-    .addTo(map)
-    .bindPopup("Pickup");
-
-
-    /* Destination */
-    destinationMarker =
-    L.marker(
-        [destinationLat, destinationLon],
-        { icon: destinationIcon }
-    )
-    .addTo(map)
-    .bindPopup("Destination");
-
-
-    var url =
-        "http://127.0.0.1:8000/route"
-        + "?pickup_lat=" + pickupLat
-        + "&pickup_lon=" + pickupLon
-        + "&destination_lat=" + destinationLat
-        + "&destination_lon=" + destinationLon;
-
-
-    console.log("Fetching route:", url);
-
-
-    fetch(url)
-
-    .then(response => response.json())
-
-    .then(data => {
-
-        console.log("Route response:", data);
-
-        if (!data.routes ||
-            data.routes.length === 0) {
-
-            console.log("No route found");
-            return;
-        }
-
-        var coordinates =
-            data.routes[0]
-                .geometry
-                .coordinates;
-
-        var latlngs =
-            coordinates.map(function(point) {
-
-                return [
-                    point[1],
-                    point[0]
-                ];
-            });
-
-
-        /* Blue Route */
-        routeLine =
-            L.polyline(
-                latlngs,
-                {
-                    color: "#2196F3",
-                    weight: 6,
-                    opacity: 0.9
-                }
-            ).addTo(map);
-
-
-        map.fitBounds(
-            routeLine.getBounds(),
-            {
-                padding: [30, 30]
-            }
-        );
-    })
-
-    .catch(error => {
-
-        console.log(
-            "Route Error:",
-            error
-        );
+function makeIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color
+            + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+        iconSize:   [14, 14],
+        iconAnchor: [7,  7]
     });
 }
 
+function setRoute(pickupLat, pickupLon, destLat, destLon) {
+    if (!pickupLat || !pickupLon || !destLat || !destLon) return;
+
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    if (destMarker)   map.removeLayer(destMarker);
+    if (routeLayer)   map.removeLayer(routeLayer);
+
+    pickupMarker = L.marker([pickupLat, pickupLon], { icon: makeIcon('#1976D2') }).addTo(map)
+                    .bindPopup('Pickup').openPopup();
+    destMarker   = L.marker([destLat,   destLon],   { icon: makeIcon('#E53935') }).addTo(map)
+                    .bindPopup('Destination');
+
+    // Draw straight line immediately, then try OSRM route
+    var straight = L.polyline([[pickupLat, pickupLon],[destLat, destLon]],
+                               { color: '#1976D2', weight: 4, opacity: 0.7 }).addTo(map);
+    routeLayer = straight;
+    map.fitBounds([[pickupLat, pickupLon],[destLat, destLon]], { padding: [30, 30] });
+
+    // Try to fetch real route via OSRM
+    fetch('http://127.0.0.1:8000/route'
+          + '?pickup_lat='      + pickupLat
+          + '&pickup_lon='      + pickupLon
+          + '&destination_lat=' + destLat
+          + '&destination_lon=' + destLon)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (!data.routes || !data.routes[0]) return;
+            map.removeLayer(straight);
+            var coords = data.routes[0].geometry.coordinates.map(function(c){
+                return [c[1], c[0]];
+            });
+            routeLayer = L.polyline(coords,
+                { color: '#1976D2', weight: 5, opacity: 0.85 }).addTo(map);
+            map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+        })
+        .catch(function(){});   // keep straight line on error
+}
 </script>
-
 </body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route Map</title>
 
+<!-- LOCAL Leaflet — no CDN dependency -->
+<link rel="stylesheet" href="./leaflet/leaflet.css">
+<script src="./leaflet/leaflet.js"></script>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+var map = L.map('map', { zoomControl: false, attributionControl: false });
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
+
+var routeLayer   = null;
+var pickupMarker = null;
+var destMarker   = null;
+
+function makeIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color
+            + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+        iconSize:   [14, 14],
+        iconAnchor: [7,  7]
+    });
+}
+
+function setRoute(pickupLat, pickupLon, destLat, destLon) {
+    if (!pickupLat || !pickupLon || !destLat || !destLon) return;
+
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    if (destMarker)   map.removeLayer(destMarker);
+    if (routeLayer)   map.removeLayer(routeLayer);
+
+    pickupMarker = L.marker([pickupLat, pickupLon], { icon: makeIcon('#1976D2') }).addTo(map)
+                    .bindPopup('Pickup').openPopup();
+    destMarker   = L.marker([destLat,   destLon],   { icon: makeIcon('#E53935') }).addTo(map)
+                    .bindPopup('Destination');
+
+    // Draw straight line immediately, then try OSRM route
+    var straight = L.polyline([[pickupLat, pickupLon],[destLat, destLon]],
+                               { color: '#1976D2', weight: 4, opacity: 0.7 }).addTo(map);
+    routeLayer = straight;
+    map.fitBounds([[pickupLat, pickupLon],[destLat, destLon]], { padding: [30, 30] });
+
+    // Try to fetch real route via OSRM
+    fetch('http://127.0.0.1:8000/route'
+          + '?pickup_lat='      + pickupLat
+          + '&pickup_lon='      + pickupLon
+          + '&destination_lat=' + destLat
+          + '&destination_lon=' + destLon)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (!data.routes || !data.routes[0]) return;
+            map.removeLayer(straight);
+            var coords = data.routes[0].geometry.coordinates.map(function(c){
+                return [c[1], c[0]];
+            });
+            routeLayer = L.polyline(coords,
+                { color: '#1976D2', weight: 5, opacity: 0.85 }).addTo(map);
+            map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+        })
+        .catch(function(){});   // keep straight line on error
+}
+</script>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route Map</title>
+
+<!-- LOCAL Leaflet — no CDN dependency -->
+<link rel="stylesheet" href="./leaflet/leaflet.css">
+<script src="./leaflet/leaflet.js"></script>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+var map = L.map('map', { zoomControl: false, attributionControl: false });
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
+
+var routeLayer   = null;
+var pickupMarker = null;
+var destMarker   = null;
+
+function makeIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color
+            + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+        iconSize:   [14, 14],
+        iconAnchor: [7,  7]
+    });
+}
+
+function setRoute(pickupLat, pickupLon, destLat, destLon) {
+    if (!pickupLat || !pickupLon || !destLat || !destLon) return;
+
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    if (destMarker)   map.removeLayer(destMarker);
+    if (routeLayer)   map.removeLayer(routeLayer);
+
+    pickupMarker = L.marker([pickupLat, pickupLon], { icon: makeIcon('#1976D2') }).addTo(map)
+                    .bindPopup('Pickup').openPopup();
+    destMarker   = L.marker([destLat,   destLon],   { icon: makeIcon('#E53935') }).addTo(map)
+                    .bindPopup('Destination');
+
+    // Draw straight line immediately, then try OSRM route
+    var straight = L.polyline([[pickupLat, pickupLon],[destLat, destLon]],
+                               { color: '#1976D2', weight: 4, opacity: 0.7 }).addTo(map);
+    routeLayer = straight;
+    map.fitBounds([[pickupLat, pickupLon],[destLat, destLon]], { padding: [30, 30] });
+
+    // Try to fetch real route via OSRM
+    fetch('http://127.0.0.1:8000/route'
+          + '?pickup_lat='      + pickupLat
+          + '&pickup_lon='      + pickupLon
+          + '&destination_lat=' + destLat
+          + '&destination_lon=' + destLon)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (!data.routes || !data.routes[0]) return;
+            map.removeLayer(straight);
+            var coords = data.routes[0].geometry.coordinates.map(function(c){
+                return [c[1], c[0]];
+            });
+            routeLayer = L.polyline(coords,
+                { color: '#1976D2', weight: 5, opacity: 0.85 }).addTo(map);
+            map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+        })
+        .catch(function(){});   // keep straight line on error
+}
+</script>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route Map</title>
+
+<!-- LOCAL Leaflet — no CDN dependency -->
+<link rel="stylesheet" href="./leaflet/leaflet.css">
+<script src="./leaflet/leaflet.js"></script>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+var map = L.map('map', { zoomControl: false, attributionControl: false });
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
+
+var routeLayer   = null;
+var pickupMarker = null;
+var destMarker   = null;
+
+function makeIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color
+            + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+        iconSize:   [14, 14],
+        iconAnchor: [7,  7]
+    });
+}
+
+function setRoute(pickupLat, pickupLon, destLat, destLon) {
+    if (!pickupLat || !pickupLon || !destLat || !destLon) return;
+
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    if (destMarker)   map.removeLayer(destMarker);
+    if (routeLayer)   map.removeLayer(routeLayer);
+
+    pickupMarker = L.marker([pickupLat, pickupLon], { icon: makeIcon('#1976D2') }).addTo(map)
+                    .bindPopup('Pickup').openPopup();
+    destMarker   = L.marker([destLat,   destLon],   { icon: makeIcon('#E53935') }).addTo(map)
+                    .bindPopup('Destination');
+
+    // Draw straight line immediately, then try OSRM route
+    var straight = L.polyline([[pickupLat, pickupLon],[destLat, destLon]],
+                               { color: '#1976D2', weight: 4, opacity: 0.7 }).addTo(map);
+    routeLayer = straight;
+    map.fitBounds([[pickupLat, pickupLon],[destLat, destLon]], { padding: [30, 30] });
+
+    // Try to fetch real route via OSRM
+    fetch('http://127.0.0.1:8000/route'
+          + '?pickup_lat='      + pickupLat
+          + '&pickup_lon='      + pickupLon
+          + '&destination_lat=' + destLat
+          + '&destination_lon=' + destLon)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (!data.routes || !data.routes[0]) return;
+            map.removeLayer(straight);
+            var coords = data.routes[0].geometry.coordinates.map(function(c){
+                return [c[1], c[0]];
+            });
+            routeLayer = L.polyline(coords,
+                { color: '#1976D2', weight: 5, opacity: 0.85 }).addTo(map);
+            map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+        })
+        .catch(function(){});   // keep straight line on error
+}
+</script>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route Map</title>
+
+<!-- LOCAL Leaflet — no CDN dependency -->
+<link rel="stylesheet" href="./leaflet/leaflet.css">
+<script src="./leaflet/leaflet.js"></script>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+var map = L.map('map', { zoomControl: false, attributionControl: false });
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
+
+var routeLayer   = null;
+var pickupMarker = null;
+var destMarker   = null;
+
+function makeIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color
+            + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+        iconSize:   [14, 14],
+        iconAnchor: [7,  7]
+    });
+}
+
+function setRoute(pickupLat, pickupLon, destLat, destLon) {
+    if (!pickupLat || !pickupLon || !destLat || !destLon) return;
+
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    if (destMarker)   map.removeLayer(destMarker);
+    if (routeLayer)   map.removeLayer(routeLayer);
+
+    pickupMarker = L.marker([pickupLat, pickupLon], { icon: makeIcon('#1976D2') }).addTo(map)
+                    .bindPopup('Pickup').openPopup();
+    destMarker   = L.marker([destLat,   destLon],   { icon: makeIcon('#E53935') }).addTo(map)
+                    .bindPopup('Destination');
+
+    // Draw straight line immediately, then try OSRM route
+    var straight = L.polyline([[pickupLat, pickupLon],[destLat, destLon]],
+                               { color: '#1976D2', weight: 4, opacity: 0.7 }).addTo(map);
+    routeLayer = straight;
+    map.fitBounds([[pickupLat, pickupLon],[destLat, destLon]], { padding: [30, 30] });
+
+    // Try to fetch real route via OSRM
+    fetch('http://127.0.0.1:8000/route'
+          + '?pickup_lat='      + pickupLat
+          + '&pickup_lon='      + pickupLon
+          + '&destination_lat=' + destLat
+          + '&destination_lon=' + destLon)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (!data.routes || !data.routes[0]) return;
+            map.removeLayer(straight);
+            var coords = data.routes[0].geometry.coordinates.map(function(c){
+                return [c[1], c[0]];
+            });
+            routeLayer = L.polyline(coords,
+                { color: '#1976D2', weight: 5, opacity: 0.85 }).addTo(map);
+            map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+        })
+        .catch(function(){});   // keep straight line on error
+}
+</script>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route Map</title>
+
+<!-- LOCAL Leaflet — no CDN dependency -->
+<link rel="stylesheet" href="./leaflet/leaflet.css">
+<script src="./leaflet/leaflet.js"></script>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+var map = L.map('map', { zoomControl: false, attributionControl: false });
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
+
+var routeLayer   = null;
+var pickupMarker = null;
+var destMarker   = null;
+
+function makeIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color
+            + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+        iconSize:   [14, 14],
+        iconAnchor: [7,  7]
+    });
+}
+
+function setRoute(pickupLat, pickupLon, destLat, destLon) {
+    if (!pickupLat || !pickupLon || !destLat || !destLon) return;
+
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    if (destMarker)   map.removeLayer(destMarker);
+    if (routeLayer)   map.removeLayer(routeLayer);
+
+    pickupMarker = L.marker([pickupLat, pickupLon], { icon: makeIcon('#1976D2') }).addTo(map)
+                    .bindPopup('Pickup').openPopup();
+    destMarker   = L.marker([destLat,   destLon],   { icon: makeIcon('#E53935') }).addTo(map)
+                    .bindPopup('Destination');
+
+    // Draw straight line immediately, then try OSRM route
+    var straight = L.polyline([[pickupLat, pickupLon],[destLat, destLon]],
+                               { color: '#1976D2', weight: 4, opacity: 0.7 }).addTo(map);
+    routeLayer = straight;
+    map.fitBounds([[pickupLat, pickupLon],[destLat, destLon]], { padding: [30, 30] });
+
+    // Try to fetch real route via OSRM
+    fetch('http://127.0.0.1:8000/route'
+          + '?pickup_lat='      + pickupLat
+          + '&pickup_lon='      + pickupLon
+          + '&destination_lat=' + destLat
+          + '&destination_lon=' + destLon)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (!data.routes || !data.routes[0]) return;
+            map.removeLayer(straight);
+            var coords = data.routes[0].geometry.coordinates.map(function(c){
+                return [c[1], c[0]];
+            });
+            routeLayer = L.polyline(coords,
+                { color: '#1976D2', weight: 5, opacity: 0.85 }).addTo(map);
+            map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+        })
+        .catch(function(){});   // keep straight line on error
+}
+</script>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route Map</title>
+
+<!-- LOCAL Leaflet — no CDN dependency -->
+<link rel="stylesheet" href="./leaflet/leaflet.css">
+<script src="./leaflet/leaflet.js"></script>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+var map = L.map('map', { zoomControl: false, attributionControl: false });
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
+
+var routeLayer   = null;
+var pickupMarker = null;
+var destMarker   = null;
+
+function makeIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color
+            + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+        iconSize:   [14, 14],
+        iconAnchor: [7,  7]
+    });
+}
+
+function setRoute(pickupLat, pickupLon, destLat, destLon) {
+    if (!pickupLat || !pickupLon || !destLat || !destLon) return;
+
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    if (destMarker)   map.removeLayer(destMarker);
+    if (routeLayer)   map.removeLayer(routeLayer);
+
+    pickupMarker = L.marker([pickupLat, pickupLon], { icon: makeIcon('#1976D2') }).addTo(map)
+                    .bindPopup('Pickup').openPopup();
+    destMarker   = L.marker([destLat,   destLon],   { icon: makeIcon('#E53935') }).addTo(map)
+                    .bindPopup('Destination');
+
+    // Draw straight line immediately, then try OSRM route
+    var straight = L.polyline([[pickupLat, pickupLon],[destLat, destLon]],
+                               { color: '#1976D2', weight: 4, opacity: 0.7 }).addTo(map);
+    routeLayer = straight;
+    map.fitBounds([[pickupLat, pickupLon],[destLat, destLon]], { padding: [30, 30] });
+
+    // Try to fetch real route via OSRM
+    fetch('http://127.0.0.1:8000/route'
+          + '?pickup_lat='      + pickupLat
+          + '&pickup_lon='      + pickupLon
+          + '&destination_lat=' + destLat
+          + '&destination_lon=' + destLon)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (!data.routes || !data.routes[0]) return;
+            map.removeLayer(straight);
+            var coords = data.routes[0].geometry.coordinates.map(function(c){
+                return [c[1], c[0]];
+            });
+            routeLayer = L.polyline(coords,
+                { color: '#1976D2', weight: 5, opacity: 0.85 }).addTo(map);
+            map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+        })
+        .catch(function(){});   // keep straight line on error
+}
+</script>
+</body>
+</html><!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Route Map</title>
+
+<!-- LOCAL Leaflet — no CDN dependency -->
+<link rel="stylesheet" href="./leaflet/leaflet.css">
+<script src="./leaflet/leaflet.js"></script>
+
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body, #map { width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+var map = L.map('map', { zoomControl: false, attributionControl: false });
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19
+}).addTo(map);
+
+var routeLayer   = null;
+var pickupMarker = null;
+var destMarker   = null;
+
+function makeIcon(color) {
+    return L.divIcon({
+        className: '',
+        html: '<div style="width:14px;height:14px;border-radius:50%;background:' + color
+            + ';border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.5)"></div>',
+        iconSize:   [14, 14],
+        iconAnchor: [7,  7]
+    });
+}
+
+function setRoute(pickupLat, pickupLon, destLat, destLon) {
+    if (!pickupLat || !pickupLon || !destLat || !destLon) return;
+
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    if (destMarker)   map.removeLayer(destMarker);
+    if (routeLayer)   map.removeLayer(routeLayer);
+
+    pickupMarker = L.marker([pickupLat, pickupLon], { icon: makeIcon('#1976D2') }).addTo(map)
+                    .bindPopup('Pickup').openPopup();
+    destMarker   = L.marker([destLat,   destLon],   { icon: makeIcon('#E53935') }).addTo(map)
+                    .bindPopup('Destination');
+
+    // Draw straight line immediately, then try OSRM route
+    var straight = L.polyline([[pickupLat, pickupLon],[destLat, destLon]],
+                               { color: '#1976D2', weight: 4, opacity: 0.7 }).addTo(map);
+    routeLayer = straight;
+    map.fitBounds([[pickupLat, pickupLon],[destLat, destLon]], { padding: [30, 30] });
+
+    // Try to fetch real route via OSRM
+    fetch('http://127.0.0.1:8000/route'
+          + '?pickup_lat='      + pickupLat
+          + '&pickup_lon='      + pickupLon
+          + '&destination_lat=' + destLat
+          + '&destination_lon=' + destLon)
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+            if (!data.routes || !data.routes[0]) return;
+            map.removeLayer(straight);
+            var coords = data.routes[0].geometry.coordinates.map(function(c){
+                return [c[1], c[0]];
+            });
+            routeLayer = L.polyline(coords,
+                { color: '#1976D2', weight: 5, opacity: 0.85 }).addTo(map);
+            map.fitBounds(routeLayer.getBounds(), { padding: [30, 30] });
+        })
+        .catch(function(){});   // keep straight line on error
+}
+</script>
+</body>
 </html>

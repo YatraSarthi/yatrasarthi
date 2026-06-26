@@ -110,9 +110,13 @@ def register(request: RegisterRequest):
 @router.post("/send-login-otp")
 def send_login_otp(request: LoginOTPRequest):
 
+    print("========== SEND LOGIN OTP ==========")
+    print("Phone:", request.phone)
+
     db: Session = SessionLocal()
 
     try:
+        print("Database session created")
 
         user = (
             db.query(User)
@@ -120,18 +124,24 @@ def send_login_otp(request: LoginOTPRequest):
             .first()
         )
 
-        if not user:
+        print("User query finished")
 
+        if not user:
+            print("User not found")
             return {
                 "success": False,
                 "message": "User not found."
             }
+
+        print("Deleting old OTP")
 
         db.query(OTPStore).filter(
             OTPStore.phone == request.phone
         ).delete()
 
         otp = generate_otp()
+
+        print("Generated OTP:", otp)
 
         db.add(
             OTPStore(
@@ -141,22 +151,33 @@ def send_login_otp(request: LoginOTPRequest):
             )
         )
 
+        print("Committing...")
+
         db.commit()
+
+        print("Commit complete")
+
+        print("Sending SMS...")
 
         send_sms(
             request.phone,
             f"Your YatraSarthi Login OTP is {otp}"
         )
 
+        print("SMS complete")
+
         return {
             "success": True,
             "message": "OTP sent successfully."
         }
 
-    finally:
+    except Exception as e:
+        print("ERROR:", e)
+        raise
 
-        db.close()
+    
 @router.post("/verify-otp")
+
 def verify_otp(request: VerifyOTPRequest):
 
     db: Session = SessionLocal()
@@ -173,7 +194,6 @@ def verify_otp(request: VerifyOTPRequest):
         )
 
         if not otp_record:
-
             return {
                 "success": False,
                 "message": "Invalid OTP."
@@ -186,7 +206,6 @@ def verify_otp(request: VerifyOTPRequest):
         )
 
         if not user:
-
             return {
                 "success": False,
                 "message": "User not found."
@@ -211,8 +230,9 @@ def verify_otp(request: VerifyOTPRequest):
         }
 
     finally:
-
         db.close()
+
+
 @router.post("/resend-otp")
 def resend_otp(request: ResendOTPRequest):
 
@@ -227,7 +247,6 @@ def resend_otp(request: ResendOTPRequest):
         )
 
         if not user:
-
             return {
                 "success": False,
                 "message": "User not found."
@@ -260,5 +279,4 @@ def resend_otp(request: ResendOTPRequest):
         }
 
     finally:
-
         db.close()

@@ -146,26 +146,31 @@ Component.onDestruction: {                         // ADD THIS WHOLE BLOCK
             color: "#E8EAF6"
 
             WebEngineView {
-                id: routeMap
-                anchors.fill: parent
-                url: Qt.resolvedUrl("../web/route.html")
+    id: routeMap
+    anchors.fill: parent
 
-                onLoadingChanged: {
-                    if (loadRequest.status ===
-                            WebEngineLoadRequest.LoadSucceededStatus) {
-                        console.log("Route map loaded")
-                        runJavaScript(
-                            "setRoute("
-                            + appState.pickupLat   + ","
-                            + appState.pickupLon   + ","
-                            + appState.destinationLat + ","
-                            + appState.destinationLon
-                            + ")"
-                        )
-                    }
-                }
-            }
+    Component.onCompleted: {
+        console.log("Resolved URL:", Qt.resolvedUrl("../web/route.html"))
+    }
 
+    url: Qt.resolvedUrl("../web/route.html")
+
+    onLoadingChanged: function(loadRequest) {
+
+    if (loadRequest.status !== WebEngineLoadRequest.LoadSucceededStatus)
+        return
+
+    console.log("HTML finished loading")
+
+    routeMap.runJavaScript(
+        "setRoute("
+        + appState.pickupLat + ","
+        + appState.pickupLon + ","
+        + appState.destinationLat + ","
+        + appState.destinationLon
+        + ");"
+    )
+}}
             // Distance badge over the map
             Rectangle {
                 anchors.top: parent.top

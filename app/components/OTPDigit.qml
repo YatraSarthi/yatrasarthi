@@ -1,95 +1,42 @@
-import QtQuick
-import QtQuick.Controls
+import QtQuick 2.12
+import QtQuick.Controls 2.12
 
 TextField {
-
     id: otpField
 
     signal moveNext()
     signal movePrevious()
 
-    width: 48
-    height: 58
-
+    width: 48; height: 58
     maximumLength: 1
-
     horizontalAlignment: Text.AlignHCenter
-    verticalAlignment: Text.AlignVCenter
-
-    font.pixelSize: 24
-    font.bold: true
-
+    verticalAlignment:   Text.AlignVCenter
+    font.pixelSize: 24; font.bold: true
     color: "#202124"
-
     inputMethodHints: Qt.ImhDigitsOnly
-
-    selectByMouse: true
+    selectByMouse:    true
 
     background: Rectangle {
-
-        radius: 14
-
-        color: "white"
-
+        radius:       14
+        color:        "white"
         border.width: otpField.activeFocus ? 2 : 1
-
-        border.color: otpField.activeFocus
-                      ? "#1976D2"
-                      : "#D8E2EC"
-
-        Behavior on border.color {
-
-            ColorAnimation {
-
-                duration: 180
-
-            }
-
-        }
-
-        Behavior on border.width {
-
-            NumberAnimation {
-
-                duration: 180
-
-            }
-
-        }
-
+        border.color: otpField.activeFocus ? "#1976D2" : "#D8E2EC"
+        Behavior on border.color { ColorAnimation  { duration: 180 } }
+        Behavior on border.width { NumberAnimation { duration: 180 } }
     }
 
-    onTextChanged: {
-
-        if (text.length === 1)
-            moveNext()
-
-    }
+    onTextChanged: { if (text.length === 1) moveNext() }
 
     Keys.onPressed: function(event) {
-
         if (event.key === Qt.Key_Backspace && text === "") {
-
             movePrevious()
-
             event.accepted = true
-
         }
-
     }
 
     MouseArea {
-
-        anchors.fill: parent
-
+        anchors.fill:    parent
         acceptedButtons: Qt.LeftButton
-
-        onClicked: {
-
-            otpField.forceActiveFocus()
-
-        }
-
+        onClicked:       otpField.forceActiveFocus()
     }
-
 }
