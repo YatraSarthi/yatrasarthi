@@ -274,7 +274,7 @@ YatraSarthi/
 
 **1\. Clone the Repository**
 
-git clone <https://github.com/<username>/YatraSarthi.git>
+git clone https://github.com/YatraSarthi/yatrasarthi.git
 
 cd YatraSarthi
 
