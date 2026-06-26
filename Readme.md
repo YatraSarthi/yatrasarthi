@@ -1,7 +1,5 @@
 **🚖 YatraSarthi**
 
-<br/><br/><br/><br/><br/>
-
 **🚖 About YatraSarthi**
 
 YatraSarthi is an open-source ride-hailing platform inspired by modern transportation services such as Uber and Ola. The project demonstrates how a complete transportation ecosystem can be developed entirely using Free and Open Source Software (FOSS).
