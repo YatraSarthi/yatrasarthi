@@ -984,7 +984,7 @@ Page {
                                             anchors.verticalCenter: parent.verticalCenter; spacing: 4
                                             Label { text: "YatraSarthi"; font.pixelSize: 20; font.bold: true; color: "white" }
                                             Label { text: "Version 1.0.0  ·  Build 2026.06"; font.pixelSize: 11; color: "#B3E5FC" }
-                                            Label { text: "Your trusted ride companion"; font.pixelSize: 11; color: "#90CAF9"; font.italic: true }
+                                            Label { text: "The Sarthi for Every Yatra"; font.pixelSize: 11; color: "#90CAF9"; font.italic: true }
                                         }
                                     }
                                 }
@@ -1025,13 +1025,10 @@ Page {
                                     Label { text: "Built by"; font.pixelSize: 13; font.bold: true; color: "#1976D2" }
                                     Repeater {
                                         model: [
-                                            { name: "Johney Reji",       role: "Lead Developer & Backend" },
-                                            { name: "Lokesh Royal",      role: "Frontend & QML UI" },
-                                            { name: "Satyakam Tripathy", role: "Maps & Navigation" },
-                                            { name: "Devaj",             role: "Driver Systems" },
-                                            { name: "Ibrahim",           role: "Payments & Security" },
-                                            { name: "Manaswitha",        role: "Design & UX" },
-                                            { name: "Agnik",             role: "Testing & QA" }
+                                            { name: "Johney Reji",       role: "Lead Backend Developer" },
+                                            { name: "Lokesh Royal",      role: "Lead Frontend Developer" },
+                                            { name: "Satyakam Tripathy", role: "Authentication & API Integration" },
+                                            { name: "Manaswitha",        role: "UI/UX Designer & Developer" }
                                         ]
                                         delegate: Rectangle {
                                             width: parent.width; height: 44; radius: 10
@@ -1145,7 +1142,7 @@ Page {
 
                                     Text {
                                         anchors.horizontalCenter: parent.horizontalCenter
-                                        text: "🎉"
+                                        text: ""
                                         font.pixelSize: 48
                                     }
                                     Label {
@@ -1353,7 +1350,7 @@ Page {
                     x: 16; width: parent.width - 32; height: 50; radius: 14
                     color: dm ? "#2A1A1A" : "#FFF0F0"; border.color: dm ? "#4A2A2A" : "#FFCDD2"
                     Row { anchors.centerIn: parent; spacing: 10
-                        Text { text: "⏻"; font.pixelSize: 18; color: "#E53935" }
+                        Text { text: ""; font.pixelSize: 18; color: "#E53935" }
                         Text { text: "Log Out"; font.pixelSize: 15; font.bold: true; color: "#E53935" }
                     }
                     MouseArea { anchors.fill: parent; onClicked: console.log("Logout") }
