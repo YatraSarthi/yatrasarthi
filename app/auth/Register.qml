@@ -44,7 +44,7 @@ Page {
 
         Image {
 
-            source: "../assets/icons/logo.jpeg"
+            source: "../assets/icons/logo.png"
 
             width: 90
             height: 90

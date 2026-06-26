@@ -12,7 +12,7 @@ DEMO_MODE = False
 # BACKEND
 # ==========================================
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = "https://aceass-vivobook-asuslaptop-m6500ih.tailb49250.ts.net"
 
 
 # ==========================================
