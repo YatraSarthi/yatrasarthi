@@ -472,7 +472,7 @@ Row {
 
                         Row {
                             spacing: 6
-                            Label { text: "📍"; font.pixelSize: 13 }
+                            Label { text: ""; font.pixelSize: 13 }
                             Label {
                                 text:           "Destination"
                                 color:          "#888888"
